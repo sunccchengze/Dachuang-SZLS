@@ -1,6 +1,14 @@
+<<<<<<< HEAD
 streamlit
 numpy
 pandas
 plotly
 scipy
+=======
+streamlit
+numpy
+pandas
+plotly
+scipy
+>>>>>>> d34b3accde18de1345c5e086428311189ab9affa
 floris
