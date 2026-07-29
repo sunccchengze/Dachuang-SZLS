@@ -5,8 +5,12 @@ from pathlib import Path
 
 BASE = Path(__file__).parent
 
-# ===== 读取多风速数据 =====
-df = pd.read_csv(BASE / "cases_multi.csv")
+# 兼容本地和Streamlit Cloud的路径
+_csv_path = BASE / "cases_multi.csv"
+if not _csv_path.exists():
+    _csv_path = Path("cases_multi.csv")
+
+df = pd.read_csv(_csv_path)
 df["power_total"] = df["power_1"] + df["power_2"]
 
 wind_speeds = sorted(df["U_inf"].unique())
