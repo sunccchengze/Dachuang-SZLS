@@ -1,77 +1,402 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="风电场偏航优化演示",
+    page_title="风电场偏航优化演示系统",
     page_icon="🌬️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
 st.markdown("""
 <style>
-.stApp { background-color: #080d1a; }
-.main-header {
-    background: linear-gradient(135deg, #0d1526 0%, #1a3a6e 100%);
-    padding: 40px 40px;
-    border-radius: 16px;
-    border: 1px solid #1e2d4a;
+.stApp {
+    background-color: #060b18;
+    background-image:
+        radial-gradient(ellipse 80% 60% at 10% 20%,
+            rgba(74, 158, 255, 0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 90% 80%,
+            rgba(39, 174, 96, 0.14) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 50% 50%,
+            rgba(155, 89, 182, 0.08) 0%, transparent 60%);
+    min-height: 100vh;
+}
+[data-testid="stSidebarNav"] { display: none; }
+[data-testid="stSidebar"] { display: none; }
+
+.hero {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 24px;
+    padding: 64px 56px 56px 56px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
     margin-bottom: 32px;
 }
-.card {
-    background-color: #111827;
-    border: 1px solid #1e2d4a;
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 16px;
+.hero::before {
+    content: "";
+    position: absolute;
+    top: -80px; left: -80px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle,
+        rgba(74,158,255,0.15) 0%, transparent 65%);
+    pointer-events: none;
+}
+.hero::after {
+    content: "";
+    position: absolute;
+    bottom: -80px; right: -80px;
+    width: 360px; height: 360px;
+    background: radial-gradient(circle,
+        rgba(39,174,96,0.12) 0%, transparent 65%);
+    pointer-events: none;
+}
+.hero-tag {
+    display: inline-block;
+    background: rgba(74,158,255,0.12);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(74,158,255,0.35);
+    color: #4a9eff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    padding: 5px 16px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+}
+.hero-title {
+    font-size: 46px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 16px 0;
+    line-height: 1.15;
+    letter-spacing: -1px;
+}
+.hero-title span {
+    background: linear-gradient(90deg, #4a9eff 0%, #27ae60 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.hero-sub {
+    font-size: 16px;
+    color: rgba(168,188,223,0.85);
+    margin: 0 0 36px 0;
+    line-height: 1.7;
+}
+.hero-badges {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.badge {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.10);
+    color: rgba(168,188,223,0.9);
+    font-size: 12px;
+    padding: 5px 14px;
+    border-radius: 20px;
+}
+
+.stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 32px;
+}
+.stat-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease,
+                border-color 0.25s ease;
+}
+.stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent, rgba(255,255,255,0.2), transparent);
+}
+.stat-card:hover {
+    transform: scale(1.05);
+    border-color: rgba(74,158,255,0.45);
+    box-shadow:
+        0 0 20px rgba(74,158,255,0.15),
+        0 0 40px rgba(74,158,255,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.stat-number {
+    font-size: 36px;
+    font-weight: 800;
+    color: #4a9eff;
+    margin: 0;
+    line-height: 1;
+}
+.stat-unit {
+    font-size: 16px;
+    color: #4a9eff;
+    margin-left: 2px;
+}
+.stat-label {
+    font-size: 12px;
+    color: rgba(136,153,187,0.8);
+    margin: 8px 0 0 0;
+    letter-spacing: 0.3px;
+}
+
+.section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(136,153,187,0.7);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 0 0 16px 4px;
+}
+
+.page-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 32px;
+}
+.page-card {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 24px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease,
+                background 0.25s ease, box-shadow 0.25s ease;
+}
+.page-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent, rgba(255,255,255,0.15), transparent);
+}
+.page-card:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(74,158,255,0.45);
+    transform: scale(1.05);
+    box-shadow:
+        0 0 20px rgba(74,158,255,0.15),
+        0 0 40px rgba(74,158,255,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.page-icon {
+    font-size: 26px;
+    margin-bottom: 12px;
+    display: block;
+}
+.page-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #e8edf5;
+    margin: 0 0 6px 0;
+}
+.page-desc {
+    font-size: 12px;
+    color: rgba(107,122,153,0.9);
+    margin: 0;
+    line-height: 1.55;
+}
+.page-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 8px;
+    margin-top: 12px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+.tag-core {
+    background: rgba(74,158,255,0.12);
+    color: #4a9eff;
+    border: 1px solid rgba(74,158,255,0.25);
+}
+.tag-3d {
+    background: rgba(155,89,182,0.12);
+    color: #b07fd4;
+    border: 1px solid rgba(155,89,182,0.25);
+}
+.tag-analysis {
+    background: rgba(39,174,96,0.12);
+    color: #27ae60;
+    border: 1px solid rgba(39,174,96,0.25);
+}
+.tag-ai {
+    background: rgba(230,126,34,0.12);
+    color: #e67e22;
+    border: 1px solid rgba(230,126,34,0.25);
+}
+.tag-coming {
+    background: rgba(255,255,255,0.05);
+    color: rgba(136,153,187,0.6);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.tech-bar {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+}
+.tech-label {
+    font-size: 11px;
+    color: rgba(74,85,104,0.9);
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.tech-items {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.tech-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(136,153,187,0.8);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 6px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("""
-<div class="main-header">
-    <h1 style="margin:0; color:white; font-size:28px;">
-        🌬️ 风电场偏航优化可视化演示系统
+<div class="hero">
+    <div class="hero-tag">🏫 西安交通大学 · 大创项目</div>
+    <h1 class="hero-title">
+        风电场偏航优化<br>
+        <span>可视化演示系统</span>
     </h1>
-    <p style="margin:10px 0 0 0; color:#a8bcdf; font-size:15px;">
-        西安交通大学 · 能源与动力工程学院 · 大创项目
+    <p class="hero-sub">
+        融合数据-物理驱动 · FLORIS GCH 尾流模型 · NREL 5MW 基准风机<br>
+        从流场感知到机组协同调控的完整技术链路演示
     </p>
+    <div class="hero-badges">
+        <span class="badge">🌬️ 两台串列布局</span>
+        <span class="badge">📐 NREL 5MW</span>
+        <span class="badge">⚙️ GCH 尾流模型</span>
+        <span class="badge">🧠 二维插值代理模型</span>
+        <span class="badge">🎯 网格搜索优化</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.markdown("""
-<div class="card">
-    <h3 style="color:#4a9eff; margin:0 0 8px 0;">📊 尾流分析</h3>
-    <p style="color:#8899bb; margin:0; font-size:14px;">
-        交互式尾流速度场云图，拖动滑块实时查看不同偏航角下的尾流分布与功率变化。
-    </p>
-</div>
-""", unsafe_allow_html=True)
-
-with col2:
-    st.markdown("""
-<div class="card">
-    <h3 style="color:#27ae60; margin:0 0 8px 0;">🎯 优化结果</h3>
-    <p style="color:#8899bb; margin:0; font-size:14px;">
-        偏航前后尾流对比图、速度差值图，以及偏航角扫描动画演示。
-    </p>
-</div>
-""", unsafe_allow_html=True)
-
-with col3:
-    st.markdown("""
-<div class="card">
-    <h3 style="color:#e67e22; margin:0 0 8px 0;">📋 数据总览</h3>
-    <p style="color:#8899bb; margin:0; font-size:14px;">
-        全部工况数据表格，以及各工况功率分布统计图。
-    </p>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown("<br>", unsafe_allow_html=True)
 st.markdown("""
-<div style="color:#8899bb; font-size:13px; padding: 16px 0;">
-    👈 从左侧导航栏选择页面
+<div class="stats-bar">
+    <div class="stat-card">
+        <p class="stat-number">8.1<span class="stat-unit">%</span></p>
+        <p class="stat-label">最大功率提升（8 m/s）</p>
+    </div>
+    <div class="stat-card">
+        <p class="stat-number">52</p>
+        <p class="stat-label">多风速工况数量</p>
+    </div>
+    <div class="stat-card">
+        <p class="stat-number">+25<span class="stat-unit">°</span></p>
+        <p class="stat-label">最优偏航角</p>
+    </div>
+    <div class="stat-card">
+        <p class="stat-number">7</p>
+        <p class="stat-label">演示功能页面</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown('<p class="section-title">功能模块</p>', unsafe_allow_html=True)
+st.markdown("""
+<div class="page-grid">
+    <div class="page-card">
+        <span class="page-icon">📊</span>
+        <p class="page-name">尾流分析</p>
+        <p class="page-desc">交互式速度场云图，代理模型实时预测任意偏航角下的功率输出</p>
+        <span class="page-tag tag-core">CORE</span>
+    </div>
+    <div class="page-card">
+        <span class="page-icon">🎯</span>
+        <p class="page-name">优化结果</p>
+        <p class="page-desc">偏航前后尾流对比、速度差值图、偏航角扫描动画</p>
+        <span class="page-tag tag-core">CORE</span>
+    </div>
+    <div class="page-card">
+        <span class="page-icon">📋</span>
+        <p class="page-name">数据总览</p>
+        <p class="page-desc">全工况功率柱状图、P₁/P₂分解曲线、原始数据表格</p>
+        <span class="page-tag tag-analysis">ANALYSIS</span>
+    </div>
+    <div class="page-card">
+        <span class="page-icon">🌐</span>
+        <p class="page-name">3D 尾流曲面</p>
+        <p class="page-desc">三维速度曲面可视化，鼠标拖拽旋转，直观感受尾流空间结构</p>
+        <span class="page-tag tag-3d">3D</span>
+    </div>
+    <div class="page-card">
+        <span class="page-icon">🫧</span>
+        <p class="page-name">3D 体渲染</p>
+        <p class="page-desc">真实三维尾流低速泡，含风机转子几何，多高度层叠加渲染</p>
+        <span class="page-tag tag-3d">3D</span>
+    </div>
+    <div class="page-card">
+        <span class="page-icon">🔥</span>
+        <p class="page-name">热力矩阵</p>
+        <p class="page-desc">偏航角 × 风速功率增益矩阵，覆盖 6~12 m/s 全风速工况</p>
+        <span class="page-tag tag-analysis">ANALYSIS</span>
+    </div>
+    <div class="page-card">
+        <span class="page-icon">⚡</span>
+        <p class="page-name">优化求解器</p>
+        <p class="page-desc">输入任意风速，实时网格搜索最优偏航角，输出完整优化结果</p>
+        <span class="page-tag tag-ai">AI · OPT</span>
+    </div>
+    <div class="page-card" style="opacity:0.45; border-style:dashed;">
+        <span class="page-icon">🔗</span>
+        <p class="page-name">真实数据接入</p>
+        <p class="page-desc">等待仿真组 CFD 数据与 AI 组代理模型接口，开学后替换</p>
+        <span class="page-tag tag-coming">COMING</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="tech-bar">
+    <span class="tech-label">TECH STACK</span>
+    <div class="tech-items">
+        <span class="tech-item">Python 3.13</span>
+        <span class="tech-item">Streamlit 1.51</span>
+        <span class="tech-item">Plotly 6.3</span>
+        <span class="tech-item">FLORIS 4.6.6</span>
+        <span class="tech-item">NumPy 2.3</span>
+        <span class="tech-item">SciPy 1.16</span>
+        <span class="tech-item">Pandas 2.3</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
