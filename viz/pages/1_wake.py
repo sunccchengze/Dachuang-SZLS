@@ -11,37 +11,14 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from surrogate_model import predict_power
+from utils import DARK_CSS, PLOT_THEME, GRID_STYLE, AXIS_COLOR, download_plotly
 
 st.set_page_config(page_title="尾流分析", page_icon="📊", layout="wide")
-
-st.markdown("""
-<style>
-.stApp { background-color: #080d1a; }
-[data-testid="stMetric"] {
-    background-color: #111827;
-    border: 1px solid #1e2d4a;
-    border-radius: 12px;
-    padding: 16px 20px;
-}
-[data-testid="stMetricLabel"] {
-    font-size: 13px !important;
-    color: #8899bb !important;
-    font-weight: 600 !important;
-}
-[data-testid="stMetricValue"] {
-    font-size: 22px !important;
-    color: #e8edf5 !important;
-    font-weight: 700 !important;
-}
-[data-testid="stSidebar"] { background-color: #0d1526; }
-[data-testid="stSidebar"] * { color: #e8edf5 !important; }
-</style>
-""", unsafe_allow_html=True)
+st.markdown(DARK_CSS, unsafe_allow_html=True)
 
 st.markdown("## 📊 尾流分析")
 st.divider()
 
-# ===== 读取数据 =====
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 @st.cache_data
@@ -56,17 +33,25 @@ def load_field(case_id):
         return d["x"], d["y"], d["u"]
     return None, None, None
 
-df = load_cases()
-df["power_total"] = df["power_1"] + df["power_2"]
-baseline = df[df["yaw_1"] == 0]["power_total"].values[0]
+@st.cache_data
+def load_result():
+    import json
+    with open(os.path.join(BASE, "optimizer_result.json")) as f:
+        return json.load(f)
 
-# ===== 侧边栏 =====
+with st.spinner("加载数据..."):
+    df = load_cases()
+    df["power_total"] = df["power_1"] + df["power_2"]
+    baseline = df[df["yaw_1"] == 0]["power_total"].values[0]
+    result   = load_result()
+
 with st.sidebar:
     st.markdown("## ⚙️ 参数控制台")
     st.divider()
     yaw_input = st.slider(
         "上游风机偏航角 γ₁ (°)",
-        min_value=-30, max_value=30,
+        min_value=int(df["yaw_1"].min()),
+        max_value=int(df["yaw_1"].max()),
         value=0, step=1
     )
     st.divider()
@@ -81,17 +66,15 @@ with st.sidebar:
 - 尾流模型：**GCH**
     """)
 
-# ===== 代理模型预测 =====
-p1_pred, p2_pred = predict_power(yaw_input)
-p_total_pred = p1_pred + p2_pred
-gain_pred = (p_total_pred - baseline) / baseline * 100
+with st.spinner("计算代理模型预测值..."):
+    p1_pred, p2_pred = predict_power(yaw_input)
+    p_total_pred = p1_pred + p2_pred
+    gain_pred    = (p_total_pred - baseline) / baseline * 100
 
-# 找最近工况
-idx = (df["yaw_1"] - yaw_input).abs().idxmin()
-row = df.loc[idx]
+idx     = (df["yaw_1"] - yaw_input).abs().idxmin()
+row     = df.loc[idx]
 case_id = row["case_id"]
 
-# ===== 指标卡片 =====
 c1, c2, c3, c4 = st.columns(4)
 with c1:
     p1_base = df[df["yaw_1"] == 0]["power_1"].values[0]
@@ -112,12 +95,12 @@ with c4:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ===== 主图区 =====
 col_map, col_curves = st.columns([3, 2])
 
 with col_map:
     st.markdown(f"#### 🗺️ 尾流速度场（最近工况：{row['yaw_1']:+.0f}°）")
-    x, y, u = load_field(case_id)
+    with st.spinner("加载流场数据..."):
+        x, y, u = load_field(case_id)
 
     if u is not None:
         fig_map = go.Figure()
@@ -146,24 +129,24 @@ with col_map:
             name="中心线", opacity=0.4, showlegend=True
         ))
         fig_map.update_layout(
-            xaxis=dict(title="顺风方向 x (m)", showgrid=False,
-                       color="#8899bb"),
-            yaxis=dict(title="横向 y (m)", showgrid=False,
-                       color="#8899bb"),
+            xaxis=dict(title="顺风方向 x (m)", showgrid=False, **AXIS_COLOR),
+            yaxis=dict(title="横向 y (m)",     showgrid=False, **AXIS_COLOR),
             height=420,
             margin=dict(l=10, r=70, t=20, b=50),
-            paper_bgcolor="#111827", plot_bgcolor="#111827",
-            font=dict(color="#e8edf5"),
+            **PLOT_THEME,
             legend=dict(orientation="h", y=-0.18, x=0,
                         font=dict(size=11), bgcolor="rgba(0,0,0,0)")
         )
         st.plotly_chart(fig_map, use_container_width=True)
+        download_plotly(fig_map, f"wake_field_yaw{row['yaw_1']:+.0f}.html",
+                        "📥 下载尾流云图")
 
 with col_curves:
-    # 总功率曲线
-    st.markdown("#### 📈 总功率 vs 偏航角")
-    yaw_fine = np.linspace(-30, 30, 200)
-    p_fine = [predict_power(y)[0] + predict_power(y)[1] for y in yaw_fine]
+    st.markdown("#### 📈 总功率 vs 偏航角 (°)")
+    with st.spinner("生成功率曲线..."):
+        yaw_fine = np.linspace(-30, 30, 200)
+        p_fine   = [predict_power(y)[0] + predict_power(y)[1]
+                    for y in yaw_fine]
 
     fig_total = go.Figure()
     fig_total.add_trace(go.Scatter(
@@ -183,22 +166,25 @@ with col_curves:
         marker=dict(size=14, color="#e74c3c",
                     line=dict(color="white", width=2))
     ))
+    fig_total.add_vline(
+        x=result["recommended_yaw"],
+        line_dash="dash", line_color="#27ae60", line_width=1.5,
+        annotation_text=f"最优 {result['recommended_yaw']}°",
+        annotation_font=dict(color="#27ae60", size=11)
+    )
     fig_total.update_layout(
-        xaxis=dict(title="偏航角 (°)", showgrid=True,
-                   gridcolor="#1e2d4a", color="#8899bb"),
-        yaxis=dict(title="总功率 (kW)", showgrid=True,
-                   gridcolor="#1e2d4a", color="#8899bb"),
+        xaxis=dict(title="偏航角 (°)", **GRID_STYLE, **AXIS_COLOR),
+        yaxis=dict(title="总功率 (kW)", **GRID_STYLE, **AXIS_COLOR),
         height=190,
         margin=dict(l=10, r=10, t=15, b=40),
-        paper_bgcolor="#111827", plot_bgcolor="#111827",
-        font=dict(color="#e8edf5"),
+        **PLOT_THEME,
         legend=dict(orientation="h", y=-0.38, x=0,
                     font=dict(size=10), bgcolor="rgba(0,0,0,0)")
     )
     st.plotly_chart(fig_total, use_container_width=True)
+    download_plotly(fig_total, "wake_power_curve.html", "📥 下载功率曲线")
 
-    # P1/P2 分解曲线
-    st.markdown("#### ⚡ 上下游功率分解")
+    st.markdown("#### ⚡ 上下游功率分解 (kW)")
     p1_fine = [predict_power(y)[0] for y in yaw_fine]
     p2_fine = [predict_power(y)[1] for y in yaw_fine]
 
@@ -216,16 +202,13 @@ with col_curves:
     fig_split.add_vline(x=yaw_input, line_dash="dot",
                         line_color="#e74c3c", line_width=1.5)
     fig_split.update_layout(
-        xaxis=dict(title="偏航角 (°)", showgrid=True,
-                   gridcolor="#1e2d4a", color="#8899bb"),
-        yaxis=dict(title="功率 (kW)", showgrid=True,
-                   gridcolor="#1e2d4a", color="#8899bb"),
+        xaxis=dict(title="偏航角 (°)", **GRID_STYLE, **AXIS_COLOR),
+        yaxis=dict(title="功率 (kW)",  **GRID_STYLE, **AXIS_COLOR),
         height=190,
         margin=dict(l=10, r=10, t=15, b=40),
-        paper_bgcolor="#111827", plot_bgcolor="#111827",
-        font=dict(color="#e8edf5"),
+        **PLOT_THEME,
         legend=dict(orientation="h", y=-0.42, x=0,
                     font=dict(size=10), bgcolor="rgba(0,0,0,0)")
     )
     st.plotly_chart(fig_split, use_container_width=True)
-    
+    download_plotly(fig_split, "wake_power_split.html", "📥 下载分解曲线")
