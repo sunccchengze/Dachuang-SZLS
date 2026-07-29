@@ -21,17 +21,12 @@ st.markdown("""
     min-height: 100vh;
 }
 
-/* ===== 侧边栏深色主题 ===== */
 [data-testid="stSidebar"] {
     background-color: #0a1020 !important;
     border-right: 1px solid rgba(255,255,255,0.08) !important;
 }
-[data-testid="stSidebar"] * {
-    color: #a8bcdf !important;
-}
-[data-testid="stSidebarNav"] {
-    padding-top: 8px;
-}
+[data-testid="stSidebar"] * { color: #a8bcdf !important; }
+[data-testid="stSidebarNav"] { padding-top: 8px; }
 [data-testid="stSidebarNav"] a {
     background: transparent !important;
     border-radius: 10px !important;
@@ -52,7 +47,6 @@ st.markdown("""
     color: #a8bcdf !important;
 }
 
-/* ===== hero ===== */
 .hero {
     background: rgba(255,255,255,0.04);
     backdrop-filter: blur(24px);
@@ -119,7 +113,6 @@ st.markdown("""
     font-size: 12px; padding: 5px 14px; border-radius: 20px;
 }
 
-/* ===== 统计卡片 ===== */
 .stats-bar {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -155,17 +148,11 @@ st.markdown("""
     font-size: 12px; color: rgba(136,153,187,0.8); margin: 8px 0 0 0;
 }
 
-/* ===== 功能卡片 ===== */
 .section-title {
     font-size: 13px; font-weight: 700;
     color: rgba(136,153,187,0.7);
     letter-spacing: 2px; text-transform: uppercase;
     margin: 0 0 16px 4px;
-}
-.page-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px; margin-bottom: 28px;
 }
 .page-card {
     background: rgba(255,255,255,0.04);
@@ -191,15 +178,6 @@ st.markdown("""
                 0 0 40px rgba(74,158,255,0.08),
                 inset 0 1px 0 rgba(255,255,255,0.15);
 }
-.page-icon { font-size: 26px; margin-bottom: 12px; display: block; }
-.page-name {
-    font-size: 14px; font-weight: 700;
-    color: #e8edf5; margin: 0 0 6px 0;
-}
-.page-desc {
-    font-size: 12px; color: rgba(107,122,153,0.9);
-    margin: 0; line-height: 1.55;
-}
 .page-tag {
     display: inline-block; font-size: 10px; font-weight: 700;
     padding: 2px 8px; border-radius: 8px; margin-top: 12px;
@@ -215,11 +193,14 @@ st.markdown("""
                 border:1px solid rgba(230,126,34,0.25); }
 .tag-pod      { background:rgba(232,67,147,0.12);  color:#e84393;
                 border:1px solid rgba(232,67,147,0.25); }
+.tag-array    { background:rgba(251,191,36,0.12);  color:#fbbf24;
+                border:1px solid rgba(251,191,36,0.25); }
+.tag-control  { background:rgba(74,222,128,0.12);  color:#4ade80;
+                border:1px solid rgba(74,222,128,0.25); }
 .tag-coming   { background:rgba(255,255,255,0.05);
                 color:rgba(136,153,187,0.6);
                 border:1px solid rgba(255,255,255,0.08); }
 
-/* ===== 技术栈 ===== */
 .tech-bar {
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.07);
@@ -272,12 +253,13 @@ st.markdown("""
         从流场感知到机组协同调控的完整技术链路演示
     </p>
     <div class="hero-badges">
-        <span class="badge">🌬️ 两台串列布局</span>
+        <span class="badge">🌬️ 两台串列 / 3×3 阵列</span>
         <span class="badge">📐 NREL 5MW</span>
         <span class="badge">⚙️ GCH 尾流模型</span>
         <span class="badge">🧠 二维插值代理模型</span>
         <span class="badge">🔬 POD 降阶分析</span>
         <span class="badge">🎯 网格搜索优化</span>
+        <span class="badge">🎛️ 功率需求跟踪</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -286,8 +268,8 @@ st.markdown("""
 st.markdown("""
 <div class="stats-bar">
     <div class="stat-card">
-        <p class="stat-number">8.1<span class="stat-unit">%</span></p>
-        <p class="stat-label">最大功率提升（8 m/s）</p>
+        <p class="stat-number">14.9<span class="stat-unit">%</span></p>
+        <p class="stat-label">3×3阵列最大功率提升</p>
     </div>
     <div class="stat-card">
         <p class="stat-number">2</p>
@@ -295,10 +277,10 @@ st.markdown("""
     </div>
     <div class="stat-card">
         <p class="stat-number">+25<span class="stat-unit">°</span></p>
-        <p class="stat-label">最优偏航角</p>
+        <p class="stat-label">两台串列最优偏航角</p>
     </div>
     <div class="stat-card">
-        <p class="stat-number">8</p>
+        <p class="stat-number">10</p>
         <p class="stat-label">演示功能页面</p>
     </div>
 </div>
@@ -306,58 +288,64 @@ st.markdown("""
 
 # ===== 功能卡片 =====
 st.markdown('<p class="section-title">功能模块</p>', unsafe_allow_html=True)
-st.markdown("""
-<div class="page-grid">
-    <div class="page-card">
-        <span class="page-icon">📊</span>
-        <p class="page-name">尾流分析</p>
-        <p class="page-desc">交互式速度场云图，代理模型实时预测任意偏航角下的功率输出</p>
-        <span class="page-tag tag-core">CORE</span>
-    </div>
-    <div class="page-card">
-        <span class="page-icon">🎯</span>
-        <p class="page-name">优化结果</p>
-        <p class="page-desc">偏航前后尾流对比、速度差值图、偏航角扫描动画</p>
-        <span class="page-tag tag-core">CORE</span>
-    </div>
-    <div class="page-card">
-        <span class="page-icon">📋</span>
-        <p class="page-name">数据总览</p>
-        <p class="page-desc">全工况功率柱状图、P₁/P₂分解曲线、原始数据表格</p>
-        <span class="page-tag tag-analysis">ANALYSIS</span>
-    </div>
-    <div class="page-card">
-        <span class="page-icon">🌐</span>
-        <p class="page-name">3D 尾流曲面</p>
-        <p class="page-desc">三维速度曲面可视化，鼠标拖拽旋转，直观感受尾流空间结构</p>
-        <span class="page-tag tag-3d">3D</span>
-    </div>
-    <div class="page-card">
-        <span class="page-icon">🫧</span>
-        <p class="page-name">3D 体渲染</p>
-        <p class="page-desc">真实三维尾流低速泡，含风机转子几何，多高度层叠加渲染</p>
-        <span class="page-tag tag-3d">3D</span>
-    </div>
-    <div class="page-card">
-        <span class="page-icon">🔥</span>
-        <p class="page-name">热力矩阵</p>
-        <p class="page-desc">偏航角 × 风速功率增益矩阵，覆盖 6~12 m/s 全风速工况</p>
-        <span class="page-tag tag-analysis">ANALYSIS</span>
-    </div>
-    <div class="page-card">
-        <span class="page-icon">⚡</span>
-        <p class="page-name">优化求解器</p>
-        <p class="page-desc">输入任意风速，实时网格搜索最优偏航角，输出完整优化结果</p>
-        <span class="page-tag tag-ai">AI · OPT</span>
-    </div>
-    <div class="page-card">
-        <span class="page-icon">🔬</span>
-        <p class="page-name">POD 降阶分析</p>
-        <p class="page-desc">本征正交分解，模态能量分布，流场重构对比，误差定量评估</p>
-        <span class="page-tag tag-pod">POD · ROM</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+
+cards = [
+    ("pages/1_wake.py",             "📊", "尾流分析",
+     "交互式速度场云图，代理模型实时预测任意偏航角下的功率输出",
+     "tag-core", "CORE"),
+    ("pages/2_optimization.py",     "🎯", "优化结果",
+     "偏航前后尾流对比、速度差值图、偏航角扫描动画",
+     "tag-core", "CORE"),
+    ("pages/3_overview.py",         "📋", "数据总览",
+     "全工况功率柱状图、P₁/P₂分解曲线、原始数据表格",
+     "tag-analysis", "ANALYSIS"),
+    ("pages/4_3d_surface.py",       "🌐", "3D 尾流曲面",
+     "三维速度曲面可视化，鼠标拖拽旋转，直观感受尾流空间结构",
+     "tag-3d", "3D"),
+    ("pages/5_3d_volume.py",        "🫧", "3D 体渲染",
+     "真实三维尾流低速泡，含风机转子几何，多高度层叠加渲染",
+     "tag-3d", "3D"),
+    ("pages/6_heatmap.py",          "🔥", "热力矩阵",
+     "偏航角 × 风速功率增益矩阵，覆盖 6~12 m/s 全风速工况",
+     "tag-analysis", "ANALYSIS"),
+    ("pages/7_solver.py",           "⚡", "优化求解器",
+     "输入任意风速，实时网格搜索最优偏航角，输出完整优化结果",
+     "tag-ai", "AI · OPT"),
+    ("pages/8_pod.py",              "🔬", "POD 降阶分析",
+     "本征正交分解，模态能量分布，流场重构对比，误差定量评估",
+     "tag-pod", "POD · ROM"),
+    ("pages/9_array.py",            "⚡", "3×3 阵列优化",
+     "九台风机协同偏航，全场功率热力图，两台vs阵列增益对比",
+     "tag-array", "ARRAY"),
+    ("pages/10_power_tracking.py",  "🎛️", "功率需求跟踪",
+     "输入电网目标功率，系统自动搜索满足需求的最优偏航角组合",
+     "tag-control", "CONTROL"),
+]
+
+row1 = st.columns(4)
+row2 = st.columns(4)
+row3 = st.columns(4)
+
+for i, (path, icon, name, desc, tag_cls, tag_txt) in enumerate(cards):
+    if i < 4:
+        col = row1[i]
+    elif i < 8:
+        col = row2[i - 4]
+    else:
+        col = row3[i - 8]
+
+    with col:
+        st.markdown(f"""
+        <div class="page-card">
+            <div style="font-size:24px;margin-bottom:8px;">{icon}</div>
+            <div style="font-size:13px;font-weight:700;
+                        color:#e8edf5;margin-bottom:6px;">{name}</div>
+            <div style="font-size:11px;color:rgba(107,122,153,0.9);
+                        line-height:1.5;margin-bottom:8px;">{desc}</div>
+            <span class="page-tag {tag_cls}">{tag_txt}</span>
+        </div>
+        """, unsafe_allow_html=True)
+        st.page_link(path, label=f"进入 {name} →")
 
 # ===== 技术栈 =====
 st.markdown("""
