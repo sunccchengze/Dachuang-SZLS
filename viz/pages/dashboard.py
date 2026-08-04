@@ -48,7 +48,9 @@ with lc:
                              line=dict(color="#00cc96", width=3)))
     fig.update_layout(title=f" U∞ = {U_sel} m/s  |  功率 vs 偏航角 (插值)",
                       xaxis_title="偏航角 (°)", yaxis_title="总功率 (kW)",
-                      template=PLOT_THEME, height=380)
+                      template="plotly_dark", paper_bgcolor="#111827",
+                      plot_bgcolor="#111827", font=dict(color="#e8edf5"),
+                      height=380)
     st.plotly_chart(fig, use_container_width=True)
     st.caption("接口：predict_power(yaw_angle, U_inf) — 未来 PINN 替换零改动")
 
