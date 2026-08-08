@@ -1,7 +1,8 @@
 # 2026-08-08 群聊与交付消化（chat digest）
 
 > 来源：`20260808/` 文件夹，来自 `arena/019fcc85-wind-farm-viz` 分支，已拉取到本分支根目录并提交。
-> 本文件把该文件夹的 4 个内容完整消化，并同步更新了 `communication_log.md` / `research_overview.md` / `question.md` / `team_inventory.md` / `delivery_plan.md`。
+> 本文件把该文件夹的内容完整消化，并同步更新了 `communication_log.md` / `research_overview.md` / `question.md` / `team_inventory.md` / `delivery_plan.md`。
+> ⚠️ **待补**：用户提及还有 `假期前 PPT.md`（组长厉今飞会议 PPT：本月核心目标 / 统一数据接口 / 5 模块分工 / 学习顺序"先能跑→再准确→再高级"），但**该文件尚未出现在 `019fcc85` 分支**（当前仅 5 个文件），待其推送后补读并补充到 `孙承泽个人待办.md`。其要点已根据用户口头说明先行落实。
 
 ---
 

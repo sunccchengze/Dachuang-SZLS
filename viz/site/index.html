@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>风电场偏航优化可视化 · 孙承泽</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <div class="brand">风电场偏航优化可视化<small>孙承泽 · 可视化模块</small></div>
+    <div class="nav-links">
+      <a href="#power">功率-偏航</a>
+      <a href="#optimize">偏航寻优</a>
+      <a href="#array">阵列优化</a>
+      <a href="#rose">风玫瑰</a>
+      <a href="#fields">流场</a>
+      <a href="#model">模型精度</a>
+      <a href="#interface">数据接口</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <h1>融合数据-物理驱动的风电流场感知与智能调控</h1>
+  <p>偏航优化可视化演示系统 · 基于 FLORIS 工程尾流模型占位数据，接口已对齐袁夫达 / 厉今飞 / 洪祖名的真实模型，可直接替换升级。</p>
+  <div class="badges">
+    <span class="badge">纯静态 · 零依赖</span>
+    <span class="badge">Cloudflare Pages 可部署</span>
+    <span class="badge">浏览器内实时插值</span>
+    <span class="badge">学习顺序：先能跑 → 再准确 → 再高级</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="power">
+    <div class="sec-head"><span class="idx">01</span><h2>功率 — 偏航角曲线</h2>
+      <span class="desc">双机布局，固定下游机偏航 0°</span></div>
+    <div class="card">
+      <div class="controls" id="powerU"></div>
+      <div class="chart" id="powerChart"></div>
+      <div class="legend">
+        <span><i style="background:#4a9eff"></i>风机 1 功率</span>
+        <span><i style="background:#27ae60"></i>风机 2 功率</span>
+        <span><i style="background:#f5a623"></i>全场总功率</span>
+        <span><i style="background:#e74c3c"></i>最优偏航角</span>
+      </div>
+      <div class="note" id="powerNote"></div>
+    </div>
+  </section>
+
+  <section id="optimize">
+    <div class="sec-head"><span class="idx">02</span><h2>偏航寻优（find_yaw_for_target）</h2>
+      <span class="desc">输入风速与目标功率，暴力搜索推荐偏航角</span></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="controls">
+          <label>来流风速 U∞ (m/s)</label>
+          <input type="number" id="optU" value="8" step="0.5" min="4" max="12">
+          <label>目标功率 (kW)</label>
+          <input type="number" id="optT" value="2400" step="10" min="0">
+        </div>
+        <div class="chart" id="optGauge"></div>
+        <div class="note" id="optNote"></div>
+      </div>
+      <div class="card">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="stat"><div class="v blue" id="oS-yaw">–</div><div class="k">推荐偏航角 (°)</div></div>
+          <div class="stat"><div class="v green" id="oS-pow">–</div><div class="k">实际总功率 (kW)</div></div>
+          <div class="stat"><div class="v amber" id="oS-err">–</div><div class="k">跟踪误差 (%)</div></div>
+          <div class="stat"><div class="v" id="oS-base">–</div><div class="k">偏航 0° 基准 (kW)</div></div>
+        </div>
+        <div class="note">接口契约：<span class="code" style="display:block;margin-top:8px">predict_power(yaw, U_inf) -> (P1, P2) kW
+替换真实模型时仅改此函数体，界面层 0 改动。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="array">
+    <div class="sec-head"><span class="idx">03</span><h2>3×3 阵列偏航优化</h2>
+      <span class="desc">统一偏航 vs 独立偏航（洪祖名结果）</span></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="chart" id="arrayBar"></div>
+        <div class="note" id="arrayNote"></div>
+      </div>
+      <div class="card">
+        <div class="chart" id="arrayLayout"></div>
+        <div class="note">箭头方向 = 各机推荐偏航角（独立策略），颜色 = 单机功率（绿高红低）。未来由洪祖名真实优化器结果覆盖。</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="rose">
+    <div class="sec-head"><span class="idx">04</span><h2>风玫瑰 — 优化增益</h2>
+      <span class="desc">各风向下的功率提升幅度 (%)</span></div>
+    <div class="card">
+      <div class="chart" id="roseChart"></div>
+      <div class="note" id="roseNote"></div>
+    </div>
+  </section>
+
+  <section id="fields">
+    <div class="sec-head"><span class="idx">05</span><h2>流场可视化</h2>
+      <span class="desc">FLORIS 工程尾流模型（占位演示数据）</span></div>
+    <div class="card">
+      <div class="img-grid">
+        <img src="assets/img/my_first_wake.png" alt="尾流">
+        <img src="assets/img/check_fields.png" alt="流场校验">
+      </div>
+      <div class="note">上：单机组尾流；下：流场校验对比。以下为偏航扫描动画（GIF）：</div>
+      <div class="img-grid" style="margin-top:12px">
+        <img src="assets/img/wake_animation.gif" alt="尾流动画">
+        <img src="assets/img/array_animation.gif" alt="阵列动画">
+      </div>
+      <div class="note warn">注：当前流场为田铭雨 FLORIS 工程尾流模型生成的演示数据；申请书所述 Fluent 高保真数据到位后，仅替换图片源即可，界面不变。</div>
+    </div>
+  </section>
+
+  <section id="model">
+    <div class="sec-head"><span class="idx">06</span><h2>代理模型精度</h2>
+      <span class="desc">厉今飞基线 + 洪祖名 XGBoost 优化</span></div>
+    <div class="card">
+      <div class="img-grid">
+        <img src="assets/img/true_vs_pred_farm_power.png" alt="真实vs预测">
+        <img src="assets/img/residual_gch_xgb_tuned.png" alt="残差">
+      </div>
+      <div class="note">洪祖名在厉今飞 MLP 基线之上做模型选择（XGBoost / GPR / MLP / 两阶段，5-fold CV），最终选定 XGBoost：全场功率 MAE 由 86.5/103.1 kW 降至 <span class="good">7.79 / 10.49 kW</span>（约 11 倍），R² &gt; 0.99996。可视化未来直接加载其 <code>final_models/*.json</code> 即可。</div>
+    </div>
+  </section>
+
+  <section id="interface">
+    <div class="sec-head"><span class="idx">07</span><h2>统一数据接口</h2>
+      <span class="desc">与各组的契约（预先固定，降低格式错配风险）</span></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="code"><span class="cm"># AI 组接口（厉今飞 / 洪祖名提供真实模型）</span>
+<span class="kw">def</span> <span class="fn">predict_power</span>(yaw_angle, U_inf):
+    <span class="cm"># 输入：偏航角(°)，风速(m/s)</span>
+    <span class="cm"># 输出：(P1, P2) 单位 kW</span>
+    ...
+    <span class="kw">return</span> P1, P2
+
+<span class="cm"># 优化控制组接口（洪祖名提供真实优化器）</span>
+<span class="kw">def</span> <span class="fn">find_yaw_for_target</span>(target_power, U_inf):
+    <span class="cm"># 输入：目标功率(kW)，风速(m/s)</span>
+    <span class="cm"># 输出：(best_yaw, actual_power, error_pct)</span>
+    ...
+    <span class="kw">return</span> best_yaw, actual_power, error_pct</div>
+      </div>
+      <div class="card">
+        <div class="note" style="margin-top:0">
+          <b>数据文件来源与替换计划：</b><br>
+          • <code>cases.csv</code> / <code>cases_array.csv</code>：我用 FLORIS 生成的占位数据（generate_data / generate_array_data）。<br>
+          • <code>optimizer_result.json</code> / <code>array_independent_result.json</code>：我生成的 FLORIS 结果；<span class="good">未来用洪祖名真实优化器结果覆盖，界面数字自动更新</span>。<br>
+          • <code>fields/</code> 系列：田铭雨 FLORIS 工程尾流（演示数据）；高保真到位后仅换图。<br>
+          • 真实链路：田铭雨 CFD → 袁夫达 NN 训练 → 洪祖名优化 → 我可视化。
+        </div>
+        <div class="note warn">当前所有数据为 FLORIS 占位；接口已固化，待各组提供真实模型/数据时按契约替换，app 界面零改动。</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  数据来源：袁夫达（建模）· 厉今飞（AI/基线）· 洪祖名（优化/模型选择）· 田铭雨（仿真流场）· 孙承泽（可视化）。<br>
+  本页为静态演示，可一键部署至 Cloudflare Pages。指导教师：李良星。
+</footer>
+
+<script src="assets/data.js"></script>
+<script src="assets/js/interp.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

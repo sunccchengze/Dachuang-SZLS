@@ -45,3 +45,16 @@
 3. 零功率：直接剔除 vs 两阶段保留，待定正式方案（洪）。
 4. PINN 物理融合何时启动、谁牵头（全员）。
 5. `fields/` 是 FLORIS 还是 Fluent，高保真到哪步（田）。
+
+---
+
+## 孙承泽答复（2026-08-08，针对 question.md 部分问题）
+
+- **Q1（predict_power 是过渡吗）**：是临时过渡。等组员给真实训练好的模型，替换 `predict_power` 函数体即可；输入偏航角+风速、输出 P1/P2(kW)，界面层 0 改动。
+- **Q2（cos_factor\*\*1.5）**：工程近似，文献 p 常取 1.5~3，这里取 1.5 较保守，未与 FLORIS 真值系统比对误差；仅用于 `predict_power_2d` 功率跟踪界面，暂未实现、精度不保证；开学后按真实模型替换。
+- **Q3（PINN 零改动）**：指可视化层完全不碰物理模型，因现阶段还没接 PINN；surrogate 里是纯插值。"零改动"= 将来 PINN 训练好后只需替换 `predict_power` 函数签名，`app.py` 与所有 pages 不动。
+- **Q4（增益数字来源）**：`cases.csv` / `cases_array.csv` 是我用 `generate_data` / `generate_array_data` 跑 FLORIS 生成的；`optimizer_result.json` / `array_independent_result.json` 也是我这边 FLORIS 结果。未来用洪祖名真实优化器结果覆盖这两个 JSON，界面数字自动更新；**以洪的为准**。
+- **Q12（fields 是否高保真）**：`fields` / `fields_3d` / `fields_array` 都是 FLORIS 工程尾流模型输出，不是 Fluent/CFD 高保真；申请书的高保真是目标，现在还没到。都是我用 FLORIS 临时生成的演示数据。
+- **Q13（fields_3d / POD 用途）**：`fields_3d` 是我用 `generate_3d_data` 生成的；POD 分解目前只为可视化提供模态能量分布与重构误差展示，不是为 PINN 提供模态基（那是后续，未开始）。
+- **Q14（优化是否实时）**：`optimizer_result.json` 的推荐偏航角是离线算好写死的，无实时优化；`find_yaw_for_target` 是我写的占位实现，用插值模型暴力搜索，不是真正在线求解，将来被洪祖名真实优化算法替换。
+- **Q17（协作链路）**：我只负责可视化，现在吃 FLORIS 模拟数据喂演示系统；真实链路 = 田铭雨(CFD) → 袁夫达(NN 训练) → 洪祖名(优化) → 我(可视化)。现在用 FLORIS 占位，未来按各组给的东西替换一部分占位；若未提供则继续用 FLORIS。目前无明显卡点，格式错配风险已通过预设接口降到最低。
