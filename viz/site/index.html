@@ -158,6 +158,12 @@
           • <code>fields/</code> 系列：田铭雨 FLORIS 工程尾流（演示数据）；高保真到位后仅换图。<br>
           • 真实链路：田铭雨 CFD → 袁夫达 NN 训练 → 洪祖名优化 → 我可视化。
         </div>
+        <div class="note" style="margin-top:10px">
+          <b>已对齐假期前 PPT 的统一接口规范：</b><br>
+          • <code>optimizer_result.json</code> 字段 = <code>wind_speed, original_yaw, recommended_yaw, power_before, power_after, wake_field</code>（前 5 项已落地，<code>wake_field</code> 待田铭雨 CFD 提供后仅换图）。<br>
+          • <code>cases.csv</code> 最小字段（PPT）= <code>case_id, U_inf, yaw_1, yaw_2, pitch, rpm, power_1, power_2</code>（第一版 pitch/rpm 固定，故暂未含）。<br>
+          • 流场统一网格 128×64（x, y, u, v），未来由田铭雨 npz 提供。
+        </div>
         <div class="note warn">当前所有数据为 FLORIS 占位；接口已固化，待各组提供真实模型/数据时按契约替换，app 界面零改动。</div>
       </div>
     </div>
