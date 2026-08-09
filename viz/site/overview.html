@@ -1,0 +1,13 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>数据总览 · 风电场偏航优化</title><link rel="stylesheet" href="css/style.css"><script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script><script src="assets/js/plotly-theme.js" defer></script></head><body>
+<nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div><div class="nav-links"></div></div></nav>
+<section class="wrap pg-hero"><h1>📋 数据总览</h1><p>全工况功率柱状图、P₁/P₂ 分解曲线、原始数据表格</p></section>
+<main class="wrap"><div class="card"><div id="barPlot" class="plotly-container" style="height:320px"></div><div class="note">各风速下全场总功率（取偏航 0° 基准工况，kW）。</div></div>
+<div class="card"><div id="decompPlot" class="plotly-container" style="height:340px"></div><div class="note">U=8 m/s 时 P₁/P₂ 分解曲线。</div></div>
+<div class="card"><div style="max-height:340px;overflow:auto;background:var(--bg2);border-radius:12px;padding:12px;border:1px solid var(--line)"><table id="tbl" style="width:100%;border-collapse:collapse;font-size:12px"></table></div><div class="note">原始数据表格（cases.csv）。</div></div></main>
+<footer class="wrap">孙承泽 · 可视化模块</footer>
+<script src="assets/data.js"></script><script src="assets/js/plotly-theme.js"></script>
+<script>(function(){const W=window.WIND_DATA,m=W.multi;const us=m.wind_speeds,base=us.map(u=>{const i=m.wind_speeds.indexOf(u);return m.ptot[i][m.yaw_angles.indexOf(0)];});
+pr('barPlot',[{type:'bar',x:us.map(u=>u+' m/s'),y:base.map(v=>Math.round(v)),marker:{color:'#3b82f6',line:{color:'#2563eb',width:1}},hovertemplate:'%{x}: %{y} kW<extra></extra>'}],{xaxis:{title:'来流风速'},yaxis:{title:'总功率 (kW)'},height:320,margin:{l:55,r:20,t:5,b:45},showlegend:false});
+const i8=m.wind_speeds.indexOf(8);pr('decompPlot',[{x:m.yaw_angles,y:m.p1[i8],mode:'lines',name:'上游 P₁',line:{color:'#6366f1',width:2}},{x:m.yaw_angles,y:m.p2[i8],mode:'lines',name:'下游 P₂',line:{color:'#2563eb',width:2}},{x:m.yaw_angles,y:m.ptot[i8],mode:'lines',name:'总功率',line:{color:'#3b82f6',width:2.5}}],{xaxis:{title:'偏航角 (°)'},yaxis:{title:'功率 (kW)'},height:340});
+const s=W.single,t=document.getElementById("tbl");let h='<tr style="color:#93c5fd;font-weight:700;border-bottom:1px solid #1e293b"><th style="padding:6px 8px">偏航角</th><th>P₁</th><th>P₂</th><th>总功率</th></tr>';s.yaw_angles.forEach((y,k)=>{h+=`<tr style="color:#94a3b8;border-bottom:1px solid rgba(30,41,59,0.1)"><td style="padding:4px 8px">${y}°</td><td>${Math.round(s.p1[k])}</td><td>${Math.round(s.p2[k])}</td><td style="color:#e2e8f0;font-weight:600">${Math.round(s.ptot[k])}</td></tr>`;});t.innerHTML=h;})();</script>
+<script src="assets/js/nav.js"></script></body></html>

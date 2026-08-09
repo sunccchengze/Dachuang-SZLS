@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>热力矩阵 · 风电场偏航优化</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+</head>
+<body>
+<nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div>
+<div class="nav-links"><a href="index.html">首页</a><a href="wake.html">尾流</a><a href="optimization.html">优化</a><a href="overview.html">总览</a><a href="3d_surface.html">3D曲面</a><a href="3d_volume.html">3D体</a><a href="heatmap.html" class="active">热力矩阵</a><a href="solver.html">求解器</a><a href="pod.html">POD</a><a href="array.html">阵列</a><a href="power_tracking.html">功率跟踪</a><a href="dashboard.html">Dashboard</a><a href="windrose.html">风玫瑰</a><a href="model.html">模型精度</a><a href="interface.html">接口</a></div></div></nav>
+<section class="wrap pg-hero"><h1>🔥 热力矩阵</h1><p>偏航角 × 风速功率增益矩阵，覆盖 6~12 m/s 全风速</p></section>
+<main class="wrap">
+  <div class="card">
+    <div id="heatPlot" class="plotly-container" style="height:500px"></div>
+    <div class="note">偏航角 × 风速功率增益热力图。悬停查看具体增益值。颜色越深增益越大，最优点在 +25° / 8 m/s 附近。</div>
+  </div>
+  <div class="grid2" style="margin-top:18px">
+    <div class="card">
+      <div class="controls"><label>选择风速</label><select id="wsSel"></select></div>
+      <div id="slicePlot" class="plotly-container" style="height:300px"></div>
+      <div class="note">选定风速下的增益曲线（%），最优点用虚线标记。</div>
+    </div>
+    <div class="card">
+      <div class="controls"><label>选择偏航角</label><select id="yawSel"></select></div>
+      <div id="yawSlicePlot" class="plotly-container" style="height:300px"></div>
+      <div class="note">选定偏航角下增益随风速变化（%），展示不同风速区间的优化效果。</div>
+    </div>
+  </div>
+</main>
+<footer class="wrap">孙承泽 · 可视化模块</footer>
+<script src="assets/data.js"></script><script src="assets/data_3d.js"></script>
+<script>
+(function(){
+  const D3=window.WIND_3D_DATA;
+  const hm=D3&&D3.heatmap;
+  const W=window.WIND_DATA,m=W.multi;
+  // 如果 build_3d_data 生成了 heatmap 数据就用，否则从 WIND_DATA 计算
+  let ws,yas,gain;
+  if(hm&&hm.gain_pct&&hm.gain_pct.length>0){
+    ws=hm.wind_speeds;yas=hm.yaw_angles;gain=hm.gain_pct;
+  }else{
+    ws=m.wind_speeds;yas=m.yaw_angles;
+    gain=ws.map((u,i)=>yas.map((y,j)=>{
+      const base=m.ptot[i][yas.indexOf(0)];
+      return base>0?((m.ptot[i][j]-base)/base*100):0;
+    }));
+  }
+
+  // Heatmap
+  const yLabels=yas.map(y=>y+'°');
+  const xLabels=ws.map(u=>u+' m/s');
+  Plotly.newPlot('heatPlot',[{
+    type:'heatmap',x:xLabels,y:yLabels,z:gain,
+    colorscale:BSM || [[0,'#0f172a'],[0.3,'#3b82f6'],[0.6,'#0891b2'],[1,'#3b82f6']],
+    hovertemplate:'风速 %{x}  偏航 %{y}  增益 %{z:.2f}%<extra></extra>',
+    colorbar:{title:{text:'增益 (%)',side:'right'},thickness:15,len:0.85,x:1.02}
+  }],{
+    xaxis:{title:'来流风速 (m/s)',color:'#94a3b8',gridcolor:'#1e293b'},
+    yaxis:{title:'上游偏航角 (°)',color:'#94a3b8',gridcolor:'#1e293b'},
+    height:500,margin:{l:60,r:70,t:20,b:50},
+    paper_bgcolor:'#020617',plot_bgcolor:'#0b1220',font:{color:'#94a3b8'}
+  },{responsive:true});
+
+  // Wind speed slice
+  const wsSel=document.getElementById('wsSel');
+  ws.forEach(u=>{const o=document.createElement('option');o.value=u;o.textContent=u+' m/s';wsSel.appendChild(o);});
+  wsSel.value=8;
+
+  function renderWsSlice(){
+    const u=parseFloat(wsSel.value);
+    const i=ws.indexOf(u);if(i<0)return;
+    const g=gain[i];
+    const optIdx=g.indexOf(Math.max(...g));
+    Plotly.newPlot('slicePlot',[{
+      x:yas,y:g,mode:'lines+markers',name:'增益',
+      line:{color:'#3b82f6',width:2.5},marker:{size:6,color:'#3b82f6'},
+      fill:'tozeroy',fillcolor:'rgba(96,165,250,0.08)'
+    }],{
+      xaxis:{title:'偏航角 (°)',color:'#94a3b8',gridcolor:'#1e293b'},
+      yaxis:{title:'增益 (%)',color:'#94a3b8',gridcolor:'#1e293b',zeroline:true,zerolinecolor:'#475569'},
+      height:300,margin:{l:50,r:15,t:15,b:45},
+      paper_bgcolor:'#020617',plot_bgcolor:'#0b1220',font:{color:'#94a3b8'},
+      annotations:[{x:yas[optIdx],y:g[optIdx],text:'最优 '+yas[optIdx]+'°',
+        showarrow:true,arrowhead:2,arrowcolor:'#0891b2',font:{color:'#0891b2',size:11},ax:0,ay:-25}]
+    },{responsive:true});
+  }
+  wsSel.onchange=renderWsSlice;renderWsSlice();
+
+  // Yaw slice
+  const yawSel=document.getElementById('yawSel');
+  yas.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y+'°';yawSel.appendChild(o);});
+  yawSel.value=25;
+
+  function renderYawSlice(){
+    const y=parseFloat(yawSel.value);
+    const j=yas.indexOf(y);if(j<0)return;
+    const g=ws.map((_,i)=>gain[i][j]);
+    Plotly.newPlot('yawSlicePlot',[{
+      x:ws,y:g,mode:'lines+markers',name:'增益',
+      line:{color:'#0891b2',width:2.5},marker:{size:6,color:'#0891b2'},
+      fill:'tozeroy',fillcolor:'rgba(52,211,153,0.08)'
+    }],{
+      xaxis:{title:'风速 (m/s)',color:'#94a3b8',gridcolor:'#1e293b'},
+      yaxis:{title:'增益 (%)',color:'#94a3b8',gridcolor:'#1e293b',zeroline:true,zerolinecolor:'#475569'},
+      height:300,margin:{l:50,r:15,t:15,b:45},
+      paper_bgcolor:'#020617',plot_bgcolor:'#0b1220',font:{color:'#94a3b8'}
+    },{responsive:true});
+  }
+  yawSel.onchange=renderYawSlice;renderYawSlice();
+})();
+</script>
+</body></html>

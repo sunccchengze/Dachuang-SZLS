@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>3×3 阵列优化 · 风电场偏航优化</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script><script src="assets/js/plotly-theme.js" defer></script>
+</head><body>
+<nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div><div class="nav-links"></div></div></nav>
+<section class="wrap pg-hero"><h1>⚡ 3×3 阵列优化</h1><p>九台风机协同偏航，全场功率热力图</p></section>
+<main class="wrap">
+<div class="grid2">
+<div class="card"><div id="arrBar" class="plotly-container" style="height:300px"></div><div class="note" id="arrNote"></div></div>
+<div class="card"><div id="arrLayout" class="plotly-container" style="height:340px"></div><div class="note">箭头=各机推荐偏航角，颜色=单机功率（蓝高靛低）。</div></div>
+</div>
+<div class="card" style="margin-top:18px"><div id="arrHeat" class="plotly-container" style="height:280px"></div><div class="note">3×3 全场功率热力图。</div></div>
+</main>
+<footer class="wrap">孙承泽 · 可视化模块</footer>
+<script src="assets/data.js"></script><script src="assets/js/plotly-theme.js"></script>
+<script>
+(function(){
+const a=window.WIND_DATA.array_opt,BSM=window.BlueSeqMid;
+pr('arrBar',[{type:'bar',x:['基准(0°)','统一偏航','独立偏航'],y:[a.power_none,a.power_unified,a.power_independent],
+  marker:{color:['#475569','#2563eb','#0891b2'],line:{color:['#334155','#1d4ed8','#0e7490'],width:1}},hovertemplate:'%{x}: %{y:.0f} kW<extra></extra>'}],
+  {xaxis:{title:'策略'},yaxis:{title:'全场功率 (kW)'},height:300,showlegend:false});
+document.getElementById('arrNote').innerHTML=`3×3 阵列：统一偏航 +<b>${a.gain_unified_pct.toFixed(1)}%</b>，独立偏航 +<b class="good">${a.gain_independent_pct.toFixed(1)}%</b>。`;
+const pwr=a.turbine_powers_independent,yaw=a.greedy_yaws,pmax=Math.max(...pwr),pmin=Math.min(...pwr),tTraces=[];
+for(let r=0;r<3;r++)for(let c=0;c<3;c++){const i=r*3+c,x=120+c*130,y=120+r*130,pf=(pwr[i]-pmin)/((pmax-pmin)||1);
+  const col=pf>0.66?'#0891b2':pf>0.33?'#3b82f6':'#6366f1';
+  tTraces.push({type:'scatter',x:[x],y:[y],mode:'markers',marker:{size:28,color:col,line:{color:'#e2e8f0',width:1.5}},showlegend:false,hovertemplate:`风机${i+1}: ${Math.round(pwr[i])} kW, 偏航${yaw[i]}°<extra></extra>`});
+  const aRad=yaw[i]*Math.PI/180,ax=x+24*Math.cos(aRad),ay=y+24*Math.sin(aRad);
+  tTraces.push({type:'scatter',x:[x,ax],y:[y,ay],mode:'lines',line:{color:'#e2e8f0',width:2},showlegend:false});
+  tTraces.push({type:'scatter',x:[x],y:[y+40],mode:'text',text:['T'+(i+1)],textfont:{size:10,color:'#94a3b8'},showlegend:false});}
+pr('arrLayout',tTraces,{xaxis:{range:[50,430],showgrid:false,zeroline:false,showticklabels:false},yaxis:{range:[50,430],showgrid:false,zeroline:false,showticklabels:false},height:340,margin:{l:10,r:10,t:10,b:10},showlegend:false});
+const heatZ=[[pwr[6],pwr[7],pwr[8]],[pwr[3],pwr[4],pwr[5]],[pwr[0],pwr[1],pwr[2]]];
+pr('arrHeat',[{type:'heatmap',z:heatZ,x:['Col 1','Col 2','Col 3'],y:['Row 3','Row 2','Row 1'],colorscale:BSM,
+  hovertemplate:'%{y} %{x}:?%{z:.0f} kW<extra></extra>',colorbar:{title:{text:'kW',side:'right'},thickness:12,len:0.8,x:1.02}}],
+  {xaxis:{title:'列'},yaxis:{title:'行'},height:280});
+})();
+</script>
+<script src="assets/js/nav.js"></script>
+</body></html>

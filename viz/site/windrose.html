@@ -1,0 +1,10 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>风玫瑰 · 风电场偏航优化</title><link rel="stylesheet" href="css/style.css"><script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script><script src="assets/js/plotly-theme.js" defer></script></head><body>
+<nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div><div class="nav-links"></div></div></nav>
+<section class="wrap pg-hero"><h1>🌬️ 风玫瑰</h1><p>各风向下的功率提升幅度 (%)</p></section>
+<main class="wrap"><div class="card"><div id="rosePlot" class="plotly-container" style="height:480px"></div><div class="note" id="roseNote"></div></div></main>
+<footer class="wrap">孙承泽 · 可视化模块</footer>
+<script src="assets/data.js"></script><script src="assets/js/plotly-theme.js"></script>
+<script>(function(){const W=window.WIND_DATA;const map={};W.windrose_opt.forEach(r=>{(map[r.wind_direction]=map[r.wind_direction]||[]).push(r.gain_pct);});const angles=Object.keys(map).map(Number).sort((a,b)=>a-b);const values=angles.map(d=>{const a=map[d];return a.reduce((x,y)=>x+y,0)/a.length;});
+pr('rosePlot',[{type:'barpolar',r:values,theta:angles.map(a=>a),marker:{color:values,colorscale:[[0,'#0f172a'],[0.5,'#2563eb'],[1,'#0891b2']],line:{color:'#020617',width:1}},hovertemplate:'风向 %{theta}°: 增益 %{r:.2f}%<extra></extra>'}],{polar:{radialaxis:{title:'增益 (%)',color:'#94a3b8',gridcolor:'#1e293b',linecolor:'#1e293b',tickfont:{color:'#94a3b8'}},angularaxis:{rotation:90,direction:'clockwise',color:'#94a3b8',gridcolor:'#1e293b',linecolor:'#1e293b',tickfont:{color:'#94a3b8',size:10}},bgcolor:'#0b1220'},height:480,margin:{l:60,r:40,t:30,b:30},showlegend:false});
+const maxG=Math.max(...values),maxD=angles[values.indexOf(maxG)];document.getElementById('roseNote').innerHTML=`各风向平均增益：最高约 <b class="good">${maxG.toFixed(1)}%</b>（风向 ${maxD}°）。`;})();</script>
+<script src="assets/js/nav.js"></script></body></html>

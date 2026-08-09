@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>3D 体渲染 · 风电场偏航优化</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+</head>
+<body>
+<nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div>
+<div class="nav-links"><a href="index.html">首页</a><a href="wake.html">尾流</a><a href="optimization.html">优化</a><a href="overview.html">总览</a><a href="3d_surface.html">3D曲面</a><a href="3d_volume.html" class="active">3D体</a><a href="heatmap.html">热力矩阵</a><a href="solver.html">求解器</a><a href="pod.html">POD</a><a href="array.html">阵列</a><a href="power_tracking.html">功率跟踪</a><a href="dashboard.html">Dashboard</a><a href="windrose.html">风玫瑰</a><a href="model.html">模型精度</a><a href="interface.html">接口</a></div></div></nav>
+<section class="wrap pg-hero"><h1>🫧 3D 体渲染</h1><p>真实三维尾流低速泡，可调阈值与透明度，含风机转子几何</p></section>
+<main class="wrap">
+  <div class="card">
+    <div class="controls">
+      <label>偏航角</label>
+      <select id="yawSel"></select>
+      <label>风速阈值</label>
+      <input type="range" id="threshR" min="4.5" max="8.0" value="6.5" step="0.1" style="width:140px">
+      <span id="threshV" style="font-size:13px;color:var(--txt)">6.5 m/s</span>
+      <label>透明度</label>
+      <input type="range" id="opacR" min="0.1" max="0.9" value="0.4" step="0.05" style="width:100px">
+      <label><input type="checkbox" id="chkSlices" checked> 截面</label>
+      <label><input type="checkbox" id="chkTurbines" checked> 风机</label>
+    </div>
+    <div id="plot3d" class="plotly-container" style="height:600px"></div>
+    <div class="note">蓝色半透明区域为尾流低速泡，白色圆圈为风机转子扫掠面。拖拽旋转，滚轮缩放。调整阈值改变尾流泡显示范围。</div>
+  </div>
+</main>
+<footer class="wrap">孙承泽 · 可视化模块</footer>
+<script src="assets/data.js"></script><script src="assets/data_3d.js"></script>
+<script>
+(function(){
+  const D3=window.WIND_3D_DATA;
+  if(!D3||!D3.fields_3d||Object.keys(D3.fields_3d).length===0){
+    document.getElementById('plot3d').innerHTML='<p style="color:var(--sub);text-align:center;padding:40px">3D 流场数据未就绪</p>';return;
+  }
+  const keys=Object.keys(D3.fields_3d).sort((a,b)=>parseFloat(a)-parseFloat(b));
+  const yawSel=document.getElementById('yawSel');
+  keys.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=parseFloat(k)+'°';yawSel.appendChild(o);});
+  const defKey=keys.find(k=>parseFloat(k)===0)||keys[Math.floor(keys.length/2)];
+  yawSel.value=defKey;
+
+  const threshR=document.getElementById('threshR'),threshV=document.getElementById('threshV');
+  threshR.oninput=()=>{threshV.textContent=threshR.value+' m/s';render();};
+
+  function render(){
+    const yaw=yawSel.value;
+    const threshold=parseFloat(threshR.value);
+    const opacity=parseFloat(document.getElementById('opacR').value);
+    const showSlices=document.getElementById('chkSlices').checked;
+    const showTurb=document.getElementById('chkTurbines').checked;
+    const fd=D3.fields_3d[yaw];if(!fd)return;
+    const x=fd.x,y=fd.y,z=fd.z,U=fd.u; // U[n_z][n_y][n_x]
+    // Flatten for Isosurface
+    const xFlat=[],yFlat=[],zFlat=[],vFlat=[];
+    for(let iz=0;iz<z.length;iz++)
+      for(let iy=0;iy<y.length;iy++)
+        for(let ix=0;ix<x.length;ix++){
+          xFlat.push(x[ix]);yFlat.push(y[iy]);zFlat.push(z[iz]);vFlat.push(U[iz][iy][ix]);
+        }
+    const traces=[];
+    // Isosurface
+    traces.push({type:'isosurface',x:xFlat,y:yFlat,z:zFlat,value:vFlat,
+      isomin:4.0,isomax:threshold,surface_count:3,
+      colorscale:'Blues_r',showscale:true,
+      colorbar:{title:'风速 (m/s)',thickness:15,len:0.6,x:1.02},
+      opacity:opacity,caps:{x_show:false,y_show:false,z_show:false},name:'尾流区'});
+    // Hub-height slice
+    if(showSlices){
+      const hubZIdx=z.reduce((bi,zi,i)=>Math.abs(zi-90)<Math.abs(z[bi]-90)?i:bi,0);
+      const uHub=U[hubZIdx];
+      traces.push({type:'surface',x:x,y:y,z:Array.from({length:y.length},()=>Array.from({length:x.length},()=>z[hubZIdx])),
+        surfacecolor:uHub,colorscale:'RdBu_r',cmin:4,cmax:9,showscale:false,opacity:0.6,
+        name:'轮毂截面 ('+Math.round(z[hubZIdx])+'m)'});
+    }
+    // Turbine geometry
+    if(showTurb){
+      for(const[tx,lbl]of[[0,'风机1'],[630,'风机2']]){
+        traces.push({type:'scatter3d',x:[tx,tx],y:[0,0],z:[0,90],mode:'lines',line:{color:'#fff',width:4},showlegend:false});
+        // Rotor circle
+        const nPts=60,ry=[],rz=[];
+        for(let i=0;i<nPts;i++){const a=2*Math.PI*i/nPts;ry.push(63*Math.sin(a));rz.push(90+63*Math.cos(a));}
+        traces.push({type:'scatter3d',x:Array(nPts).fill(tx),y:ry,z:rz,mode:'lines',line:{color:'#fff',width:2},showlegend:false});
+        traces.push({type:'scatter3d',x:[tx],y:[0],z:[170],mode:'text',text:[lbl],textfont:{color:'#fff',size:12},showlegend:false});
+      }
+    }
+    const layout={
+      scene:{xaxis:{title:'顺风方向 x (m)',backgroundcolor:'#0b1220',gridcolor:'#1e293b',showbackground:true,color:'#94a3b8'},
+        yaxis:{title:'横向 y (m)',backgroundcolor:'#0b1220',gridcolor:'#1e293b',showbackground:true,color:'#94a3b8'},
+        zaxis:{title:'高度 z (m)',backgroundcolor:'#020617',gridcolor:'#1e293b',showbackground:true,color:'#94a3b8',range:[0,200]},
+        bgcolor:'#020617',aspectmode:'manual',aspectratio:{x:3,y:3,z:1},camera:{eye:{x:-1.8,y:-1.5,z:0.8}}},
+      title:{text:'三维尾流体渲染  |  偏航角 = '+parseFloat(yaw)+'°  |  阈值 < '+threshold+' m/s',
+        font:{color:'#e2e8f0',size:14},x:0.5},
+      height:600,margin:{l:0,r:0,t:50,b:0},paper_bgcolor:'#020617',font:{color:'#e2e8f0'}};
+    Plotly.newPlot('plot3d',traces,layout,{responsive:true});
+  }
+  yawSel.onchange=render;
+  document.getElementById('opacR').oninput=render;
+  document.getElementById('chkSlices').onchange=render;
+  document.getElementById('chkTurbines').onchange=render;
+  render();
+})();
+</script>
+</body></html>

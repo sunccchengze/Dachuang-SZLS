@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>3D 尾流曲面 · 风电场偏航优化</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+</head>
+<body>
+<nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div>
+<div class="nav-links"><a href="index.html">首页</a><a href="wake.html">尾流</a><a href="optimization.html">优化</a><a href="overview.html">总览</a><a href="3d_surface.html" class="active">3D曲面</a><a href="3d_volume.html">3D体</a><a href="heatmap.html">热力矩阵</a><a href="solver.html">求解器</a><a href="pod.html">POD</a><a href="array.html">阵列</a><a href="power_tracking.html">功率跟踪</a><a href="dashboard.html">Dashboard</a><a href="windrose.html">风玫瑰</a><a href="model.html">模型精度</a><a href="interface.html">接口</a></div></div></nav>
+<section class="wrap pg-hero"><h1>🌐 3D 尾流曲面</h1><p>三维速度曲面可视化，鼠标拖拽旋转，直观感受尾流空间结构</p></section>
+<main class="wrap">
+  <div class="card">
+    <div class="controls">
+      <label>偏航角</label>
+      <select id="yawSel"></select>
+      <label>配色</label>
+      <select id="colorSel">
+        <option value="RdBu_r">RdBu_r</option>
+        <option value="Viridis">Viridis</option>
+        <option value="Plasma">Plasma</option>
+        <option value="Turbo">Turbo</option>
+        <option value="Cividis">Cividis</option>
+      </select>
+      <label><input type="checkbox" id="chkContour" checked> 底部投影</label>
+      <label><input type="checkbox" id="chkTurbines" checked> 风机标记</label>
+    </div>
+    <div id="plot3d" class="plotly-container" style="height:560px"></div>
+    <div class="note">三维速度曲面（取中间高度层）。拖拽旋转视角，滚轮缩放，双击重置。尾流在下游形成低速凹陷，偏航使其偏移。</div>
+  </div>
+</main>
+<footer class="wrap">孙承泽 · 可视化模块</footer>
+<script src="assets/data.js"></script><script src="assets/data_3d.js"></script>
+<script>
+(function(){
+  const D3=window.WIND_3D_DATA;
+  if(!D3||!D3.fields_3d||Object.keys(D3.fields_3d).length===0){
+    document.getElementById('plot3d').innerHTML='<p style="color:var(--sub);text-align:center;padding:40px">3D 流场数据未就绪，请先运行 python3 site/build_3d_data.py</p>';
+    return;
+  }
+  const keys=Object.keys(D3.fields_3d).sort((a,b)=>parseFloat(a)-parseFloat(b));
+  const yawSel=document.getElementById('yawSel');
+  keys.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=parseFloat(k)+'°';yawSel.appendChild(o);});
+  // 默认选 0° 附近的
+  const defKey=keys.find(k=>parseFloat(k)===0)||keys[Math.floor(keys.length/2)];
+  yawSel.value=defKey;
+
+  function render(){
+    const yaw=yawSel.value;
+    const cs=document.getElementById('colorSel').value;
+    const showContour=document.getElementById('chkContour').checked;
+    const showTurb=document.getElementById('chkTurbines').checked;
+    const fd=D3.fields_3d[yaw];
+    if(!fd)return;
+    const x=fd.x, y=fd.y, u=fd.u;
+    // u shape: [n_z, n_y, n_x], 取中间高度层
+    const midZ=Math.floor(u.length/2);
+    const uSlice=u[midZ]; // [n_y, n_x]
+    const traces=[];
+    // 3D Surface
+    traces.push({
+      type:'surface',x:x,y:y,z:uSlice,
+      colorscale:cs,cmin:4,cmax:9,
+      colorbar:{title:{text:'风速 (m/s)',side:'right'},thickness:15,len:0.7,x:1.02},
+      opacity:0.92,
+      contours:{z:{show:true,usecolormap:true,highlightcolor:'#fff',project_z:showContour}},
+      name:'速度场'
+    });
+    if(showTurb){
+      const xIdx0=0,xIdx1=x.reduce((bi,xi,i)=>Math.abs(xi-630)<Math.abs(x[bi]-630)?i:bi,0);
+      const yIdx=y.reduce((bi,yi,i)=>Math.abs(yi)<Math.abs(y[bi])?i:bi,0);
+      for(const[xi,lbl]of[[xIdx0,'风机1(可调)'],[xIdx1,'风机2(固定0°)']]){
+        const uVal=uSlice[yIdx][xi];
+        traces.push({type:'scatter3d',x:[x[xi],x[xi]],y:[y[yIdx],y[yIdx]],z:[3.5,uVal],
+          mode:'lines+text',line:{color:'#fff',width:4},text:['',lbl],
+          textposition:'top center',textfont:{color:'#fff',size:12},showlegend:false});
+        traces.push({type:'scatter3d',x:[x[xi]],y:[y[yIdx]],z:[uVal],
+          mode:'markers',marker:{size:6,color:'#fff',symbol:'diamond'},showlegend:false});
+      }
+    }
+    const layout={
+      scene:{xaxis:{title:'顺风方向 x (m)',backgroundcolor:'#0b1220',gridcolor:'#1e293b',showbackground:true,color:'#94a3b8'},
+        yaxis:{title:'横向 y (m)',backgroundcolor:'#0b1220',gridcolor:'#1e293b',showbackground:true,color:'#94a3b8'},
+        zaxis:{title:'风速 (m/s)',backgroundcolor:'#020617',gridcolor:'#1e293b',showbackground:true,color:'#94a3b8',range:[3.5,9.5]},
+        bgcolor:'#020617',camera:{eye:{x:-1.5,y:-1.8,z:1.2}}},
+      title:{text:'三维尾流速度场  |  偏航角 = '+parseFloat(yaw)+'°',font:{color:'#e2e8f0',size:14},x:0.5},
+      height:560,margin:{l:0,r:0,t:50,b:0},paper_bgcolor:'#020617',font:{color:'#e2e8f0'}
+    };
+    Plotly.newPlot('plot3d',traces,layout,{responsive:true});
+  }
+  yawSel.onchange=render;
+  document.getElementById('colorSel').onchange=render;
+  document.getElementById('chkContour').onchange=render;
+  document.getElementById('chkTurbines').onchange=render;
+  render();
+})();
+</script>
+</body></html>
