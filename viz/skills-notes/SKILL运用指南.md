@@ -62,3 +62,19 @@
 2. **严禁任何 Emoji 装饰**：工科汇报严禁出现 🗺️, 📊, 🔥, ⚙️, ★ 等符号，一律替换为国际通用的章节代号（如 `08 / ARRAY TOPOLOGY`）或标准物理数学变量。
 3. **拒绝卡通彩色泡泡**：风机布局必须呈现真实空间坐标（$x/D, y/D$）、实际偏航倾斜叶轮面（线段）、轮毂定位点与真实流场等值线图。
 4. **最大化数据墨水比（Data-Ink Ratio）**：优先使用标准三线学术表格（Nature/IEEE 规范）、真实能量阶梯瀑布柱状图，直接标注物理机理与功率变化量。
+
+---
+
+## 4. 图像生成与视觉工程规范 (GPTImage2Skill)
+
+装载模块：`技能库&准则/gpt-image-2-skill/`
+参考文件：`技能库&准则/gpt-image-2-skill/31大场景提示词库与七条铁律.md`
+
+### 4.1 七条铁律执行准则
+1. **结构先于华丽**：`场景 (Scene) → 主体 (Subject) → 材质细节 (Key Details) → 光影构图 (Lighting/Angle) → 约束 (Constraints)`；
+2. **文字严格加引号**：图内文字必须使用英文双引号界定（如 `"10041 kW"`, `"YAW +30°"`）；
+3. **物理与工业词汇精准**：使用 *matte brushed titanium*, *cividis velocity contour*, *streamline ribbons*, *300 DPI vector* 等具体术语；
+4. **显式构图参数**：明确 *Top-down orthographic 2D*, *Isometric 30°*, *Telephoto macro*；
+5. **局部重绘守恒律**：先列 *Preserve Invariants*，再列 *Change only X*；
+6. **分辨率严格对齐**：边缘为 16 的倍数，宽高比 $\le 3:1$；
+7. **透明通道工程化**：透明素材一律走 Chroma 单色底（Magenta/Cyan）或黑白双背景对齐提取，严禁直出脏边。
