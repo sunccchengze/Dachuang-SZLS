@@ -20,14 +20,14 @@
 
 <section class="wrap pg-hero">
   <h1>🔬 POD 本征正交分解降阶分析</h1>
-  <p>流场降阶建模（ROM）：前 2 阶模态覆盖 98.1% 能量，实现毫秒级流场重构与优化提速</p>
+  <p>流场降阶建模（ROM）：前 2 阶模态覆盖 98.0% 能量，实现毫秒级流场重构与优化提速</p>
 </section>
 
 <main class="wrap">
   <!-- 4 大核心 KPI 指标卡 -->
   <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
     <div class="stat-card">
-      <p class="stat-number">98.1%</p>
+      <p class="stat-number">98.0%</p>
       <p class="stat-label">前 2 阶累积能量占比</p>
       <p class="kpi-delta up">Mode 0 + Mode 1</p>
     </div>
@@ -66,7 +66,7 @@
         <img id="modeImgEl" src="assets/img/pod/mode_0.png" style="max-width:100%;max-height:220px;border-radius:6px;transition:opacity .2s">
       </div>
       <div class="note" id="modeDescText" style="margin-top:10px">
-        <b>模态 0（能量占比 82.4%）</b>：流场对称平均结构，主导未偏航时的标准高斯尾流亏损形态。
+        <b>模态 0（能量占比 76.4%）</b>：呈上下反对称偶极子结构（一侧正加速、一侧负亏损区），主导偏航引起的尾流横向侧偏。
       </div>
     </div>
   </div>
@@ -115,8 +115,8 @@
 (function(){
   // POD 模态能量数据
   const modes = ['Mode 0', 'Mode 1', 'Mode 2', 'Mode 3', 'Mode 4'];
-  const energy = [82.4, 15.7, 1.2, 0.5, 0.2];
-  const cumEnergy = [82.4, 98.1, 99.3, 99.8, 100.0];
+  const energy = [76.4, 21.6, 1.1, 0.5, 0.4];
+  const cumEnergy = [76.4, 98.0, 99.1, 99.6, 100.0];
 
   pr('podEnergyPlot', [
     {
@@ -143,17 +143,17 @@
     margin: { l: 50, r: 50, t: 20, b: 40 },
     legend: { orientation: 'h', y: 1.14, x: 0.05, font: { size: 11 } },
     annotations: [{
-      x: 'Mode 1', y: 98.1, yref: 'y2',
-      text: '前 2 阶达 98.1%',
+      x: 'Mode 1', y: 98.0, yref: 'y2',
+      text: '前 2 阶达 98.0%',
       showarrow: true, arrowhead: 2, arrowcolor: WF.sageDeep,
       font: { color: WF.sageDeep, size: 11 }, ax: 20, ay: -28
     }]
   });
 
   const descs = [
-    '<b>模态 0（去均值首要模态，能量占比 82.4%）</b>：流场去均值后的第一阶主特征模态，呈清晰的<b>上下反对称偶极子结构</b>（一侧正加速、一侧负亏损），直接主导偏航引起的尾流横向侧偏。',
-    '<b>模态 1（二次恢复模态，能量占比 15.7%）</b>：第二阶特征模态，主导尾流沿顺风向的纵向恢复、扩散与能量补偿。',
-    '<b>模态 2（高阶剪切微扰，能量占比 1.2%）</b>：叶尖强涡系与近地边界层的高阶微小波动修正。'
+    '<b>模态 0（去均值首要模态，能量占比 76.4%）</b>：流场去均值后的第一阶主特征模态，呈清晰的<b>上下反对称偶极子结构</b>（一侧正加速、一侧负亏损），直接主导偏航引起的尾流横向侧偏。',
+    '<b>模态 1（二次恢复模态，能量占比 21.6%）</b>：第二阶特征模态，主导尾流沿顺风向的纵向恢复、扩散与能量补偿。',
+    '<b>模态 2（高阶剪切微扰，能量占比 1.1%）</b>：叶尖强涡系与近地边界层的高阶微小波动修正。'
   ];
 
   document.getElementById('modeSeg').addEventListener('click', e => {

@@ -57,7 +57,7 @@
 
     <div id="solChart" class="plotly-container" style="height:380px"></div>
     <div class="note">
-      求解流程：遍历偏航空间 γ<sub>1</sub> ∈ [−30°, +30°]，调用二阶插值/神经网络代理模型毫秒级预测 (<i>P</i><sub>1</sub>, <i>P</i><sub>2</sub>)，精准捕获全场峰值功率点。
+      求解流程：遍历偏航空间 γ<sub>1</sub> ∈ [−30°, +30°]，调用双线性插值/神经网络代理模型毫秒级预测 (<i>P</i><sub>1</sub>, <i>P</i><sub>2</sub>)，精准捕获全场峰值功率点。
     </div>
   </div>
 
@@ -80,29 +80,32 @@
           <tr style="border-bottom:1px solid var(--line)">
             <td style="padding:10px;text-align:left;font-weight:700">FLORIS + SLSQP (序列二次规划)</td>
             <td style="padding:10px">基于梯度的连续优化</td>
-            <td style="padding:10px">35 ~ 60 次</td>
-            <td style="padding:10px;color:var(--rose)">~ 2.8 s</td>
-            <td style="padding:10px">99.9%</td>
+            <td style="padding:10px">14 次（实测）</td>
+            <td style="padding:10px;color:var(--rose)">0.47 s（实测）</td>
+            <td style="padding:10px">≈100%（达全局最优 2370.5 kW）</td>
             <td style="padding:10px">离线基准标定</td>
           </tr>
           <tr style="border-bottom:1px solid var(--line)">
-            <td style="padding:10px;text-align:left;font-weight:700">FLORIS + GA (遗传算法)</td>
+            <td style="padding:10px;text-align:left;font-weight:700">FLORIS + 差分进化 (GA 类全局搜索)</td>
             <td style="padding:10px">无导数启发式全局搜索</td>
-            <td style="padding:10px">> 500 次</td>
-            <td style="padding:10px;color:var(--rose)">~ 24.5 s</td>
-            <td style="padding:10px">99.5%</td>
+            <td style="padding:10px">56 次（实测）</td>
+            <td style="padding:10px;color:var(--rose)">1.77 s（实测）</td>
+            <td style="padding:10px">≈100%（达全局最优 2370.5 kW）</td>
             <td style="padding:10px">多峰复杂阵列初查</td>
           </tr>
           <tr style="border-bottom:1px solid var(--line);background:rgba(111,135,97,0.06)">
             <td style="padding:10px;text-align:left;font-weight:700;color:var(--sage-deep)">代理模型 + 密集网格穷举 (本项目)</td>
             <td style="padding:10px">数据驱动超快推理</td>
             <td style="padding:10px">61 个离散点</td>
-            <td style="padding:10px;color:var(--sage-deep);font-weight:800">&lt; 1.5 ms (提速 1800×)</td>
+            <td style="padding:10px;color:var(--sage-deep);font-weight:800">约 0.6 ms · 61 点（提速 ≈700× / ≈2700×）</td>
             <td style="padding:10px;font-weight:700;color:var(--sage-deep)">100.0% (精确全局最优)</td>
             <td style="padding:10px;font-weight:700;color:var(--sage-deep)">风电场毫秒级在线闭环控制</td>
           </tr>
         </tbody>
       </table>
+      <p style="font-size:11px;color:var(--sub);margin-top:8px;line-height:1.6">
+        实测口径：2026-08-10 本机（Python 3.11 · FLORIS 4.6.6 · SciPy；SLSQP ftol=1e-3；差分进化 popsize=10 / maxiter=12 / seed=1），运行 <code>site/benchmark_solver.py</code> 可复跑。连续最优 +26.6°（5° 离散基准最优为 +25°）；提速比值分别对应 SLSQP 与差分进化，浏览器内插值为同算法 JS 复刻、量级相当。
+      </p>
     </div>
   </div>
 </main>

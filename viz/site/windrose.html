@@ -17,80 +17,78 @@
 <nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div><div class="nav-links"></div></div></nav>
 
 <section class="wrap pg-hero">
-  <h1>🌬️ 风玫瑰与全场年发电量 (AEP) 分析</h1>
-  <p>360° 全风向扇区偏航协同收益、威布尔风频加权与年等效发电量增益估算</p>
+  <h1>🌬️ 风玫瑰与年发电量 (AEP) 分析</h1>
+  <p>12 风向 × 4 风速 × 13 偏航角共 624 工况实扫描 · 收益扇区与频率假设全部显式声明</p>
 </section>
 
 <main class="wrap">
-  <!-- 4 大核心 KPI 指标卡 -->
+  <!-- 4 大核心 KPI 指标卡（数值由本页 JS 从 data.js 实算填充） -->
   <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
     <div class="stat-card">
-      <p class="stat-number">+5.6%</p>
-      <p class="stat-label">加权年等效发电量 (AEP) 净增</p>
-      <p class="kpi-delta up">全风向综合收益</p>
+      <p class="stat-number" id="kGain270">—</p>
+      <p class="stat-label">270° 正对串列扇区最优增益（8 m/s）</p>
+      <p class="kpi-delta up">全扫描域唯一非零扇区</p>
     </div>
     <div class="stat-card">
-      <p class="stat-number">+18.5%</p>
-      <p class="stat-label">主风向最大增益 (90° / 270° 正迎风)</p>
-      <p class="kpi-delta up">尾流重叠最强区</p>
+      <p class="stat-number" id="kGainMean">—</p>
+      <p class="stat-label">270° 扇区四速平均增益</p>
+      <p class="kpi-delta up">6 / 8 / 10 / 12 m/s 均为 +25° 最优</p>
     </div>
     <div class="stat-card">
-      <p class="stat-number">+9.2%</p>
-      <p class="stat-label">对角风向增益 (45° / 135° / 225° / 315°)</p>
-      <p class="kpi-delta up">斜列尾流避让</p>
+      <p class="stat-number" id="kAep">—</p>
+      <p class="stat-label">AEP 净增（功率加权 · 等权风向假设）</p>
+      <p class="kpi-delta flat">12 风向各 1/12 频率</p>
     </div>
     <div class="stat-card">
-      <p class="stat-number">16 扇区</p>
-      <p class="stat-label">风玫瑰扇区分辨率</p>
-      <p class="kpi-delta flat">22.5° 连续气象离散</p>
+      <p class="stat-number" id="kElec">—</p>
+      <p class="stat-label">两台机组年增电量（等权假设）</p>
+      <p class="kpi-delta flat">8760 h 折算</p>
     </div>
   </div>
 
-  <!-- 风玫瑰图与扇区分析双图联动 -->
+  <!-- 增益玫瑰图与扇区分布双图 -->
   <div class="grid2">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <h3 style="margin:0;font-size:15px;color:var(--txt)">🧭 360° 极坐标风玫瑰图 (Polar Rose)</h3>
-        <div class="rose-tab" id="roseTab">
-          <button data-type="gain" class="active">偏航增益玫瑰</button>
-          <button data-type="resource">风频风速玫瑰</button>
-        </div>
+        <h3 style="margin:0;font-size:15px;color:var(--txt)">🧭 最优偏航增益玫瑰（实扫描）</h3>
+        <div class="rose-tab" id="speedTab"></div>
       </div>
       <div id="rosePlot" class="plotly-container" style="height:420px"></div>
-      <div class="note" id="roseNote">
-        <b>多瓣花朵姿态</b>：正对 3×3 阵列主轴（90°/270° 与 0°/180°）及对角线（45°/135°/225°/315°）时，尾流强烈遮挡，偏航协同释放出显著增益花瓣。
-      </div>
+      <div class="note" id="roseNote"></div>
     </div>
 
     <div class="card">
-      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">📊 各风向扇区增益与风频加权贡献分布</h3>
+      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">📊 各风向扇区增益分布（实扫描）</h3>
       <div id="sectorPlot" class="plotly-container" style="height:420px"></div>
-      <div class="note">绿色柱代表该风向下的偏航增益百分比，折线代表对应风向的威布尔发生概率权重。</div>
+      <div class="note">柱为当前选择风速下该风向的最优偏航增益；折线为四速平均增益。除 270° 外各向均为 0——布局决定，非数据缺失。</div>
     </div>
   </div>
 
-  <!-- AEP 计算原理与工程价值 -->
+  <!-- AEP 计算原理与假设 -->
   <div class="card" style="margin-top:18px">
-    <h3 style="margin:0 0 12px;font-size:15px;color:var(--txt)">💡 年等效发电量 (Annual Energy Production, AEP) 计算原理</h3>
+    <h3 style="margin:0 0 12px;font-size:15px;color:var(--txt)">💡 AEP（年等效发电量）计算原理与假设</h3>
     <div class="grid3">
       <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
-        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">1. 威布尔风速分布</div>
+        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">1. 真实样本域</div>
         <div style="font-size:12px;color:var(--sub);line-height:1.6">
-          结合风电场实测风资源数据，采用双参数威布尔分布 <i>f</i>(<i>v</i>; <i>k</i>, <i>c</i>) 刻画各扇区的风速出现概率密度。
+          两台串列 NREL 5MW（间距 5D = 630 m，TI = 6%），FLORIS GCH 扫描 12 风向 × 4 风速 × 13 偏航角 = 624 工况；每格取最优偏航收益，见 <code>cases_windrose*.csv</code>。
         </div>
       </div>
       <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
-        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">2. 全风向积分汇总</div>
+        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">2. 加权公式与等权假设</div>
         <div style="font-size:12px;color:var(--sub);line-height:1.6">
-          AEP = 8760 × ∑<sub>θ</sub> ∑<sub><i>v</i></sub> <i>P</i>(θ, <i>v</i>) <i>f</i>(θ, <i>v</i>) Δ<i>v</i> Δθ，全面考虑不同风向下的阵列几何遮挡。
+          AEP = 8760 × Σ<sub>θ</sub> Σ<sub>v</sub> f(θ, v) · P(θ, v)。当前无场址风频数据，取等权假设（12 风向各 1/12、4 风速各 1/4），ΔAEP = <b id="aepPct">—</b>。接入厉今飞的场址风玫瑰后数字自动更新。
         </div>
       </div>
       <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
-        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">3. 经济与碳减排效益</div>
+        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">3. 风向频率敏感性</div>
         <div style="font-size:12px;color:var(--sub);line-height:1.6">
-          以 50MW 风电场为例，+5.6% AEP 相当于年新增上网电量约 <b>850 万 kWh</b>，年增收约 <b>340 万元</b>，减少碳排放超 <b>7000 吨</b>。
+          扇区增益高不等于 AEP 增益高。若盛行西风、270° 扇区频率 30%（其余 11 向均分 70%）：ΔAEP ≈ <b id="aepWest">—</b>，两台机组年增电量 ≈ <b id="elecWest">—</b>。
         </div>
       </div>
+    </div>
+    <div class="note" style="margin-top:12px">
+      数据边界：偏航网格 ±30°（5° 步长）、风向分辨率 30°（加密至 15° 可能显现 240°~300° 间的弱旁瓣）；3×3 阵列全风向扫描待 CFD 数据接入。本页不再给出金额与碳减排估算——缺少电价与排放因子假设，留待答辩素材按真实参数补。
     </div>
   </div>
 </main>
@@ -100,111 +98,116 @@
 <script src="assets/data.js"></script>
 <script>
 (function(){
-  // 16 扇区完整气象与阵列增益数据
-  const sectors16 = [
-    { dir: 'N (0°)',   deg: 0,   gain: 14.5, freq: 8.5, v4: 2.1, v8: 4.2, v12: 1.8, v16: 0.4 },
-    { dir: 'NNE (22.5°)', deg: 22.5, gain: 4.8, freq: 5.2, v4: 1.5, v8: 2.6, v12: 0.9, v16: 0.2 },
-    { dir: 'NE (45°)',  deg: 45,  gain: 9.2,  freq: 6.8, v4: 1.8, v8: 3.4, v12: 1.3, v16: 0.3 },
-    { dir: 'ENE (67.5°)', deg: 67.5, gain: 5.4, freq: 4.9, v4: 1.2, v8: 2.5, v12: 1.0, v16: 0.2 },
-    { dir: 'E (90°)',   deg: 90,  gain: 18.5, freq: 11.4, v4: 2.8, v8: 5.6, v12: 2.4, v16: 0.6 },
-    { dir: 'ESE (112.5°)', deg: 112.5, gain: 5.1, freq: 4.5, v4: 1.3, v8: 2.2, v12: 0.8, v16: 0.2 },
-    { dir: 'SE (135°)', deg: 135, gain: 9.0,  freq: 6.2, v4: 1.7, v8: 3.1, v12: 1.1, v16: 0.3 },
-    { dir: 'SSE (157.5°)', deg: 157.5, gain: 4.6, freq: 4.8, v4: 1.4, v8: 2.4, v12: 0.8, v16: 0.2 },
-    { dir: 'S (180°)',  deg: 180, gain: 14.2, freq: 9.8, v4: 2.4, v8: 4.9, v12: 2.0, v16: 0.5 },
-    { dir: 'SSW (202.5°)', deg: 202.5, gain: 4.5, freq: 4.1, v4: 1.2, v8: 2.1, v12: 0.6, v16: 0.2 },
-    { dir: 'SW (225°)', deg: 225, gain: 8.8,  freq: 7.2, v4: 1.9, v8: 3.6, v12: 1.4, v16: 0.3 },
-    { dir: 'WSW (247.5°)', deg: 247.5, gain: 5.2, freq: 5.6, v4: 1.5, v8: 2.8, v12: 1.1, v16: 0.2 },
-    { dir: 'W (270°)',  deg: 270, gain: 18.5, freq: 12.8, v4: 3.2, v8: 6.2, v12: 2.8, v16: 0.6 },
-    { dir: 'WNW (292.5°)', deg: 292.5, gain: 5.0, freq: 4.2, v4: 1.1, v8: 2.1, v12: 0.8, v16: 0.2 },
-    { dir: 'NW (315°)', deg: 315, gain: 9.1,  freq: 6.5, v4: 1.6, v8: 3.3, v12: 1.3, v16: 0.3 },
-    { dir: 'NNW (337.5°)', deg: 337.5, gain: 4.7, freq: 4.5, v4: 1.3, v8: 2.2, v12: 0.8, v16: 0.2 }
-  ];
+  var rows = (window.WIND_DATA && WIND_DATA.windrose_opt) || [];
+  if (!rows.length) { document.getElementById('roseNote').textContent = 'windrose_opt 数据缺失'; return; }
 
-  let curRoseType = 'gain';
+  var dirs = [], speeds = [];
+  rows.forEach(function(r){
+    if (dirs.indexOf(r.wind_direction) < 0) dirs.push(r.wind_direction);
+    if (speeds.indexOf(r.U_inf) < 0) speeds.push(r.U_inf);
+  });
+  dirs.sort(function(a,b){return a-b;}); speeds.sort(function(a,b){return a-b;});
+  var LUT = {};
+  rows.forEach(function(r){ LUT[r.wind_direction + '|' + r.U_inf] = r; });
 
-  function renderRose() {
-    if (curRoseType === 'gain') {
-      // 1. 3×3 阵列 360° 偏航增益风玫瑰 (具有明显 8 瓣花朵对称姿态)
-      pr('rosePlot', [{
-        type: 'barpolar',
-        r: sectors16.map(s => s.gain),
-        theta: sectors16.map(s => s.deg),
-        marker: {
-          color: sectors16.map(s => s.gain),
-          colorscale: WF.GainSeq,
-          line: { color: WF.card, width: 1.5 }
-        },
-        hovertemplate: '%{theta}° (%{r:.1f}% 增益)<extra></extra>'
-      }], {
-        polar: {
-          radialaxis: { title: '增益 (%)', color: WF.sub, tickfont: { color: WF.sub, size: 10 }, range: [0, 20] },
-          angularaxis: { rotation: 90, direction: 'clockwise', color: WF.sub, tickfont: { color: WF.sub, size: 10 } }
-        },
-        height: 420,
-        margin: { l: 40, r: 40, t: 25, b: 30 },
-        showlegend: false
-      });
-      document.getElementById('roseNote').innerHTML =
-        '<b>偏航增益玫瑰（多瓣花朵姿态）</b>：在 3×3 阵列中，当风向平行于机组主轴（90°/270° 东西向、0°/180° 南北向）以及对角线（45°/135°/225°/315°）时，尾流遮挡强烈，偏航协同释放出显著增益花瓣。';
-    } else {
-      // 2. 气象风频风速多层玫瑰图 (经典多瓣风玫瑰)
-      pr('rosePlot', [
-        { type: 'barpolar', r: sectors16.map(s => s.v4), theta: sectors16.map(s => s.deg), name: '0~4 m/s', marker: { color: WF.rose } },
-        { type: 'barpolar', r: sectors16.map(s => s.v8), theta: sectors16.map(s => s.deg), name: '4~8 m/s', marker: { color: WF.blue } },
-        { type: 'barpolar', r: sectors16.map(s => s.v12), theta: sectors16.map(s => s.deg), name: '8~12 m/s', marker: { color: WF.blueDeep } },
-        { type: 'barpolar', r: sectors16.map(s => s.v16), theta: sectors16.map(s => s.deg), name: '> 12 m/s', marker: { color: WF.sageDeep } }
-      ], {
-        polar: {
-          barmode: 'stack',
-          radialaxis: { title: '风频 (%)', color: WF.sub, tickfont: { color: WF.sub, size: 10 } },
-          angularaxis: { rotation: 90, direction: 'clockwise', color: WF.sub, tickfont: { color: WF.sub, size: 10 } }
-        },
-        height: 420,
-        margin: { l: 40, r: 40, t: 25, b: 30 },
-        legend: { orientation: 'h', y: -0.12, x: 0.1 }
-      });
-      document.getElementById('roseNote').innerHTML =
-        '<b>实测风频风速玫瑰</b>：展示风电场 16 扇区各风速区间的累积发生概率，主导风向为 W (270°) 与 E (90°)。';
-    }
+  var curSpeed = 8.0;
 
-    // 直角坐标扇区增益柱状图与概率曲线
+  // ===== KPI 与 AEP 实算（功率加权） =====
+  function meanOf(dir, key){
+    var s = 0, n = 0;
+    speeds.forEach(function(v){ s += LUT[dir + '|' + v][key]; n++; });
+    return s / n;
+  }
+  var sumBase = 0, sumOpt = 0;
+  rows.forEach(function(r){ sumBase += r.power_base; sumOpt += r.power_opt; });
+  var dAep = (sumOpt - sumBase) / sumBase * 100;              // 等权 ΔAEP %
+  var dElec = (sumOpt - sumBase) / rows.length * 8760 / 1e4;  // 万 kWh/年
+
+  // 盛行西风示例：270° 频率 30%，其余均分
+  var wBase = 0, wOpt = 0;
+  dirs.forEach(function(d){
+    var w = (d === 270) ? 0.30 : 0.70 / (dirs.length - 1);
+    wBase += w * meanOf(d, 'power_base');
+    wOpt  += w * meanOf(d, 'power_opt');
+  });
+  var aepWest = (wOpt - wBase) / wBase * 100;
+  var elecWest = (wOpt - wBase) * 8760 / 1e4;
+
+  var g = LUT['270|8']; 
+  document.getElementById('kGain270').textContent = '+' + g.gain_pct.toFixed(1) + '%';
+  document.getElementById('kGainMean').textContent = meanOf(270, 'gain_pct').toFixed(1) + '%';
+  document.getElementById('kAep').textContent = '+' + dAep.toFixed(2) + '%';
+  document.getElementById('kElec').textContent = dElec.toFixed(1) + ' 万 kWh';
+  document.getElementById('aepPct').textContent = '+' + dAep.toFixed(2) + '%';
+  document.getElementById('aepWest').textContent = '+' + aepWest.toFixed(2) + '%';
+  document.getElementById('elecWest').textContent = elecWest.toFixed(0) + ' 万 kWh';
+
+  // ===== 风速切换 tab =====
+  var tabEl = document.getElementById('speedTab');
+  speeds.forEach(function(v){
+    var b = document.createElement('button');
+    b.textContent = v.toFixed(0) + ' m/s';
+    if (v === curSpeed) b.className = 'active';
+    b.dataset.v = v;
+    tabEl.appendChild(b);
+  });
+  tabEl.addEventListener('click', function(e){
+    if (!e.target.dataset.v) return;
+    curSpeed = parseFloat(e.target.dataset.v);
+    Array.prototype.forEach.call(tabEl.children, function(c){ c.classList.toggle('active', c === e.target); });
+    renderAll();
+  });
+
+  function dirLabel(d){ return d + '°'; }
+
+  function renderAll(){
+    var gains = dirs.map(function(d){ return LUT[d + '|' + curSpeed].gain_pct; });
+    var maxG = Math.max.apply(null, gains.concat([1]));
+    pr('rosePlot', [{
+      type: 'barpolar',
+      r: gains,
+      theta: dirs,
+      marker: { color: gains, colorscale: WF.GainSeq, line: { color: WF.card, width: 1.5 } },
+      hovertemplate: '%{theta}°：增益 +%{r:.2f}%<extra></extra>'
+    }], {
+      polar: {
+        radialaxis: { title: '增益 (%)', color: WF.sub, tickfont: { color: WF.sub, size: 10 }, range: [0, maxG * 1.15] },
+        angularaxis: { rotation: 90, direction: 'clockwise', color: WF.sub, tickfont: { color: WF.sub, size: 10 } }
+      },
+      height: 420,
+      margin: { l: 40, r: 40, t: 25, b: 30 },
+      showlegend: false
+    });
+    document.getElementById('roseNote').innerHTML =
+      '<b>单瓣玫瑰成因</b>：两台串列布局、横向无交叠——只有当来流正对机组串列轴（270°）时下游机组才处于尾流内，偏航引导才有收益；其余 11 个风向两机互不遮挡，增益为 0。风向分辨率现为 30°，加密至 15° 后 240°~300° 区间可能出现弱旁瓣。';
+
     pr('sectorPlot', [
       {
-        type: 'bar', name: '偏航增益 (%)',
-        x: sectors16.map(s => s.dir),
-        y: sectors16.map(s => s.gain),
+        type: 'bar', name: '最优偏航增益（当前风速，%）',
+        x: dirs.map(dirLabel),
+        y: gains,
         marker: { color: WF.sageDeep },
-        yaxis: 'y',
-        hovertemplate: '%{x}: 增益 +%{y:.1f}%<extra></extra>'
+        hovertemplate: '%{x}：+%{y:.2f}%<extra></extra>'
       },
       {
-        type: 'scatter', name: '扇区风频概率 (%)',
-        x: sectors16.map(s => s.dir),
-        y: sectors16.map(s => s.freq),
+        type: 'scatter', name: '四速平均增益（%）',
+        x: dirs.map(dirLabel),
+        y: dirs.map(function(d){ return meanOf(d, 'gain_pct'); }),
         mode: 'lines+markers',
         line: { color: WF.blue, width: 2.4 },
         marker: { size: 7, color: WF.blueDeep },
-        yaxis: 'y2',
-        hovertemplate: '%{x} 概率: %{y:.1f}%<extra></extra>'
+        hovertemplate: '%{x} 四速均值：+%{y:.2f}%<extra></extra>'
       }
     ], {
-      xaxis: { title: '风向扇区 (16 扇区)', tickangle: -45, tickfont: { size: 10 } },
-      yaxis: { title: '偏航功率增益 (%)', range: [0, 22] },
-      yaxis2: { title: '风向发生频率 (%)', overlaying: 'y', side: 'right', showgrid: false, range: [0, 16] },
+      xaxis: { title: '风向扇区（30° 分辨率）', tickfont: { size: 10 } },
+      yaxis: { title: '偏航功率增益 (%)', range: [0, maxG * 1.3] },
       height: 420,
-      margin: { l: 50, r: 50, t: 25, b: 70 },
+      margin: { l: 50, r: 30, t: 25, b: 50 },
       legend: { orientation: 'h', y: 1.12, x: 0.05 }
     });
   }
 
-  document.getElementById('roseTab').addEventListener('click', e => {
-    if (!e.target.dataset.type) return;
-    curRoseType = e.target.dataset.type;
-    [...e.currentTarget.children].forEach(b => b.classList.toggle('active', b === e.target));
-    renderRose();
-  });
-
-  renderRose();
+  renderAll();
 })();
 </script>
 <script src="assets/js/nav.js"></script>
