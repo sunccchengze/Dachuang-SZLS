@@ -61,3 +61,25 @@ Corrections, insights, and knowledge gaps captured during development.
   2. 战役模块二（物理与算法通识）：进行中（讲义就绪，等待承泽逐项深入学习）；
   3. 战役模块三（PS 300DPI 顶刊图与 A0 展板实战）：待开展；
   4. 战役模块四（20页 PPT 与答辩）：待开展。
+
+---
+
+## [LRN-20260810-05] 决策交互偏好：选择题式收口（默认交互模式）
+- **Logged**: 2026-08-10T10:30:00Z
+- **Priority**: critical
+- **Status**: verified
+- **Category**: best_practice
+- **Trigger**: user_explicit_request（附决策汇总截图）
+- **Context**: 所有需要用户裁定的分岔点
+- **Correct Approach**: 涉及方案选择、授权放行、口径取舍时，一律用结构化选择题（2~4 个候选 + 可自定义）收口，不写长篇开放式提问；每个选项附一句话代价/后果说明，用户点击即决策。
+
+---
+
+## [LRN-20260810-06] 分支铁律：永不 merge 到 main（Zero Exception）
+- **Logged**: 2026-08-10T10:30:00Z
+- **Priority**: critical
+- **Status**: verified
+- **Category**: correction
+- **Trigger**: user_explicit_request
+- **Context**: 部署分支改绑 arena/019feacd-wind-farm-viz 时用户明确禁令
+- **Correct Approach**: 一切工作只在 arena/019feacd-wind-farm-viz 上 commit/push；永不执行 merge/rebase/push 到 main；Cloudflare Pages 生产分支由用户绑定 019feacd；019fe42f 作为历史基线保留，仅可合入其资产，不回写。
