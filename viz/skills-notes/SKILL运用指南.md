@@ -92,3 +92,13 @@ $$\text{PRD 功能需求} \xrightarrow{\text{Refero DESIGN.md (设计约束)}} \
 ### 5.2 核心运用场景
 1. **静态站 16 个子页面视觉重构**：统一按照 `site/DESIGN.md` 的颜色、圆角（$\le 12\text{px}$）、1px 发丝边框和 14px 毛玻璃背景规范执行，彻底消除粗糙的 AI 模板感；
 2. **气动流场与 3D 动画交互**：采用 `motion-recipes.md` 中的 Canvas 粒子流线、Three.js 机舱平滑阻尼转动插值（`lerp`）与数据跳动器，提升交互专业度。
+
+---
+
+## 6. 多 Agent 协作与红蓝对抗架构 (Multi-Agent Architecture)
+
+参考规范：`技能库&准则/MULTI_AGENT_ORCHESTRATION.md`
+- **总指挥 (Chief Orchestrator)**：负责承泽需求的全局拆解与路由；
+- **工兵 Agent 组**：负责具体流场计算（FLORIS）、神经网络（PPO）、PSD 绘图、前端动效；
+- **独立红队审查 Agent（老塔/老芒/老贝）**：拥有交付前**一票否决权**，在提交前严格拦截 AI 模板味、物理违背与逻辑漏洞；
+- **Self-Harness 进化器**：将审查打回的失败样本自动提炼为 Harness 拦截规则。
