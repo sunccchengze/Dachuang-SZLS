@@ -78,3 +78,17 @@
 5. **局部重绘守恒律**：先列 *Preserve Invariants*，再列 *Change only X*；
 6. **分辨率严格对齐**：边缘为 16 的倍数，宽高比 $\le 3:1$；
 7. **透明通道工程化**：透明素材一律走 Chroma 单色底（Magenta/Cyan）或黑白双背景对齐提取，严禁直出脏边。
+
+---
+
+## 5. 前端交互与动效设计系统 (MotionSites × Refero)
+
+装载模块：`技能库&准则/motionsites-design-system/`
+核心规范：`site/DESIGN.md` 与 `技能库&准则/motionsites-design-system/references/motion-recipes.md`
+
+### 5.1 黄金工作流
+$$\text{PRD 功能需求} \xrightarrow{\text{Refero DESIGN.md (设计约束)}} \text{锁定莫兰迪色盘/字体阶梯/8px网格} \xrightarrow{\text{MotionSites (动效配方)}} \text{物理插值/流线粒子/平滑转场}$$
+
+### 5.2 核心运用场景
+1. **静态站 16 个子页面视觉重构**：统一按照 `site/DESIGN.md` 的颜色、圆角（$\le 12\text{px}$）、1px 发丝边框和 14px 毛玻璃背景规范执行，彻底消除粗糙的 AI 模板感；
+2. **气动流场与 3D 动画交互**：采用 `motion-recipes.md` 中的 Canvas 粒子流线、Three.js 机舱平滑阻尼转动插值（`lerp`）与数据跳动器，提升交互专业度。
