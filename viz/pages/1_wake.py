@@ -58,7 +58,7 @@ with st.sidebar:
     st.markdown("**📋 数据集信息**")
     st.markdown(f"""
 - 工况数量：**{len(df)}** 个
-- 代理模型：**三次样条插值**
+- 代理模型：**双线性插值**（RegularGridInterpolator，线性核）
 - 风机型号：**NREL 5MW**
 - 来流风速：**8.0 m/s**
 - 湍流强度：**6%**

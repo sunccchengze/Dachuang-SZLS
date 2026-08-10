@@ -38,35 +38,35 @@
         </div>
       </div>
       <div id="stratBadge" style="font-size:12px;padding:4px 12px;border-radius:12px;background:rgba(111,135,97,0.15);color:var(--sage-deep);font-weight:700">
-        全局最优策略 · 增益 +24.04%
+        贪心协同策略 · 增益 +24.04%
       </div>
     </div>
     <div id="stratDesc" style="margin-top:12px;font-size:13px;color:var(--sub);line-height:1.6;padding-top:10px;border-top:1px solid var(--line)">
-      • <b>独立偏航策略（推荐）</b>：Row 1 偏航 +30°、Row 2 偏航 +20°、Row 3 偏航 0°。上游与中游梯级偏转尾流，使下游机组充分脱离强遮挡，全场总功率从 8095 kW 提升至 <b>10041 kW（+24.04%）</b>。
+      • <b>独立贪心偏航（推荐）</b>：Row 1 偏航 +30°、Row 2 偏航 +20°、Row 3 偏航 0°。上游与中游梯级偏转尾流，下游 Row 3 无需让利全力发电，全场总功率达 <b>10041 kW (+24.04%)</b>（贪心为局部搜索下限，真实上限或更高）。
     </div>
   </div>
 
   <!-- 3 大核心 KPI -->
   <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
     <div class="stat-card">
-      <p class="stat-number" id="kTotPwr">10041 kW</p>
+      <p class="stat-number" id="kTotPwr">—</p>
       <p class="stat-label">全场总功率</p>
-      <p class="kpi-delta up" id="dTotPwr">+24.04% (+1946 kW)</p>
+      <p class="kpi-delta flat" id="dTotPwr">—</p>
     </div>
     <div class="stat-card">
-      <p class="stat-number" id="kRow1">4020 kW</p>
+      <p class="stat-number" id="kRow1">—</p>
       <p class="stat-label">第 1 排总功率 (上游 3 台)</p>
-      <p class="kpi-delta down" id="dRow1">让利 -16.8%</p>
+      <p class="kpi-delta flat" id="dRow1">—</p>
     </div>
     <div class="stat-card">
-      <p class="stat-number" id="kRow2">3120 kW</p>
+      <p class="stat-number" id="kRow2">—</p>
       <p class="stat-label">第 2 排总功率 (中游 3 台)</p>
-      <p class="kpi-delta up" id="dRow2">+42.5% (大幅回升)</p>
+      <p class="kpi-delta flat" id="dRow2">—</p>
     </div>
     <div class="stat-card">
-      <p class="stat-number" id="kRow3">2901 kW</p>
+      <p class="stat-number" id="kRow3">—</p>
       <p class="stat-label">第 3 排总功率 (下游 3 台)</p>
-      <p class="kpi-delta up" id="dRow3">+96.8% (倍增释放)</p>
+      <p class="kpi-delta flat" id="dRow3">—</p>
     </div>
   </div>
 
@@ -133,18 +133,18 @@
       badge: '基准状态 · 尾流严重遮挡',
       badgeBg: 'rgba(185,132,132,0.15)',
       badgeCol: 'var(--rose)',
-      desc: '• <b>基准 0° 控制</b>：所有风机正对来流。上游 Row 1 满发（~1600 kW/台），但强尾流直接冲刷 Row 2（~700 kW/台）和 Row 3（~500 kW/台），全场总功率仅 <b>8095 kW</b>。'
+      desc: '• <b>基准 0° 控制</b>：所有风机正对来流。上游 Row 1 满发（1754 kW/台），但强尾流直接冲刷 Row 2（437 kW/台）和 Row 3（508 kW/台），全场总功率仅 <b>8095 kW</b>。'
     },
     unified: {
       name: '统一偏航 (+30°)',
       total: A.power_unified,
       gain: A.gain_unified_pct,
-      yaws: [30, 30, 30, 30, 30, 30, 0, 0, 0],
-      pwr: A.turbine_powers_none.map((p, i) => i < 3 ? 1460 : (i < 6 ? 920 : 660)),
+      yaws: [30, 30, 30, 0, 0, 0, 0, 0, 0],
+      pwr: A.turbine_powers_unified,
       badge: '统一协同 · 增益 +14.87%',
       badgeBg: 'rgba(107,140,174,0.15)',
       badgeCol: 'var(--blue-deep)',
-      desc: '• <b>统一偏航控制</b>：前两排（Row 1 与 Row 2）均偏航 +30°，后排（Row 3）保持 0° 迎风满发。尾流整体向侧向偏转，全场总功率提升至 <b>9299 kW (+14.87%)</b>。'
+      desc: '• <b>统一偏航控制</b>：仅最上游一排（Row 1）统一偏航 +30°，中后排保持 0° 迎风。Row 1 三台让利偏转尾流（1340 kW/台），中游 Row 2 回升至 1023~1058 kW/台，全场总功率提升至 <b>9299 kW (+14.87%)</b>。'
     },
     independent: {
       name: '独立贪心偏航 (推荐)',
@@ -152,10 +152,10 @@
       gain: A.gain_independent_pct,
       yaws: A.greedy_yaws,
       pwr: A.turbine_powers_independent,
-      badge: '全局最优策略 · 增益 +24.04%',
+      badge: '贪心协同策略 · 增益 +24.04%',
       badgeBg: 'rgba(111,135,97,0.15)',
       badgeCol: 'var(--sage-deep)',
-      desc: '• <b>独立贪心偏航（推荐）</b>：Row 1 偏航 +30°、Row 2 偏航 +20°、Row 3 偏航 0°。上游与中游梯级偏转尾流，下游 Row 3 无需让利全力发电，全场总功率达 <b>10041 kW (+24.04%)</b>。'
+      desc: '• <b>独立贪心偏航（推荐）</b>：Row 1 偏航 +30°、Row 2 偏航 +20°、Row 3 偏航 0°。上游与中游梯级偏转尾流，下游 Row 3 无需让利全力发电，全场总功率达 <b>10041 kW (+24.04%)</b>（贪心为局部搜索下限，真实上限或更高）。'
     }
   };
 
@@ -192,6 +192,9 @@
     document.getElementById('kRow3').textContent = Math.round(r3Pwr) + ' kW';
     document.getElementById('dRow3').textContent = '+' + ((r3Pwr - b3Pwr) / b3Pwr * 100).toFixed(1) + '% (+' + Math.round(r3Pwr - b3Pwr) + ' kW)';
     document.getElementById('dRow3').className = 'kpi-delta up';
+
+    // 行功率求和（对比柱图用真实逐机值求行和，不再用近似/硬编码）
+    const rsum = (arr, r) => arr.slice(r * 3, r * 3 + 3).reduce((a, x) => a + x, 0);
 
     // 1. 九机平面图（带风向流动箭头与偏航指示）
     const pmax = 1750, pmin = 400, tTraces = [];
@@ -272,21 +275,21 @@
       {
         type: 'bar', name: '第 1 排 (上游)',
         x: ['基准 0°', '统一偏航', '独立偏航'],
-        y: [b1Pwr, 1460 * 3, STRATS.independent.pwr[0] * 3],
+        y: [b1Pwr, rsum(STRATS.unified.pwr, 0), rsum(STRATS.independent.pwr, 0)],
         marker: { color: WF.rose },
         hovertemplate: '%{x} 第 1 排: %{y:.0f} kW<extra></extra>'
       },
       {
         type: 'bar', name: '第 2 排 (中游)',
         x: ['基准 0°', '统一偏航', '独立偏航'],
-        y: [b2Pwr, 920 * 3, STRATS.independent.pwr[3] * 3],
+        y: [b2Pwr, rsum(STRATS.unified.pwr, 1), rsum(STRATS.independent.pwr, 1)],
         marker: { color: WF.blueDeep },
         hovertemplate: '%{x} 第 2 排: %{y:.0f} kW<extra></extra>'
       },
       {
         type: 'bar', name: '第 3 排 (下游)',
         x: ['基准 0°', '统一偏航', '独立偏航'],
-        y: [b3Pwr, 660 * 3, STRATS.independent.pwr[6] * 3],
+        y: [b3Pwr, rsum(STRATS.unified.pwr, 2), rsum(STRATS.independent.pwr, 2)],
         marker: { color: WF.sageDeep },
         hovertemplate: '%{x} 第 3 排: %{y:.0f} kW<extra></extra>'
       }

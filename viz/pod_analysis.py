@@ -55,10 +55,6 @@ print(f"\n累计能量 95% 需要：{k_95} 个模态")
 print(f"累计能量 99% 需要：{k_99} 个模态")
 
 # ===== 第五步：读取原始网格坐标 =====
-sample_data = np.load(BASE / "fields" / df["case_id"].iloc[0] + ".npz"
-                      if False else
-                      BASE / "fields" / (df["case_id"].iloc[0] + ".npz"))
-# 修正写法
 sample_data = np.load(BASE / "fields" / f"{df['case_id'].iloc[0]}.npz")
 x_coord = sample_data["x"]   # shape: (128,)
 y_coord = sample_data["y"]   # shape: (64,)

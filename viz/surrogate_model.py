@@ -53,6 +53,10 @@ def predict_power_2d(yaw1, yaw2, U_inf=8.0):
     y2   = float(np.clip(yaw2, yaw_min, yaw_max))
     p1   = float(interp_p1([[U, y1]]).item())
     p2_0 = float(interp_p2([[U, y1]]).item())
+    # 注意：1.5 为早期工程启发式指数，FLORIS 原生偏航损失指数为 1.88
+    # （nrel_5MW turbine 定义 cosine_loss_exponent_yaw: 1.88）。
+    # 本函数仅被 Streamlit 留档页 10_power_tracking.py 使用；站点 JS 走 interp.js，不受影响。
+    # 留档口径不改行为，仅标注偏差（审计 2026-08-10）。
     cos_factor = np.cos(np.radians(y2)) ** 1.5
     p2 = p2_0 * cos_factor
 
