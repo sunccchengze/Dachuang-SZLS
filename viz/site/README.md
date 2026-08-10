@@ -15,7 +15,7 @@ python3 -m http.server 8000 --directory site
 
 | 字段 | 值 |
 |---|---|
-| 生产分支 | `arena/019fe42f-wind-farm-viz` |
+| 生产分支 | `arena/019feacd-wind-farm-viz`（2026-08-10 起；019fe42f 为历史基线，永不回写/并 main） |
 | 框架预设 | None |
 | 构建命令 | 留空 |
 | 构建输出目录 | `site` |

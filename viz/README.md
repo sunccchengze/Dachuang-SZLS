@@ -1,197 +1,107 @@
-# 风电场偏航优化可视化模块
+# 风电场偏航优化可视化系统
 
-西安交通大学 · 能源与动力工程学院 · 大创项目  
-负责人：孙承泽 · 可视化模块
-
----
-
-## 在线演示
-
-https://sunccchengze-wind-farm-viz-app-xxxxxx.streamlit.app
+西安交通大学 · 能源与动力工程学院 · 大学生创新训练项目
+可视化与交互系统模块负责人：孙承泽 ｜ 指导教师：李良星 副教授
+团队成员：田铭雨（CFD 仿真）· 袁夫达（降阶与代理模型）· 厉今飞（基线数据）· 洪祖名（优化与 PPO）
 
 ---
 
-## 页面功能
+## 两个形态
 
-| 页面 | 功能 | 标签 |
+| 形态 | 状态 | 入口 |
 |---|---|---|
-| 🏠 主页 | 项目入口与模块导航 | - |
-| 📊 尾流分析 | 交互式尾流云图 + 代理模型实时功率曲线 | CORE |
-| 🎯 优化结果 | 偏航前后对比图 + 速度差值图 + 动画 | CORE |
-| 📋 数据总览 | 各工况功率柱状图 + 统计表格 | ANALYSIS |
-| 🌐 3D尾流曲面 | 三维速度曲面，鼠标拖拽旋转 | 3D |
-| 🫧 3D体渲染 | 真实三维尾流低速泡 + 风机转子几何 | 3D |
-| 🔥 热力矩阵 | 偏航角 × 风速功率增益矩阵 | ANALYSIS |
-| ⚡ 优化求解器 | 任意风速输入，实时输出最优偏航角 | AI · OPT |
-| 🔬 POD降阶分析 | 本征正交分解，模态能量，重构误差 | POD · ROM |
-| ⚡ 3×3阵列优化 | 九台风机协同偏航，全场功率热力图 | ARRAY |
-| 🎛️ 功率需求跟踪 | 输入目标功率，自动搜索最优偏航角 | CONTROL |
+| 纯静态演示系统（`site/`，16 页） | **现役产品**，Cloudflare Pages 部署 | https://wind-farm-viz.pages.dev/ |
+| Streamlit 应用（`app.py` + `pages/`，10 页） | 留档本地工具，离线探索与答辩断网备胎 | 本地 `streamlit run app.py` |
 
----
+静态站零后端：数据经构建脚本注入 `assets/data*.js`，浏览器内双线性插值（`assets/js/interp.js`），Plotly.js / three.js 出图。
 
-## 文件结构
+## 静态站页面（16 页）
 
-```
-Python001/
-├── app.py                      # 主页入口
-├── surrogate_model.py          # 二维插值代理模型（开学后替换为神经网络）
-├── pod_analysis.py             # POD分解脚本（生成pod_results/）
-├── generate_data.py            # 单风速数据生成（cases.csv + fields/）
-├── generate_multiwind_data.py  # 多风速数据生成（cases_multi.csv）
-├── generate_3d_data.py         # 三维流场数据生成（fields_3d/）
-├── generate_array_data.py      # 3×3阵列数据生成（cases_array.csv）
-├── export_gif.py               # 动画导出脚本
-├── cases.csv                   # 单风速工况数据（8 m/s，13个偏航角）
-├── cases_multi.csv             # 多风速工况数据（6/8/10/12 m/s × 13）
-├── cases_array.csv             # 3×3阵列工况数据（13个偏航角）
-├── optimizer_result.json       # 优化器推荐结果
-├── wake_animation.gif          # 偏航角扫描动画
-├── requirements.txt            # 依赖库列表
-├── fields/                     # 单风速流场文件（128×64）
-├── fields_3d/                  # 三维流场文件（9层高度）
-├── pod_results/                # POD分解结果
-└── pages/
-    ├── 1_wake.py
-    ├── 2_optimization.py
-    ├── 3_overview.py
-    ├── 4_3d_surface.py
-    ├── 5_3d_volume.py
-    ├── 6_heatmap.py
-    ├── 7_solver.py
-    ├── 8_pod.py
-    ├── 9_array.py
-    └── 10_power_tracking.py
-```
+| 页面 | 文件 | 一句话 |
+|---|---|---|
+| 主页 | `index.html` | 项目入口、KPI、偏航原理图 |
+| 尾流分析 | `wake.html` | 偏航角滑块联动尾流云图与功率 |
+| 优化结果 | `optimization.html` | 0° vs +25° 对比，含速度场与功率分解 |
+| 优化求解器 | `solver.html` | 任意风速实时搜索最优偏航角，算法开销对比表（实测） |
+| Dashboard | `dashboard.html` | 数据-物理-控制一屏总控 |
+| 3D 风电场 | `3d_farm.html` | 九机 three.js 场景，转子旋转与尾流偏转 |
+| 3D 尾流曲面 | `3d_surface.html` | 三维速度曲面 |
+| 3D 体渲染 | `3d_volume.html` | 尾流低速泡等值面 |
+| 热力矩阵 | `heatmap.html` | 偏航角 × 风速增益矩阵 |
+| 风玫瑰与 AEP | `windrose.html` | 12 风向实扫描收益，AEP 等权假设显式声明 |
+| 数据总览 | `overview.html` | 全工况表与分解曲线 |
+| POD 降阶 | `pod.html` | 模态能量 76.4% / 21.6%，前 2 阶累计 98.0%（97.97%） |
+| 3×3 阵列优化 | `array.html` | 统一 +14.87% / 逐排贪心 +24.04% |
+| 功率需求跟踪 | `power_tracking.html` | 目标功率反求偏航角 |
+| 模型精度 | `model.html` | XGBoost 图源级佐证（仓内复现资产待补） |
+| 统一数据接口 | `interface.html` | 三组数据契约与接入状态 |
 
----
-
-## 数据接口规范
-
-### 仿真组提供：`cases.csv`
-
-| 字段 | 类型 | 单位 | 说明 |
-|---|---|---|---|
-| case_id | str | - | 工况编号，格式 case_0001 |
-| U_inf | float | m/s | 来流风速 |
-| yaw_1 | float | ° | 上游风机偏航角 |
-| yaw_2 | float | ° | 下游风机偏航角 |
-| power_1 | float | kW | 上游风机功率 |
-| power_2 | float | kW | 下游风机功率 |
-
-### 仿真组提供：`fields/case_XXXX.npz`
-
-| 变量 | 形状 | 单位 | 说明 |
-|---|---|---|---|
-| x | (128,) | m | 顺风方向坐标 |
-| y | (64,) | m | 横向坐标 |
-| u | (64, 128) | m/s | 轮毂高度水平截面风速 |
-
-> ⚠️ 速度场请存绝对风速（m/s），不要归一化  
-> ⚠️ 网格尺寸固定为 128×64，如需更改请提前告知
-
-### 仿真组提供：`fields_3d/yaw_±XX.npz`
-
-| 变量 | 形状 | 单位 | 说明 |
-|---|---|---|---|
-| x | (64,) | m | 顺风方向坐标 |
-| y | (32,) | m | 横向坐标 |
-| z | (9,) | m | 高度坐标（20~180m） |
-| u | (9, 32, 64) | m/s | 三维速度场 |
-
-### 控制组提供：`optimizer_result.json`
-
-```json
-{
-  "wind_speed": 8.0,
-  "original_yaw": 0,
-  "recommended_yaw": 25,
-  "power_before": 2190.4,
-  "power_after": 2368.4,
-  "power_gain_pct": 8.13
-}
-```
-
-### 控制组提供：功率需求跟踪函数接口
-
-```python
-def find_yaw_for_target(target_power, U_inf):
-    """
-    输入：
-        target_power : float，电网目标功率需求 (kW)
-        U_inf        : float，当前来流风速 (m/s)
-    输出：
-        best_yaw     : float，推荐偏航角 (°)
-        actual_power : float，对应实际总功率 (kW)
-        error_pct    : float，跟踪误差百分比 (%)
-    """
-    ...
-    return best_yaw, actual_power, error_pct
-```
-
-将此函数放入 `surrogate_model.py` 覆盖同名函数，`10_power_tracking.py` 无需修改。
-
-### AI组提供：神经网络代理模型接口
-
-```python
-def predict_power(yaw_angle, U_inf):
-    """
-    输入：偏航角（度），风速（m/s）
-    输出：(p1, p2)，单位 kW
-    """
-    ...
-    return p1, p2
-```
-
-将此函数放入 `surrogate_model.py` 覆盖同名函数，所有页面自动使用新模型。
-
----
-
-## 本地运行方法
+## 快速开始
 
 ```bash
+# 静态站本地预览(零依赖)
+python3 -m http.server 8000 --directory site
+
+# Streamlit 留档工具
 pip install -r requirements.txt
-cd Python001
 streamlit run app.py
 ```
 
-## 重新生成所有数据
+## 数据管道
 
 ```bash
-python generate_data.py            # 单风速数据
-python generate_multiwind_data.py  # 多风速数据
-python generate_3d_data.py         # 三维流场数据
-python generate_array_data.py      # 3×3阵列数据
-python pod_analysis.py             # POD分解
-python export_gif.py               # 动画
+python generate_data.py             # 两台串列 8 m/s × 13 偏航 → cases.csv + fields/
+python generate_multiwind_data.py   # 4 风速 × 13 偏航 → cases_multi.csv
+python generate_3d_data.py          # 5 偏航 × 9 高度层 → fields_3d/
+python generate_array_data.py       # 3×3 阵列统一偏航 → cases_array.csv
+python generate_array_independent.py# 阵列逐排贪心优化 → array_independent_result.json
+python generate_windrose_data.py    # 12 风向 × 4 风速 × 13 偏航 → cases_windrose*.csv
+python pod_analysis.py              # POD/SVD 分解 → pod_results/
+python site/build_data.py           # csv/json → site/assets/data.js(纯标准库)
+python site/build_3d_data.py        # npz → site/assets/data_3d.js
+python site/check_contract.py       # 契约自检(部署前必跑,退出码非 0 禁部署)
+python site/benchmark_solver.py     # solver 页算法对比表复跑口径
 ```
 
----
+## 数据契约（三组接口，字段形状不可变更）
 
-## 替换真实数据方法
+### 仿真组：`cases.csv` / `fields/case_XXXX.npz` / `fields_3d/yaw_±XX.npz`
 
-1. 将仿真组的 `cases.csv` 覆盖本地文件
-2. 将流场文件放入 `fields/`，命名格式保持 `case_XXXX.npz`
-3. 将控制组的 `optimizer_result.json` 覆盖本地文件
-4. 重新运行 `streamlit run app.py`
+| 变量 | 形状 | 单位 | 说明 |
+|---|---|---|---|
+| x / y | (128,) / (64,) | m | 顺风 / 横向坐标 |
+| u | (64, 128) | m/s | 轮毂高度水平截面风速（绝对风速，不归一化） |
+| 3D 版 | x(64,) y(32,) z(9,)，u(9,32,64) | m/s | 20~180 m 九层 |
 
-**无需修改任何代码。**
+### 控制组：`optimizer_result.json` 与功率跟踪函数
 
----
+`find_yaw_for_target(target_power, U_inf) -> (best_yaw, actual_power, error_pct)`，放入 `surrogate_model.py` 覆盖同名函数即可被留档页自动调用；静态站等价契约见下。
 
-## 当前数据说明（FLORIS模拟数据）
+### AI 组：`predict_power`
 
-| 参数 | 数值 |
+- Python（留档）：`predict_power(yaw_angle, U_inf) -> (p1, p2)` kW
+- JS（静态站 `assets/js/interp.js`）：`predict_power(yaw, U) -> {p1, p2, ptot, outOfRange, reasons}`，可信域 6~12 m/s、±30°，越界自动提示
+
+## 当前数据口径（2026-08-10 审计定版）
+
+| 项 | 口径 |
 |---|---|
-| 风机型号 | NREL 5MW 基准风机 |
-| 额定功率 | 5000 kW |
-| 轮毂高度 | 90 m |
-| 转子直径 | 126 m |
-| 尾流模型 | GCH（Gauss-Curl Hybrid） |
-| 单风速工况 | 8 m/s，13个偏航角（-30°~+30°，步长5°） |
-| 多风速工况 | 6/8/10/12 m/s × 13个偏航角，共52条 |
-| 三维工况 | 5个偏航角 × 9个高度层（20~180m） |
-| 阵列工况 | 3×3布局，13个上游偏航角 |
-| 两台最优偏航角 | +25°，功率提升 8.1% |
-| 阵列最优偏航角 | +30°，功率提升 14.9% |
-```
+| 仿真来源 | FLORIS 4.6.6 默认配置：GCH（gauss 速度/偏转 + 二次转向 + 偏航附加恢复 + 横向速度） |
+| 风机 | NREL 5MW（额定 5 MW @ 11.4 m/s，轮毂 90 m，转子标称 126 m） |
+| 两台串列 | 间距 5D，8 m/s，TI 6%：最优 +25°，全场 +8.13%（本地复现偏差 < 0.01 kW） |
+| 3×3 阵列 | 统一 +14.87%；逐排贪心 [30/20/0]° +24.04%（Row 均速 7.97 / 5.10 / 5.31 m/s） |
+| POD | 前 2 阶累计 97.97%（模态 0 偶极子 76.4%，模态 1 恢复 21.6%） |
+| 风玫瑰 | 仅 270° 正对扇区有收益；等权 ΔAEP +0.51%，西风 30% 示例 +1.97% |
+| 待复现 | PPO 跟踪指标（0 B 占位权重）、XGBoost 精度（图源在仓、资产待补） |
 
+每页顶部有数据状态条；全部数字的可信口径见 `.learnings/AUDIT_20260810.md`（审计台账）。
+
+## 依赖
+
+`requirements.txt` 已锁定验证区间：Python 3.11（审计复核环境）与 3.13（开发机），FLORIS 钉死 4.6.6（API 敏感），其余给出已验证上下限。静态站 `site/` 不依赖任何 Python 包。
+
+## 仓库治理
+
+- 工作分支：`arena/019feacd-wind-farm-viz`（Cloudflare Pages 生产分支同此）；历史基线 `arena/019fe42f-wind-farm-viz`；**永不 merge 到 `main`**。
+- 交接与计划：`HANDOFF.md`、`14_DAYS_MASTER_PLAN.md`、`.learnings/`（更正/错误/特性/审计四类记忆）。
+- 提交约定：小步、单主题、每个 diff 可追溯到实证来源；任何数字改动必须附复算路径。
