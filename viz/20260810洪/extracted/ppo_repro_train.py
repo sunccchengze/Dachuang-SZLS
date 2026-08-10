@@ -31,7 +31,7 @@ DT = 0.1            # s/step（假设 1）
 HORIZON = 200       # 步/episode（=20 s）
 YAW_LIM = 30.0
 A_LIM = 5.0         # 动作域 ±5°（汇报契约）
-TARGET_LO, TARGET_HI = 0.35, 0.99   # × p_base（假设 2）
+TARGET_LO, TARGET_HI = 0.78, 0.98   # × p_base（物理可达域：yaw±30°下cos^1.88(30°)=0.763）
 R_SCALE = 0.01      # 假设 3（奖励整体缩放）
 ACTION_PEN = 0.05
 OBS_SCALE = np.array([10.0, 30.0, 5000.0, 5000.0])   # 假设 4

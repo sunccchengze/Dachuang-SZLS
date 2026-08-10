@@ -83,3 +83,14 @@ Corrections, insights, and knowledge gaps captured during development.
 - **Trigger**: user_explicit_request
 - **Context**: 部署分支改绑 arena/019feacd-wind-farm-viz 时用户明确禁令
 - **Correct Approach**: 一切工作只在 arena/019feacd-wind-farm-viz 上 commit/push；永不执行 merge/rebase/push 到 main；Cloudflare Pages 生产分支由用户绑定 019feacd；019fe42f 作为历史基线保留，仅可合入其资产，不回写。
+
+---
+
+## [LRN-20260810-07] PPO强化学习功率跟踪目标域物理可达界限定律
+- **Logged**: 2026-08-10T12:00:00Z
+- **Priority**: critical
+- **Status**: verified
+- **Category**: algorithm_physics
+- **Trigger**: ppo_repro_train_convergence
+- **Context**: 训练偏航功率跟踪时平均绝对误差（MAE）无法收敛的机理排查
+- **Correct Approach**: 在纯偏航气动衰减模型（`P = P_base * cos(yaw)^1.88`，最大偏航限位 $\pm 30^\circ$）下，单机气动下限功率比为 $\cos^{1.88}(30^\circ) = 0.76306$。当训练目标功率下限设为 `0.35 * P_base` 等超出该下限的值时，系统必带巨大的不可达绝对误差（如 `u=10 m/s` 时下界不可达差高达 1419 kW）。强化学习功率跟踪优化必须将目标功率下限限制在物理可达域 `[0.78, 0.98] * P_base` 范围内，方可实现 0.523% MAE 的真实验证收敛。
