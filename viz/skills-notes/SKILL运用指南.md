@@ -158,3 +158,14 @@ $$\text{PRD 功能需求} \xrightarrow{\text{Refero DESIGN.md (设计约束)}} \
 
 ### 10.1 强制调用规则
 任何网页改动、CSS 优化、图表渲染、PPT 布局设计前，必须调用 `ui-ux-pro-max` 规则库进行预审，严格执行 7 项 Pre-Delivery 检查清单，从根本上杜绝“AI 网站廉价感”。
+
+---
+
+## 11. 免费域名与独立站部署 (DigitalPlat FreeDomain)
+
+装载模块：`技能库&准则/free-domain-service/`
+实战指南：`技能库&准则/free-domain-service/免费域名与CloudflarePages绑定实战指南.md`
+上游项目：`DigitalPlatDev/FreeDomain` (支持 `.dpdns.org` / `.qzz.io` 等多后缀与自定义 NS 委托)
+
+### 11.1 核心用途
+为科研静态站 `site/`（原默认 `https://wind-farm-viz.pages.dev/`）提供免费独立域名（如 `https://wind-farm-viz.dpdns.org/`），无缝绑定 Cloudflare Pages 与免费 SSL 证书。
