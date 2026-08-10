@@ -15,11 +15,18 @@
     20.0,
     0.0
   ],
+  "row2_30_yaws": [
+    30.0,
+    30.0,
+    0.0
+  ],
   "power_none": 8095.15,
   "power_unified": 9299.05,
+  "power_row2_30": 9934.99,
   "power_independent": 10041.46,
   "unified_yaw": 30.0,
   "gain_unified_pct": 14.87,
+  "gain_row2_30_pct": 22.72,
   "gain_independent_pct": 24.04,
   "turbine_powers_none": [
     1753.95,
@@ -53,5 +60,16 @@
     708.31,
     723.16,
     716.27
+  ],
+  "turbine_powers_row2_30": [
+    1339.86,
+    1339.86,
+    1339.86,
+    766.27,
+    790.73,
+    797.98,
+    1171.26,
+    1194.07,
+    1195.11
   ]
 }

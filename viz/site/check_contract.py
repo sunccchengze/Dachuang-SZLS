@@ -192,13 +192,13 @@ def check_scalars(d):
                 err(f"opt 缺字段 {k}")
     ao = d.get("array_opt")
     if ao:
-        for k in ("power_none", "power_unified", "power_independent", "greedy_yaws",
-                  "turbine_powers_none", "turbine_powers_unified", "turbine_powers_independent"):
+        for k in ("power_none", "power_unified", "power_row2_30", "power_independent", "greedy_yaws",
+                  "turbine_powers_none", "turbine_powers_unified", "turbine_powers_row2_30", "turbine_powers_independent"):
             if k not in ao:
                 err(f"array_opt 缺字段 {k}")
         if "greedy_yaws" in ao and len(ao["greedy_yaws"]) != 9:
             err("array_opt.greedy_yaws 应为 9 个偏航角")
-        for pk in ("turbine_powers_none", "turbine_powers_unified", "turbine_powers_independent"):
+        for pk in ("turbine_powers_none", "turbine_powers_unified", "turbine_powers_row2_30", "turbine_powers_independent"):
             arr = ao.get(pk)
             if isinstance(arr, list):
                 if len(arr) != 9:

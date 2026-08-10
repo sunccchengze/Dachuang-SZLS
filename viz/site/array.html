@@ -22,7 +22,7 @@
 
 <section class="wrap pg-hero">
   <h1>⚡ 3×3 阵列协同偏航优化</h1>
-  <p>九台风机多机协同：基准 8095 kW → 统一偏航 9299 kW (+14.9%) → 独立偏航 10041 kW (+24.0%)</p>
+  <p>九台风机多机协同：基准 8095 kW → 第一排偏航 9299 kW (+14.9%) → 前两排偏航 9935 kW (+22.7%) → 独立贪心 10041 kW (+24.0%)</p>
 </section>
 
 <main class="wrap">
@@ -33,7 +33,8 @@
         <span style="font-weight:700;color:var(--txt)">控制策略切换：</span>
         <div class="strategy-seg" id="stratSeg">
           <button data-strat="none">基准 0° (无协同)</button>
-          <button data-strat="unified">统一偏航 (+30°)</button>
+          <button data-strat="unified">第一排偏航 (+30°)</button>
+          <button data-strat="row2_30">前两排偏航 (+30°)</button>
           <button data-strat="independent" class="active">独立贪心偏航 (推荐)</button>
         </div>
       </div>
@@ -136,15 +137,26 @@
       desc: '• <b>基准 0° 控制</b>：所有风机正对来流。上游 Row 1 满发（1754 kW/台），但强尾流直接冲刷 Row 2（437 kW/台）和 Row 3（508 kW/台），全场总功率仅 <b>8095 kW</b>。'
     },
     unified: {
-      name: '统一偏航 (+30°)',
+      name: '第一排偏航 (+30°)',
       total: A.power_unified,
       gain: A.gain_unified_pct,
       yaws: [30, 30, 30, 0, 0, 0, 0, 0, 0],
       pwr: A.turbine_powers_unified,
-      badge: '统一协同 · 增益 +14.87%',
+      badge: '第一排协同 · 增益 +14.87%',
       badgeBg: 'rgba(107,140,174,0.15)',
       badgeCol: 'var(--blue-deep)',
-      desc: '• <b>统一偏航控制</b>：仅最上游一排（Row 1）统一偏航 +30°，中后排保持 0° 迎风。Row 1 三台让利偏转尾流（1340 kW/台），中游 Row 2 回升至 1023~1058 kW/台，全场总功率提升至 <b>9299 kW (+14.87%)</b>。'
+      desc: '• <b>第一排偏航控制</b>：最上游一排（Row 1）统一偏航 +30°，中后排保持 0° 迎风。Row 1 三台让利偏转尾流（1340 kW/台），中游 Row 2 回升至 1023~1058 kW/台，全场总功率提升至 <b>9299 kW (+14.87%)</b>。'
+    },
+    row2_30: {
+      name: '前两排偏航 (+30°)',
+      total: A.power_row2_30,
+      gain: A.gain_row2_30_pct,
+      yaws: [30, 30, 30, 30, 30, 30, 0, 0, 0],
+      pwr: A.turbine_powers_row2_30,
+      badge: '双排接力偏转 · 增益 +22.72%',
+      badgeBg: 'rgba(107,140,174,0.15)',
+      badgeCol: 'var(--blue-deep)',
+      desc: '• <b>前两排接力偏航（+30° / +30° / 0°）</b>：第一排和第二排全部偏航 +30°，第三排保持 0°。Row 2 继续主动偏转尾流虽让自身单机微降至 766~798 kW/台，却为下游清洗出顺畅流道，使 Row 3 单机骤升至 <b>1171~1195 kW</b>，全场总功率升至 <b>9935 kW (+22.72%)</b>。'
     },
     independent: {
       name: '独立贪心偏航 (推荐)',
@@ -267,29 +279,29 @@
     pr('arrBar', [
       {
         type: 'bar', name: '全场总功率',
-        x: ['基准 0°', '统一偏航', '独立偏航'],
-        y: [A.power_none, A.power_unified, A.power_independent],
-        marker: { color: [WF.sub, WF.blue, WF.sageDeep] },
+        x: ['基准 0°', '第一排偏航', '前两排偏航', '独立贪心'],
+        y: [A.power_none, A.power_unified, A.power_row2_30, A.power_independent],
+        marker: { color: [WF.sub, WF.blue, WF.blueDeep, WF.sageDeep] },
         hovertemplate: '%{x} 全场总功率: %{y:.0f} kW<extra></extra>'
       },
       {
         type: 'bar', name: '第 1 排 (上游)',
-        x: ['基准 0°', '统一偏航', '独立偏航'],
-        y: [b1Pwr, rsum(STRATS.unified.pwr, 0), rsum(STRATS.independent.pwr, 0)],
+        x: ['基准 0°', '第一排偏航', '前两排偏航', '独立贪心'],
+        y: [b1Pwr, rsum(STRATS.unified.pwr, 0), rsum(STRATS.row2_30.pwr, 0), rsum(STRATS.independent.pwr, 0)],
         marker: { color: WF.rose },
         hovertemplate: '%{x} 第 1 排: %{y:.0f} kW<extra></extra>'
       },
       {
         type: 'bar', name: '第 2 排 (中游)',
-        x: ['基准 0°', '统一偏航', '独立偏航'],
-        y: [b2Pwr, rsum(STRATS.unified.pwr, 1), rsum(STRATS.independent.pwr, 1)],
+        x: ['基准 0°', '第一排偏航', '前两排偏航', '独立贪心'],
+        y: [b2Pwr, rsum(STRATS.unified.pwr, 1), rsum(STRATS.row2_30.pwr, 1), rsum(STRATS.independent.pwr, 1)],
         marker: { color: WF.blueDeep },
         hovertemplate: '%{x} 第 2 排: %{y:.0f} kW<extra></extra>'
       },
       {
         type: 'bar', name: '第 3 排 (下游)',
-        x: ['基准 0°', '统一偏航', '独立偏航'],
-        y: [b3Pwr, rsum(STRATS.unified.pwr, 2), rsum(STRATS.independent.pwr, 2)],
+        x: ['基准 0°', '第一排偏航', '前两排偏航', '独立贪心'],
+        y: [b3Pwr, rsum(STRATS.unified.pwr, 2), rsum(STRATS.row2_30.pwr, 2), rsum(STRATS.independent.pwr, 2)],
         marker: { color: WF.sageDeep },
         hovertemplate: '%{x} 第 3 排: %{y:.0f} kW<extra></extra>'
       }
