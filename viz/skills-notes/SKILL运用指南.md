@@ -128,3 +128,22 @@ $$\text{PRD 功能需求} \xrightarrow{\text{Refero DESIGN.md (设计约束)}} \
 1. **Harness 优先**：任何质量问题优先从上下文组织、工具契约与验证门禁找解法；
 2. **代码即工具**：复杂流场计算与图表生成一律使用 Python 脚本作为现场动态生成的即时工具，执行后即时验证；
 3. **上下文预算严控**：避免无关长文本膨胀，关键数据一律走结构化制品契约（`.npz` / `.json` / `DESIGN.md`）。
+
+---
+
+## 9. Codex 10 大科研全流程工作流 (小葛 AI / Nature Skills)
+
+装载模块：`技能库&准则/codex-research-workflow/`
+核心手册：`技能库&准则/codex-research-workflow/CODEX_10大科研工作流全景实战手册.md`
+
+### 9.1 10 大阶段技能路由表
+1. **01 选题**：`scientific-brainstorming`
+2. **02 检索**：`nature-academic-search`
+3. **03 综述**：`nature-reader` / `nature-literature-pipeline`
+4. **04 统筹**：`academic-research-suite`
+5. **05 统计**：`nature-statistics`
+6. **06 绘图**：`nature-figure`
+7. **07 写作**：`nature-writing`
+8. **08 润色**：`nature-polishing`
+9. **09 投稿/答辩**：`nature-reviewer` / `nature-response` / `nature-data`
+10. **10 汇报**：`nature-paper2ppt`
