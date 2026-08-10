@@ -115,3 +115,16 @@ $$\text{PRD 功能需求} \xrightarrow{\text{Refero DESIGN.md (设计约束)}} \
 - **工业级规则库**：阿里万级开发者海量验证的缺陷检测规则（空指针/死代码/资源泄漏/浮点相等/安全注入/并发竞争）；
 - **定制规则合并**：自动合并 `.opencodereview/rule.json` 针对本项目的 Python 流体力学计算、JS WebGL 渲染与 HTML 莫兰迪规范；
 - **红队审查集成**：作为多 Agent 架构中代码交付的硬性验收门禁。
+
+---
+
+## 8. 现代 AI Agent 全栈工程 (李博杰体系)
+
+装载模块：`技能库&准则/ai-agent-engineering/`
+大师入驻：`技能库&准则/nuwa-distilled/bojie-li-perspective/` (【李博杰】· 现代 AI Agent 架构宗师)
+核心原理：$\text{Agent} = \text{LLM} + \text{上下文} + \text{工具}$
+
+### 8.1 核心实践要求
+1. **Harness 优先**：任何质量问题优先从上下文组织、工具契约与验证门禁找解法；
+2. **代码即工具**：复杂流场计算与图表生成一律使用 Python 脚本作为现场动态生成的即时工具，执行后即时验证；
+3. **上下文预算严控**：避免无关长文本膨胀，关键数据一律走结构化制品契约（`.npz` / `.json` / `DESIGN.md`）。
