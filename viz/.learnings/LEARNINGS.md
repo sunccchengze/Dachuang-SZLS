@@ -1,34 +1,65 @@
-# 🧠 LEARNINGS.md — 孙承泽大创项目核心认知与经验记忆
+# Learnings
 
-> **记忆体系**：三层记忆系统（工作记忆 / 情景判例记忆 / 语义长期知识）
-> **项目**：西安交通大学大学生创新训练项目 · 风电场偏航优化可视化平台（指导教师：李良星 副教授）
+Corrections, insights, and knowledge gaps captured during development.
 
----
-
-## 一、 用户画像与交互风格偏好 (User Profile & Preferences)
-1. **身份背景**：孙承泽，低年级本科生，项目总负责人兼可视化与交互模块负责人。团队 4 位高年级队友（田铭雨、袁夫达、厉今飞、洪祖名）。
-2. **极佳审美标准**：
-   - 绝不接受粗糙刺眼的深海军蓝或通用圆角悬浮卡片；
-   - 极度偏好**纯正莫兰迪工科典雅风（米白底色 `#F8F6F0` + 柔和雾蓝 `#5B84B1` + 鼠尾草绿 `#6F8761`）**；
-   - 网页必须保留**旋转风机动态背景视频（`bg.mp4`）与高透毛玻璃遮罩（`media.css`）**；
-   - 大标题必须应用**学术宋体-简 (Songti SC)**。
-3. **交付物硬性要求**：
-   - **王牌 PPT**：瑞士国际主义高密度工科排版（Swiss Grid），严格 1.3 倍行距，零 AI 模板味（绝无 Emoji，绝无悬浮圆角白框，绝无彩色圆圈伪风机），必须包含真实 2D FLORIS 流场云图、Nature 规范三线表与阶梯能量瀑布柱状图；
-   - **Photoshop 图元**：300 DPI 印刷级分辨率，RGB 模式，严格 5 分层组结构；
-   - **交互平台 (`site/`)**：纯静态边缘渲染，零后端依赖，完美运行于 Cloudflare Pages。
+**Categories**: correction | insight | knowledge_gap | best_practice
 
 ---
 
-## 二、 核心物理机理与实验金标准 (Ground Truth Physics)
-1. **双机偏航避让**：
-   - 自然对风 0°：T1 = 1754 kW, T2 = 436 kW, Total = 2190 kW
-   - 最优偏航 +25°（上游倾斜 `/`，法向 $\nwarrow$，尾流向右上/侧方偏转 $\nearrow$）：T1 = 1459 kW (-16.8%), T2 = 909 kW (+108.4%), Total = 2368 kW (**全场净增 +8.13% / +178 kW**)
-2. **3×3 九机阵列阶梯协同偏航**：
-   - 基准 0°：全场 8095.15 kW（后排深陷重度尾流叠加，风速仅 3.6 m/s）
-   - 统一上游偏航（Row 1: 30°, Row 2&3: 0°）：9299.05 kW (+14.87%)
-   - **独立贪心偏航（Row 1: 30°, Row 2: 20°, Row 3: 0°）**：**10041.46 kW (全场净增 +24.04% / +1946.31 kW)**
-     - Row 1 (上游 3 台)：4020 kW（让利 -23.6%，开启全场避让通道）
-     - Row 2 (中游 3 台)：2787 kW（回升 +112.9%，二次导流借道穿行）
-     - Row 3 (下游 3 台)：3234 kW（倍增 +112.5%，迎风清洁高速满发）
-3. **POD/SVD 流场本征降阶**：
-   - 8192 维空间网格，前 2 阶模态累积能量占比 **98.1%**（模态 0 占 82.4% 为反对称偏转偶极子；模态 1 占 15.7% 为顺风尾流恢复），计算耗时从数分钟降至 $<0.5\text{ ms}$。
+## [LRN-20260810-01] 网页视觉基线与莫兰迪设计规范
+- **Logged**: 2026-08-10T06:40:00Z
+- **Priority**: critical
+- **Status**: verified
+- **Category**: best_practice
+- **Trigger**: user_feedback
+- **Context**: 静态站 `site/` 的视觉基调与用户审美偏好
+- **What Happened**: 探索过程中曾发生配色偏离（改写为暗色海军蓝），破坏了原版的莫兰迪浅色与动态视频背景，被用户严厉纠偏并完全回滚。
+- **Correct Approach**:
+  1. 静态站 `site/` 视觉状态永久以 commit `70c398e` 为黄金基准；
+  2. 保持纯正莫兰迪工科米白底（`#F8F6F0`）、旋转风机背景视频（`bg.mp4`）与高透毛玻璃遮罩（`media.css`）；
+  3. 大标题统一采用学术宋体-简 (Songti SC)，所有 3D 页面（`3d_farm.html`, `3d_surface.html`, `3d_volume.html`）保持原有 Plotly 数据流正常运转。
+
+---
+
+## [LRN-20260810-02] 孙承泽团队角色与定位精确校准
+- **Logged**: 2026-08-10T06:50:00Z
+- **Priority**: critical
+- **Status**: verified
+- **Category**: correction
+- **Trigger**: user_correction
+- **Context**: 大创项目成员角色确权
+- **What Happened**: 助手在总结中曾误称孙承泽为“项目总负责人”。
+- **Correct Approach**:
+  1. 孙承泽是大创项目中的组员，具体负责**“可视化与交互系统（Visualization & Interactive System）模块”**；
+  2. 指导教师为李良星副教授，其他高年级队友分工为：田铭雨（CFD 流场）、袁夫达（插值代理模型）、厉今飞（基线实验与工况）、洪祖名（优化算法与 PPO 强化学习）；
+  3. 严禁任何跨越事实的角色臆断。
+
+---
+
+## [LRN-20260810-03] 技能学习与吸收协议 (GitHub First Protocol)
+- **Logged**: 2026-08-10T07:00:00Z
+- **Priority**: high
+- **Status**: verified
+- **Category**: best_practice
+- **Trigger**: user_correction
+- **Context**: 技能库扩充与工具链建设
+- **What Happened**: 面对用户提到的新技能时，曾出现未深入检索 GitHub 原生高 Star 仓库就自行推断定义的现象。
+- **Correct Approach**:
+  1. 面对用户给出的任何技能或框架（如 `self-improving-agent`, `agent-memory`, `open-code-review`），**第一步必须在 GitHub 上检索对应的高 Star 权威开源仓库**；
+  2. 下载、分析其真实源码（代码、Prompt、Hooks、References），严格按照上游规范吸收；
+  3. 若在 GitHub 无法检索到开源实现，必须向用户汇报，在获得用户明确许可后方可自行定制。
+
+---
+
+## [LRN-20260810-04] 工科路演与答辩 PPT“零 AI 味”标准
+- **Logged**: 2026-08-10T04:20:00Z
+- **Priority**: high
+- **Status**: verified
+- **Category**: best_practice
+- **Trigger**: user_feedback
+- **Context**: 王牌答辩幻灯片制作
+- **What Happened**: 初版 PPT 采用了通用圆角卡片、Emoji 装饰与彩色气泡伪风机，被用户指出 AI 模板味极重。
+- **Correct Approach**:
+  1. 严格遵循瑞士国际主义工科排版（Swiss Grid），1.3 倍行距，零 Emoji；
+  2. 必须嵌入由 FLORIS / Matplotlib 生成的真实 2D 流场云图、Nature 标准三线表与阶梯能量瀑布柱状图；
+  3. 风机必须绘制真实偏航倾斜叶轮面（$\gamma_1=+30^\circ$ 倾斜实线段）。

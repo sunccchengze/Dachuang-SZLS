@@ -1,32 +1,35 @@
-# ⚠️ ERRORS.md — 判例式失败记忆与红线禁区 (Precedent Negative Memory)
+# Errors
 
-> **核心原则**：将每一次踩坑与用户批评提炼为永久不可逾越的红线（Negative Guardrails），任何后继 Session 的 Agent 必须严格回避。
-
----
-
-## 判例 1：误改网页配色与破坏成熟 3D 数据体系 (Critical Severity)
-- **事件回溯**：在执行重构时，私自将成熟的莫兰迪浅色风格改写为 Deep Navy 深海军蓝，破坏了原本的 `media.css` 视频背景、`home.css` 故事线以及 `3d_farm.html` / `3d_surface.html` 的 Plotly 数据渲染体系。
-- **用户原话**：“非常糟糕，远比我之前的差……配色也乱了，版式也乱了，3D也不显示了，彻底废了。全部恢复！”
-- **永久红线**：
-  1. **严禁私自推翻 `site/` 的成熟页面**，任何对 `site/` 的修改必须保持莫兰迪浅色基调（`#F8F6F0`）、视频背景和原有 3D 渲染数据结构；
-  2. 网页基线状态永远以 commit `70c398e` 为准，未经明确许可绝不进行破坏性重写。
+Command failures, integration errors, and critical precedent rollbacks.
 
 ---
 
-## 判例 2：PPT 制作出现“AI 模板味 (AI Slop)” (High Severity)
-- **事件回溯**：初版单页 PPT 生成了 3 个白色悬浮圆角卡片、Emoji 装饰符（📊, 🔥, ⚙️）以及卡通彩色圆圈充当风机。
-- **用户原话**：“你自己看一看，我觉得你这个ai味和昨天一样重。”
-- **永久红线**：
-  1. **严禁在工科汇报 PPT 中使用任何 Emoji**；
-  2. **严禁使用悬浮圆角矩形卡片堆叠**；
-  3. **严禁用抽象彩色圆点代表风机**，风机必须绘制真实偏航倾斜叶轮面（如 `γ₁=+30°` 倾斜线段）；
-  4. 必须嵌入真实的 2D FLORIS 流场云图、Nature 规范三线表和阶梯能量瀑布柱状图，严格 1.3 倍行距。
+## [ERR-20260810-01] 擅自破坏成熟网页莫兰迪体系与 3D 数据流 (Critical)
+- **Logged**: 2026-08-10T06:30:00Z
+- **Severity**: critical
+- **Context**: 战役模块一执行过程中全站 CSS 激进重构
+- **Error Description**: 私自将 `site/` 篡改为深海军蓝（`#020617`），导致视频背景、莫兰迪色盘与 3D Plotly 页面失效。
+- **Root Cause**: 违反“外科手术式修改”原则，未以用户已验收的 commit `70c398e` 为前置基准。
+- **Resolution / Prevention**: 
+  1. 执行 `git checkout 70c398e -- site/` 完成 100% 字节级回滚；
+  2. 永久封禁对 `site/` 基础视觉与 3D 渲染架构的破坏性重构，任何改动必须保持莫兰迪浅色基调。
 
 ---
 
-## 判例 3：擅自弹出文件查看器与长篇道歉 (Medium Severity)
-- **事件回溯**：在完成生成后，频繁调用 `present_file` 弹出查看器打断用户，或在被纠正后长篇大论道歉。
-- **用户原话**：“不要再在文件查看器中打开了，我看不到。你在仓库存好，我 pull 下来本地自己看。”
-- **永久红线**：
-  1. **严禁随意使用 `present_file` 弹窗查看器**，所有生成文件（PPTX/PSD/代码）静默 commit 并 push 到 GitHub 分支，引导用户本地 `git pull`；
-  2. 遭遇批评时立即执行精准修复，保持冷静客观专业，绝不进行冗长谄媚道歉。
+## [ERR-20260810-02] 幻灯片生成出现通用 AI 卡片与 Emoji 泛滥 (High)
+- **Logged**: 2026-08-10T04:15:00Z
+- **Severity**: high
+- **Context**: `generate_ace_deck.py` 首次生成 `王牌PPT.pptx`
+- **Error Description**: 输出包含 3 个浮动白底圆角矩形、Emoji 符号（📊, ⚙️, 🔥）及彩色气泡圆圈风机。
+- **Root Cause**: 缺乏反 AI 模板前置拦截，落入大模型预训练概率的通用 SaaS UI 模板腔。
+- **Resolution / Prevention**: 接入 `Stop-slop.md`、`taste-skill` 与真实 FLORIS CFD 流场出图脚本，严格执行瑞士网格与三线表规范。
+
+---
+
+## [ERR-20260810-03] 未经 GitHub 检索私自臆断创建 Skill 机制 (High)
+- **Logged**: 2026-08-10T07:10:00Z
+- **Severity**: high
+- **Context**: 用户要求吸收图片中的 6 大记忆 Skill
+- **Error Description**: 助手未从 GitHub 上游权威开源仓库检索代码，而是自行编写简易骨架，被用户驳回。
+- **Root Cause**: 未严格执行“GitHub 权威仓库检索 $\to$ 真实源码分析 $\to$ 无法检索则主动汇报请示”的标准规程。
+- **Resolution / Prevention**: 驳回旧实现，完整 clone 并接入 `pskoett/self-improving-agent`、`Martian-Engineering/agent-memory` 与 `juanmacruzherrera/claude-layered-memory-architecture` 正式开源体系。
