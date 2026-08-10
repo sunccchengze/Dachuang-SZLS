@@ -31,4 +31,8 @@ class SimplifiedTurbineEnv:
         return self._get_obs(), reward, done, info
         
     def _get_obs(self):
-        return np.array([self.u_inf, self.yaw, self.target_p], dtype=np.float32)
+        # 契约对齐（汇报接口文档：State = [u_inf, yaw_current, power_current, target_power]）：
+        # 原包实现缺 power_current（3 维），2026-08-10 复现修复补齐为 4 维。
+        p_act = 0.5 * 1.225 * (np.pi * 63**2) * 0.45 * (self.u_inf**3) / 1000.0 \
+            * (np.cos(np.radians(self.yaw)) ** 1.88)
+        return np.array([self.u_inf, self.yaw, p_act, self.target_p], dtype=np.float32)
