@@ -102,3 +102,16 @@ $$\text{PRD 功能需求} \xrightarrow{\text{Refero DESIGN.md (设计约束)}} \
 - **工兵 Agent 组**：负责具体流场计算（FLORIS）、神经网络（PPO）、PSD 绘图、前端动效；
 - **独立红队审查 Agent（老塔/老芒/老贝）**：拥有交付前**一票否决权**，在提交前严格拦截 AI 模板味、物理违背与逻辑漏洞；
 - **Self-Harness 进化器**：将审查打回的失败样本自动提炼为 Harness 拦截规则。
+
+---
+
+## 7. 阿里开源 Open Code Review (AI 代码审查规范)
+
+装载模块：`技能库&准则/open-code-review/`
+配置文件：`.opencodereview/rule.json`
+执行命令：`ocr delegate preview` / `ocr rules check <path>` / `ocr review`
+
+### 7.1 核心价值
+- **工业级规则库**：阿里万级开发者海量验证的缺陷检测规则（空指针/死代码/资源泄漏/浮点相等/安全注入/并发竞争）；
+- **定制规则合并**：自动合并 `.opencodereview/rule.json` 针对本项目的 Python 流体力学计算、JS WebGL 渲染与 HTML 莫兰迪规范；
+- **红队审查集成**：作为多 Agent 架构中代码交付的硬性验收门禁。
