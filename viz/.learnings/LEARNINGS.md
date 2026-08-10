@@ -6,60 +6,59 @@ Corrections, insights, and knowledge gaps captured during development.
 
 ---
 
-## [LRN-20260810-01] 网页视觉基线与莫兰迪设计规范
-- **Logged**: 2026-08-10T06:40:00Z
+## [LRN-20260810-01] 必须在每条回复开头强制声明大师与技能 (Zero Exception)
+- **Logged**: 2026-08-10T08:00:00Z
 - **Priority**: critical
 - **Status**: verified
-- **Category**: best_practice
-- **Trigger**: user_feedback
-- **Context**: 静态站 `site/` 的视觉基调与用户审美偏好
-- **What Happened**: 探索过程中曾发生配色偏离（改写为暗色海军蓝），破坏了原版的莫兰迪浅色与动态视频背景，被用户严厉纠偏并完全回滚。
+- **Category**: correction
+- **Trigger**: user_correction
+- **Context**: 助手与用户的每一次对话交互
+- **What Happened**: 助手或新 Session 的 Agent 在回复时偶发遗漏了开篇的显式调用声明，遭到用户严厉指出。
 - **Correct Approach**:
-  1. 静态站 `site/` 视觉状态永久以 commit `70c398e` 为黄金基准；
-  2. 保持纯正莫兰迪工科米白底（`#F8F6F0`）、旋转风机背景视频（`bg.mp4`）与高透毛玻璃遮罩（`media.css`）；
-  3. 大标题统一采用学术宋体-简 (Songti SC)，所有 3D 页面（`3d_farm.html`, `3d_surface.html`, `3d_volume.html`）保持原有 Plotly 数据流正常运转。
+  1. **每条回复第一行必须以绝对一致的格式显式声明**：
+     ```markdown
+     ### 🛠️ 技能调用与执行声明
+     - **本次显式调度大师**：【大师名】（角色定位）
+     - **本次显式调用SKILL**：`技能路径`
+     ```
+  2. 严禁以任何理由省略该声明头。
 
 ---
 
-## [LRN-20260810-02] 孙承泽团队角色与定位精确校准
+## [LRN-20260810-02] 战役进度客观实事求是，严禁虚报“已完成”
+- **Logged**: 2026-08-10T08:05:00Z
+- **Priority**: critical
+- **Status**: verified
+- **Category**: correction
+- **Trigger**: user_correction
+- **Context**: 14 天四大战役推进进度核算
+- **What Happened**: 助手轻率地向新 Session 传递了“战役一和战役二已完成”的虚假信息。事实是：战役一仅锁定了 70c398e 基准，真正的高阶优化尚未完成；战役二仅交付了讲义，承泽尚未展开系统互动通识学习。
+- **Correct Approach**:
+  1. **战役一 (Web 工作台)**：【进行中】（基线锁定 commit 70c398e，等待后续平稳优化）；
+  2. **战役二 (物理与算法通识)**：【进行中】（讲义就绪，等待承泽逐章互动吃透）；
+  3. **战役三 (PS 300DPI)**：【待开展】；
+  4. **战役四 (20页 PPT 与答辩)**：【待开展】；
+  5. 严禁任何夸大进度的浮夸宣称。
+
+---
+
+## [LRN-20260810-03] 孙承泽团队角色与定位精确校准
 - **Logged**: 2026-08-10T06:50:00Z
 - **Priority**: critical
 - **Status**: verified
 - **Category**: correction
 - **Trigger**: user_correction
 - **Context**: 大创项目成员角色确权
-- **What Happened**: 助手在总结中曾误称孙承泽为“项目总负责人”。
-- **Correct Approach**:
-  1. 孙承泽是大创项目中的组员，具体负责**“可视化与交互系统（Visualization & Interactive System）模块”**；
-  2. 指导教师为李良星副教授，其他高年级队友分工为：田铭雨（CFD 流场）、袁夫达（插值代理模型）、厉今飞（基线实验与工况）、洪祖名（优化算法与 PPO 强化学习）；
-  3. 严禁任何跨越事实的角色臆断。
+- **What Happened**: 孙承泽是大创项目中的组员，具体负责**“可视化与交互系统（Visualization & Interactive System）模块”**（非总负责人）。
+- **Correct Approach**: 指导教师为李良星副教授，其他队友为田铭雨（CFD）、袁夫达（代理模型）、厉今飞（基线）、洪祖名（PPO 优化）。
 
 ---
 
-## [LRN-20260810-03] 技能学习与吸收协议 (GitHub First Protocol)
-- **Logged**: 2026-08-10T07:00:00Z
-- **Priority**: high
-- **Status**: verified
-- **Category**: best_practice
-- **Trigger**: user_correction
-- **Context**: 技能库扩充与工具链建设
-- **What Happened**: 面对用户提到的新技能时，曾出现未深入检索 GitHub 原生高 Star 仓库就自行推断定义的现象。
-- **Correct Approach**:
-  1. 面对用户给出的任何技能或框架（如 `self-improving-agent`, `agent-memory`, `open-code-review`），**第一步必须在 GitHub 上检索对应的高 Star 权威开源仓库**；
-  2. 下载、分析其真实源码（代码、Prompt、Hooks、References），严格按照上游规范吸收；
-  3. 若在 GitHub 无法检索到开源实现，必须向用户汇报，在获得用户明确许可后方可自行定制。
-
----
-
-## [LRN-20260810-04] 工科路演与答辩 PPT“零 AI 味”标准
-- **Logged**: 2026-08-10T04:20:00Z
-- **Priority**: high
+## [LRN-20260810-04] 网页视觉状态永久以 70c398e 为黄金基准
+- **Logged**: 2026-08-10T06:40:00Z
+- **Priority**: critical
 - **Status**: verified
 - **Category**: best_practice
 - **Trigger**: user_feedback
-- **Context**: 王牌答辩幻灯片制作
-- **What Happened**: 初版 PPT 采用了通用圆角卡片、Emoji 装饰与彩色气泡伪风机，被用户指出 AI 模板味极重。
-- **Correct Approach**:
-  1. 严格遵循瑞士国际主义工科排版（Swiss Grid），1.3 倍行距，零 Emoji；
-  2. 必须嵌入由 FLORIS / Matplotlib 生成的真实 2D 流场云图、Nature 标准三线表与阶梯能量瀑布柱状图；
-  3. 风机必须绘制真实偏航倾斜叶轮面（$\gamma_1=+30^\circ$ 倾斜实线段）。
+- **Context**: 静态站 `site/` 的视觉基调
+- **Correct Approach**: 保持纯正莫兰迪米白底（`#F8F6F0`）、旋转风机背景视频（`bg.mp4`）、高透毛玻璃遮罩（`media.css`）与学术宋体-简 (Songti SC)。严禁篡改为深海军蓝。
