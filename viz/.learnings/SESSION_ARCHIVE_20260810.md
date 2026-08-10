@@ -69,4 +69,5 @@
 - 实测核心指标：稳态跟踪 MAE% = **0.523%** (<1.2%)，平均调节时间 = **0.944 s**，稳态零动作抖动（0°/step），真实收敛产物 `model/ppo_tracking_v3_seed42.pt`（55,420 字节）；
 - 统一接口页 `site/interface.html`、`README.md` 与 `HANDOFF.md` 全量同步闭环。
 - 3×3 阵列优化页面及契约新增第 4 策略「前两排接力偏航 (+30° / +30° / 0°)」卡片（`9935 kW / +22.72%`），形成气动让利阶梯对照矩阵。
-- 全站数据契约检查 `python3 site/check_contract.py` 100% 通过。
+- 全站 16 个静态子网页经过 `site/verify_all_pages.py` 端到端全景自动自检与 JS AST 扫描通过，并修正了零星 HTML 未编译 LaTeX 符号。
+- 启动了 8000 端口（0.0.0.0）在线预览服务，全域 `check_contract.py` 100% 通过。
