@@ -180,3 +180,17 @@ $$\text{PRD 功能需求} \xrightarrow{\text{Refero DESIGN.md (设计约束)}} \
 
 ### 12.1 核心价值
 通过本地 Cookie 映射与各平台专用 CLI（`bili-cli`、`xhs-cli`、`yt-dlp`），让 Agent 能够实时检索并读取国内全平台内容，作为风电行业动态与答辩素材的一手来源。
+
+---
+
+## 13. 6阶全栈智能体记忆系统 (Memory System)
+
+装载模块：`技能库&准则/memory-system/`
+记忆存储目录：`.learnings/`
+核心档案：
+- `.learnings/LEARNINGS.md`（用户偏好、莫兰迪色盘、物理金标准）
+- `.learnings/ERRORS.md`（判例式负向记忆：绝不改暗色、绝无Emoji/悬浮卡片、绝不弹窗）
+- `.learnings/FEATURE_REQUESTS.md`（四大战役攻坚任务表）
+
+### 13.1 跨 Session 接力铁律
+任何新会话的 Agent 必须在第一步检索 `.learnings/` 与 `HANDOFF.md`，实现 100% 风格、认知与行为约束的无缝继承。
