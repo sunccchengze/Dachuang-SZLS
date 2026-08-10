@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>3D 风电场 · 风电场偏航优化</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/farm.css">
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+             "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div>
+<div class="nav-links"><a href="index.html">首页</a><a href="wake.html">尾流</a><a href="optimization.html">优化</a><a href="overview.html">总览</a><a href="3d_surface.html">3D曲面</a><a href="3d_volume.html">3D体</a><a href="3d_farm.html" class="active">3D风场</a><a href="heatmap.html">热力矩阵</a><a href="solver.html">求解器</a><a href="pod.html">POD</a><a href="array.html">阵列</a><a href="power_tracking.html">功率跟踪</a><a href="dashboard.html">Dashboard</a><a href="windrose.html">风玫瑰</a><a href="model.html">模型精度</a><a href="interface.html">接口</a></div></div></nav>
+<section class="wrap pg-hero"><h1>🌀 3D 风电场</h1><p>九台风机协同偏航：转子实时旋转、半透明尾流随偏航偏转、按单机功率着色</p></section>
+<main class="wrap">
+  <div class="card farm-card">
+    <div class="farm-controls">
+      <div class="farm-seg" id="viewSeg">
+        <button data-view="schematic" class="active">3×3 示意</button>
+        <button data-view="real">真实流场（双机）</button>
+      </div>
+      <div id="modeSeg" class="farm-seg">
+        <button data-mode="none" class="active">基准 0°</button>
+        <button data-mode="unified">统一偏航</button>
+        <button data-mode="independent">独立偏航</button>
+      </div>
+      <div id="yawWrap" style="display:none;align-items:center;gap:8px">
+        <label>偏航角</label>
+        <select id="realYaw" style="width:90px"></select>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px">尾流透明度
+        <input type="range" id="wakeOpacity" min="0" max="0.8" step="0.05" value="0.35" style="width:110px">
+      </label>
+      <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="chkSpin" checked> 自动环绕</label>
+      <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="chkRotor" checked> 转子旋转</label>
+    </div>
+    <div class="farm-stage">
+      <canvas id="farm"></canvas>
+      <div class="farm-legend" id="farmLegend"></div>
+      <div class="farm-hint">拖拽旋转 · 滚轮缩放 · 右键平移</div>
+      <div id="farmLoad" class="farm-load">正在加载 3D 场景…</div>
+    </div>
+    <div class="farm-kpis" id="farmKpis"></div>
+    <div class="note" id="farmNote"><b>3×3 示意</b>：九机阵列与控制策略切换，工程尾流模型。切到 <b>真实流场（双机）</b>：基于 FLORIS 三维网格数据，渲染 <b>气动流线束、半透明磨砂流管与 2D/5D CFD 速度截面云图</b>，动态展示上游偏航如何让尾流避开下游机组并提升总功率。</div>
+  </div>
+</main>
+<footer class="wrap">孙承泽 · 可视化模块</footer>
+<script src="assets/data.js"></script>
+<script src="assets/data_3d_real.js"></script>
+<script type="module" src="assets/js/farm.js"></script>
+<script>
+// 模块加载完成后隐藏 loading
+window.addEventListener('load',()=>{const l=document.getElementById('farmLoad');if(l)setTimeout(()=>l.style.opacity='0',400);});
+</script>
+<script src="assets/js/nav.js"></script><script src="assets/js/bg-video.js"></script><script src="assets/js/data-source.js"></script>
+</body></html>

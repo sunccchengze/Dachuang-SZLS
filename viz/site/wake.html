@@ -2,36 +2,58 @@
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>尾流分析 · 风电场偏航优化</title>
 <link rel="stylesheet" href="css/style.css">
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+<link rel="stylesheet" href="css/wake.css">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script><script src="assets/js/plotly-theme.js"></script>
 </head>
 <body>
 <nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div>
-<div class="nav-links"><a href="index.html">首页</a><a href="wake.html" class="active">尾流</a><a href="optimization.html">优化</a><a href="overview.html">总览</a><a href="3d_surface.html">3D曲面</a><a href="3d_volume.html">3D体</a><a href="heatmap.html">热力矩阵</a><a href="solver.html">求解器</a><a href="pod.html">POD</a><a href="array.html">阵列</a><a href="power_tracking.html">功率跟踪</a><a href="dashboard.html">Dashboard</a><a href="windrose.html">风玫瑰</a><a href="model.html">模型精度</a><a href="interface.html">接口</a></div></div></nav>
-<section class="wrap pg-hero"><h1>📊 尾流分析</h1><p>交互式速度场云图，代理模型实时预测任意偏航角下的功率输出</p></section>
+<div class="nav-links"><a href="index.html">首页</a><a href="wake.html" class="active">尾流</a><a href="optimization.html">优化</a><a href="overview.html">总览</a><a href="3d_surface.html">3D曲面</a><a href="3d_volume.html">3D体</a><a href="3d_farm.html">3D风场</a><a href="heatmap.html">热力矩阵</a><a href="solver.html">求解器</a><a href="pod.html">POD</a><a href="array.html">阵列</a><a href="power_tracking.html">功率跟踪</a><a href="dashboard.html">Dashboard</a><a href="windrose.html">风玫瑰</a><a href="model.html">模型精度</a><a href="interface.html">接口</a></div></div></nav>
+<section class="wrap pg-hero"><h1>📊 尾流分析</h1><p>拖动偏航角，实时观察尾流偏转与上下游功率变化</p></section>
 <main class="wrap">
-  <!-- KPI row -->
-  <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
-    <div class="stat-card"><p class="stat-number" id="kP1">–</p><p class="stat-label">上游风机 P₁ (kW)</p></div>
-    <div class="stat-card"><p class="stat-number" id="kP2">–</p><p class="stat-label">下游风机 P₂ (kW)</p></div>
-    <div class="stat-card"><p class="stat-number" id="kPtot">–</p><p class="stat-label">总功率 (kW)</p></div>
-    <div class="stat-card"><p class="stat-number" id="kGain">–</p><p class="stat-label">相对基准增益</p></div>
+
+  <!-- 因果说明条 -->
+  <div class="cause-bar">
+    <span class="cb-label">原理</span>
+    <span class="cb-text">上游风机主动偏航，把低速尾流<b class="down">横向推开</b>，下游风机重新获得较高来流；上游功率<b class="down">略降</b>，下游功率<b class="up">回升</b>，全场总功率<b class="up">净增</b>。</span>
+    <span class="cb-pill" id="causePill" style="background:rgba(107,140,174,0.12);color:var(--blue-deep)">拖动滑块试试 →</span>
   </div>
-  <div class="grid2">
-    <!-- Flow field -->
-    <div class="card">
-      <div class="controls">
-        <label>偏航角 γ₁</label>
-        <input type="range" id="yawSlider" min="-30" max="30" value="0" step="5" style="width:200px">
-        <span id="yawLabel" style="font-size:14px;font-weight:700;color:var(--blue)">0°</span>
+
+  <!-- KPI -->
+  <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat-card"><p class="stat-number" id="kP1">–</p><p class="stat-label">上游风机 P₁ (kW)</p><p class="kpi-delta" id="dP1">基准 0°</p></div>
+    <div class="stat-card"><p class="stat-number" id="kP2">–</p><p class="stat-label">下游风机 P₂ (kW)</p><p class="kpi-delta" id="dP2">基准 0°</p></div>
+    <div class="stat-card"><p class="stat-number" id="kPtot">–</p><p class="stat-label">全场总功率 (kW)</p><p class="kpi-delta" id="dPtot">基准 0°</p></div>
+    <div class="stat-card"><p class="stat-number" id="kGain">–</p><p class="stat-label">相对基准增益</p><p class="kpi-delta flat" id="dOpt">最优 +25° · +8.1%</p></div>
+  </div>
+
+  <!-- 滑块控制 -->
+  <div class="card">
+    <div class="yaw-controls">
+      <label style="font-weight:700;color:var(--txt)">上游偏航角 γ₁</label>
+      <div class="yaw-slider-wrap">
+        <input type="range" id="yawSlider" min="-30" max="30" value="0" step="5" style="width:100%">
+        <span class="yaw-badge" id="yawBadge">0°</span>
       </div>
-      <div id="fieldPlot" class="plotly-container" style="height:420px"></div>
-      <div class="note">尾流速度场（FLORIS GCH 模型）。拖动偏航角滑块实时观察流场变化。下游机尾流随偏航偏移，是功率增益的来源。</div>
+      <div class="yaw-quick">
+        <button class="btn" id="btnZero">0° 基准</button>
+        <button class="btn" id="btnOpt">+25° 最优</button>
+        <button class="btn" id="btnPlay">▶ 自动扫描</button>
+      </div>
     </div>
-    <!-- Power curves -->
-    <div class="card">
-      <div id="powerPlot" class="plotly-container" style="height:210px"></div>
-      <div id="splitPlot" class="plotly-container" style="height:210px;margin-top:12px"></div>
-      <div class="note">上：总功率 vs 偏航角，红点为当前；下：P₁/P₂ 分解。代理模型 <code>predict_power(yaw, U)</code> 实时预测。</div>
+
+    <div class="grid2">
+      <div>
+        <div id="fieldPlot" class="plotly-container" style="height:420px"></div>
+        <div class="note">尾流速度场（FLORIS GCH，8 m/s）。暖色=高速来流，蓝色=低速尾流；偏航时尾流横向偏移。</div>
+        <div style="margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--bg2)">
+          <img src="assets/img/hero/wake_concept.jpg" style="width:100%;height:auto;display:block" alt="风电场偏航尾流概念示意">
+        </div>
+      </div>
+      <div>
+        <div id="powerPlot" class="plotly-container" style="height:210px"></div>
+        <div id="splitPlot" class="plotly-container" style="height:210px;margin-top:12px"></div>
+        <div class="note">上：总功率 vs 偏航角，金点=当前，绿点=最优；下：P₁/P₂ 分解，虚线=当前偏航。</div>
+      </div>
     </div>
   </div>
 </main>
@@ -40,84 +62,124 @@
 <script>
 (function(){
   const W=window.WIND_DATA, S=window.SURROGATE, D3=window.WIND_3D_DATA;
-  const m=W.multi;
-  const yawSlider=document.getElementById('yawSlider');
-  const yawLabel=document.getElementById('yawLabel');
+  const m=W.multi, i8=m.wind_speeds.indexOf(8);
+  const slider=document.getElementById('yawSlider'), badge=document.getElementById('yawBadge');
+  const optYaw = m.yaw_angles[m.ptot[i8].indexOf(Math.max(...m.ptot[i8]))];
+  document.getElementById('dOpt').textContent='最优 '+optYaw+'° · +8.1%';
 
-  // 找最近偏航角
-  function nearestYaw(v){return m.yaw_angles.reduce((p,c)=>Math.abs(c-v)<Math.abs(p-v)?c:p);}
+  let playTimer=null, playing=false;
+
+  function fmtDelta(cur,base){
+    const d=cur-base, pct=base>0?(100*d/base):0;
+    const sign=d>0?'+':'';
+    return {text:sign+Math.round(d)+' kW ('+sign+pct.toFixed(1)+'%)', up:d>0.5, down:d<-0.5};
+  }
+  function setDelta(el,cur,base){
+    const r=fmtDelta(cur,base);
+    el.textContent=r.text;
+    el.className='kpi-delta '+(r.up?'up':r.down?'down':'flat');
+  }
 
   function render(){
-    const yaw=parseInt(yawSlider.value);
-    yawLabel.textContent=yaw+'°';
+    const yaw=parseInt(slider.value);
+    badge.textContent=yaw+'°';
+    badge.classList.toggle('opt', yaw===optYaw);
     const pred=S.predict_power(yaw,8);
     const base=S.predict_power(0,8);
     const gain=((pred.ptot-base.ptot)/base.ptot*100);
+
     document.getElementById('kP1').textContent=Math.round(pred.p1);
     document.getElementById('kP2').textContent=Math.round(pred.p2);
     document.getElementById('kPtot').textContent=Math.round(pred.ptot);
-    document.getElementById('kGain').textContent=(gain>=0?'+':'')+gain.toFixed(1)+'%';
+    const gEl=document.getElementById('kGain');
+    gEl.textContent=(gain>=0?'+':'')+gain.toFixed(1)+'%';
+    gEl.style.color = gain>0.5 ? 'var(--sage-deep)' : gain<-0.5 ? 'var(--rose)' : 'var(--blue)';
+    setDelta(document.getElementById('dP1'),pred.p1,base.p1);
+    setDelta(document.getElementById('dP2'),pred.p2,base.p2);
+    setDelta(document.getElementById('dPtot'),pred.ptot,base.ptot);
 
-    // Flow field heatmap
+    // 因果条随状态变化
+    const pill=document.getElementById('causePill');
+    if(yaw===0){pill.textContent='当前 0°：尾流正对下游';pill.style.background='rgba(185,132,132,0.12)';pill.style.color='var(--rose)';}
+    else if(yaw===optYaw){pill.textContent='✓ 最优 '+yaw+'°：增益 +'+gain.toFixed(1)+'%';pill.style.background='rgba(138,161,122,0.18)';pill.style.color='var(--sage-deep)';}
+    else if(gain>0){pill.textContent='偏航 '+yaw+'°：增益 +'+gain.toFixed(1)+'%';pill.style.background='rgba(107,140,174,0.12)';pill.style.color='var(--blue-deep)';}
+    else{pill.textContent='偏航 '+yaw+'°：增益 '+gain.toFixed(1)+'%（已过最优）';pill.style.background='rgba(185,132,132,0.12)';pill.style.color='var(--rose)';}
+
+    // 云图
     const f2d=D3&&D3.fields_2d&&D3.fields_2d[String(yaw)];
+    const optVal=m.ptot[i8][m.yaw_angles.indexOf(optYaw)];
     if(f2d){
-      Plotly.newPlot('fieldPlot',[{
+      Plotly.react('fieldPlot',[{
         type:'heatmap',x:f2d.x,y:f2d.y,z:f2d.u,
-        colorscale:'RdBu_r',zmin:4,zmax:9,
+        colorscale:window.FieldSeq,zmin:4,zmax:9,
         colorbar:{title:{text:'m/s',side:'right'},thickness:12,len:0.8,x:1.02},
-        hovertemplate:'x: %{x:.0f}m  y: %{y:.0f}m  u: %{z:.2f} m/s<extra></extra>'
+        hovertemplate:'x:%{x:.0f}m y:%{y:.0f}m u:%{z:.2f} m/s<extra></extra>'
       },{
         type:'scatter',x:[0,630],y:[0,0],mode:'markers+text',
-        marker:{size:14,color:'#e2e8f0',symbol:'triangle-up',line:{color:'#1e3a6e',width:1.5}},
-        text:['  风机1(可调)','  风机2(固定0°)'],textposition:'middle right',
-        textfont:{size:11,color:'#e2e8f0'},showlegend:true,name:'风机位置'
+        marker:{size:14,color:[WF.lavender,WF.sage],symbol:'triangle-up',line:{color:WF.card,width:2}},
+        text:['  风机1 γ₁='+yaw+'°','  风机2 (0°)'],textposition:'middle right',
+        textfont:{size:11,color:WF.txt},showlegend:false
+      },{
+        // 尾流偏转方向箭头
+        type:'scatter',x:[700],y:[yaw*1.2],mode:'markers',
+        marker:{size:16,symbol:'arrow-right',color:WF.clay,line:{color:WF.card,width:1.5}},
+        showlegend:false,hoverinfo:'skip'
       }],{
-        xaxis:{title:'顺风方向 x (m)',color:'#94a3b8',gridcolor:'#1e293b'},
-        yaxis:{title:'横向 y (m)',color:'#94a3b8',gridcolor:'#1e293b'},
-        height:420,margin:{l:50,r:60,t:20,b:50},
-        paper_bgcolor:'#020617',plot_bgcolor:'#0b1220',font:{color:'#94a3b8'},
-        legend:{orientation:'h',y:-0.15,x:0,font:{size:10},bgcolor:'rgba(0,0,0,0)'}
-      },{responsive:true});
+        xaxis:{title:'顺风方向 x (m)'},
+        yaxis:{title:'横向 y (m)','range':[-300,300]},
+        height:420,margin:{l:50,r:60,t:20,b:50}
+      },{responsive:true,displayModeBar:'hover',modeBarButtonsToRemove:['lasso2d','select2d']});
     }
 
-    // Total power curve
-    const i8=m.wind_speeds.indexOf(8);
-    const optIdx=m.ptot[i8].indexOf(Math.max(...m.ptot[i8]));
-    Plotly.newPlot('powerPlot',[{
+    // 总功率曲线
+    Plotly.react('powerPlot',[{
       x:m.yaw_angles,y:m.ptot[i8],mode:'lines',name:'总功率',
-      line:{color:'#3b82f6',width:2.5},fill:'tozeroy',fillcolor:'rgba(96,165,250,0.06)'
+      line:{color:WF.blue,width:2.5},fill:'tozeroy',fillcolor:'rgba(107,140,174,0.10)'
     },{
-      x:[yaw],y:[pred.ptot],mode:'markers',name:'当前 '+yaw+'°',
-      marker:{size:14,color:'#93c5fd',line:{color:'#e2e8f0',width:2}}
+      x:[optYaw],y:[optVal],mode:'markers',name:'最优',
+      marker:{size:13,color:WF.sageDeep,symbol:'circle',line:{color:WF.card,width:2}}
+    },{
+      x:[yaw],y:[pred.ptot],mode:'markers+text',name:'当前',
+      marker:{size:14,color:WF.gold,line:{color:WF.card,width:2}},
+      text:['  '+yaw+'°'],textposition:'middle right',textfont:{size:11,color:WF.txt}
     }],{
-      xaxis:{title:'偏航角 (°)',color:'#94a3b8',gridcolor:'#1e293b'},
-      yaxis:{title:'总功率 (kW)',color:'#94a3b8',gridcolor:'#1e293b'},
-      height:210,margin:{l:50,r:15,t:10,b:40},
-      paper_bgcolor:'#020617',plot_bgcolor:'#0b1220',font:{color:'#94a3b8'},
-      showlegend:false,
-      annotations:[{x:m.yaw_angles[optIdx],y:m.ptot[i8][optIdx],text:'最优 '+m.yaw_angles[optIdx]+'°',
-        showarrow:true,arrowhead:2,arrowcolor:'#0891b2',font:{color:'#0891b2',size:11},ax:0,ay:-30}]
-    },{responsive:true});
+      xaxis:{title:'偏航角 (°)'},
+      yaxis:{title:'总功率 (kW)'},
+      height:210,margin:{l:50,r:15,t:10,b:40},showlegend:false
+    },{responsive:true,displayModeBar:false});
 
-    // P1/P2 split
-    Plotly.newPlot('splitPlot',[{
+    // P1/P2 分解
+    Plotly.react('splitPlot',[{
       x:m.yaw_angles,y:m.p1[i8],mode:'lines',name:'上游 P₁',
-      line:{color:'#6366f1',width:2}
+      line:{color:WF.lavender,width:2}
     },{
       x:m.yaw_angles,y:m.p2[i8],mode:'lines',name:'下游 P₂',
-      line:{color:'#3b82f6',width:2}
+      line:{color:WF.blue,width:2}
+    },{
+      x:[yaw,yaw],y:[0,Math.max(...m.p1[i8],...m.p2[i8])*1.05],mode:'lines',
+      line:{color:WF.gold,width:1.5,dash:'dot'},showlegend:false,hoverinfo:'skip'
     }],{
-      xaxis:{title:'偏航角 (°)',color:'#94a3b8',gridcolor:'#1e293b'},
-      yaxis:{title:'功率 (kW)',color:'#94a3b8',gridcolor:'#1e293b'},
+      xaxis:{title:'偏航角 (°)'},
+      yaxis:{title:'功率 (kW)'},
       height:210,margin:{l:50,r:15,t:10,b:40},
-      paper_bgcolor:'#020617',plot_bgcolor:'#0b1220',font:{color:'#94a3b8'},
-      legend:{orientation:'h',y:-0.35,x:0,font:{size:10},bgcolor:'rgba(0,0,0,0)'},
-      shapes:[{type:'line',x0:yaw,x1:yaw,y0:0,y1:1,yref:'paper',line:{color:'#93c5fd',width:1.5,dash:'dot'}}]
-    },{responsive:true});
+      legend:{orientation:'h',y:-0.35,x:0,font:{size:10}}
+    },{responsive:true,displayModeBar:false});
   }
 
-  yawSlider.oninput=render;
+  slider.oninput=render;
+  document.getElementById('btnZero').onclick=()=>{slider.value=0;render();};
+  document.getElementById('btnOpt').onclick=()=>{slider.value=optYaw;render();};
+  document.getElementById('btnPlay').onclick=function(){
+    if(playing){clearInterval(playTimer);playing=false;this.textContent='▶ 自动扫描';this.classList.remove('active');return;}
+    playing=true;this.textContent='⏸ 暂停扫描';this.classList.add('active');
+    playTimer=setInterval(()=>{
+      let v=parseInt(slider.value)+5; if(v>30)v=-30;
+      slider.value=v;render();
+    },400);
+  };
+
   render();
 })();
 </script>
-</body></html>
+<script src="assets/js/nav.js"></script>
+<script src="assets/js/bg-video.js"></script><script src="assets/js/data-source.js"></script></body></html>

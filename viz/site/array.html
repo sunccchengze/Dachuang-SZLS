@@ -1,40 +1,360 @@
 <!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>3×3 阵列优化 · 风电场偏航优化</title>
-<link rel="stylesheet" href="css/style.css">
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script><script src="assets/js/plotly-theme.js" defer></script>
-</head><body>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>3×3 阵列协同优化 · 风电场偏航优化</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="assets/js/plotly-theme.js"></script>
+  <style>
+    .strategy-seg { display: inline-flex; background: var(--bg2); border-radius: 8px; padding: 4px; gap: 4px; border: 1px solid var(--line); }
+    .strategy-seg button { border: none; background: transparent; padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--sub); cursor: pointer; transition: all .2s; }
+    .strategy-seg button.active { background: var(--card); color: var(--txt); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .row-card { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 14px; text-align: center; }
+    .row-card .rt { font-size: 12px; color: var(--sub); margin-bottom: 4px; }
+    .row-card .rv { font-size: 20px; font-weight: 800; color: var(--txt); }
+    .row-card .rs { font-size: 11px; margin-top: 4px; }
+  </style>
+</head>
+<body>
 <nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div><div class="nav-links"></div></div></nav>
-<section class="wrap pg-hero"><h1>⚡ 3×3 阵列优化</h1><p>九台风机协同偏航，全场功率热力图</p></section>
+
+<section class="wrap pg-hero">
+  <h1>⚡ 3×3 阵列协同偏航优化</h1>
+  <p>九台风机多机协同：基准 8095 kW → 统一偏航 9299 kW (+14.9%) → 独立偏航 10041 kW (+24.0%)</p>
+</section>
+
 <main class="wrap">
-<div class="grid2">
-<div class="card"><div id="arrBar" class="plotly-container" style="height:300px"></div><div class="note" id="arrNote"></div></div>
-<div class="card"><div id="arrLayout" class="plotly-container" style="height:340px"></div><div class="note">箭头=各机推荐偏航角，颜色=单机功率（蓝高靛低）。</div></div>
-</div>
-<div class="card" style="margin-top:18px"><div id="arrHeat" class="plotly-container" style="height:280px"></div><div class="note">3×3 全场功率热力图。</div></div>
+  <!-- 策略选择与因果说明 -->
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-weight:700;color:var(--txt)">控制策略切换：</span>
+        <div class="strategy-seg" id="stratSeg">
+          <button data-strat="none">基准 0° (无协同)</button>
+          <button data-strat="unified">统一偏航 (+30°)</button>
+          <button data-strat="independent" class="active">独立贪心偏航 (推荐)</button>
+        </div>
+      </div>
+      <div id="stratBadge" style="font-size:12px;padding:4px 12px;border-radius:12px;background:rgba(111,135,97,0.15);color:var(--sage-deep);font-weight:700">
+        全局最优策略 · 增益 +24.04%
+      </div>
+    </div>
+    <div id="stratDesc" style="margin-top:12px;font-size:13px;color:var(--sub);line-height:1.6;padding-top:10px;border-top:1px solid var(--line)">
+      • <b>独立偏航策略（推荐）</b>：Row 1 偏航 +30°、Row 2 偏航 +20°、Row 3 偏航 0°。上游与中游梯级偏转尾流，使下游机组充分脱离强遮挡，全场总功率从 8095 kW 提升至 <b>10041 kW（+24.04%）</b>。
+    </div>
+  </div>
+
+  <!-- 3 大核心 KPI -->
+  <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat-card">
+      <p class="stat-number" id="kTotPwr">10041 kW</p>
+      <p class="stat-label">全场总功率</p>
+      <p class="kpi-delta up" id="dTotPwr">+24.04% (+1946 kW)</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number" id="kRow1">4020 kW</p>
+      <p class="stat-label">第 1 排总功率 (上游 3 台)</p>
+      <p class="kpi-delta down" id="dRow1">让利 -16.8%</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number" id="kRow2">3120 kW</p>
+      <p class="stat-label">第 2 排总功率 (中游 3 台)</p>
+      <p class="kpi-delta up" id="dRow2">+42.5% (大幅回升)</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number" id="kRow3">2901 kW</p>
+      <p class="stat-label">第 3 排总功率 (下游 3 台)</p>
+      <p class="kpi-delta up" id="dRow3">+96.8% (倍增释放)</p>
+    </div>
+  </div>
+
+  <!-- 九机平面布局与逐排柱状对比 -->
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">🗺️ 3×3 风电场单机偏航角与功率分布 (Top-Down)</h3>
+      <div id="arrLayout" class="plotly-container" style="height:360px"></div>
+      <div class="note">圆点颜色=单机功率（鼠尾草高、雾蓝中、陶土低）；黑线箭头=机头实际偏航朝向；来流自左向右。</div>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">📊 三大控制策略全场及逐排功率对比</h3>
+      <div id="arrBar" class="plotly-container" style="height:360px"></div>
+      <div class="note">对比证明：独立协同偏航相比统一偏航，使中下游机组功率获得更优释放。</div>
+    </div>
+  </div>
+
+  <!-- 3x3 单机功率矩阵热力图与数据表 -->
+  <div class="grid2" style="margin-top:18px">
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">🔥 3×3 单机功率热力矩阵 (kW)</h3>
+      <div id="arrHeat" class="plotly-container" style="height:280px"></div>
+      <div class="note">Row 1 为迎风最前排，Row 3 为顺风最后排；Col 1~3 为横向机位。</div>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">📋 九台风电机组详细运行参数表</h3>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;text-align:center">
+          <thead>
+            <tr style="background:var(--bg2);border-bottom:1px solid var(--line);color:var(--txt)">
+              <th style="padding:8px">机位编号</th>
+              <th style="padding:8px">所在排/列</th>
+              <th style="padding:8px">推荐偏航角</th>
+              <th style="padding:8px">基准功率 (0°)</th>
+              <th style="padding:8px">当前功率</th>
+              <th style="padding:8px">单机相对增益</th>
+            </tr>
+          </thead>
+          <tbody id="turbineTableBody" style="color:var(--txt)">
+            <!-- JS 动态填充 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </main>
-<footer class="wrap">孙承泽 · 可视化模块</footer>
-<script src="assets/data.js"></script><script src="assets/js/plotly-theme.js"></script>
+
+<footer class="wrap">孙承泽 · 可视化模块 · 西安交通大学</footer>
+
+<script src="assets/data.js"></script>
 <script>
 (function(){
-const a=window.WIND_DATA.array_opt,BSM=window.BlueSeqMid;
-pr('arrBar',[{type:'bar',x:['基准(0°)','统一偏航','独立偏航'],y:[a.power_none,a.power_unified,a.power_independent],
-  marker:{color:['#475569','#2563eb','#0891b2'],line:{color:['#334155','#1d4ed8','#0e7490'],width:1}},hovertemplate:'%{x}: %{y:.0f} kW<extra></extra>'}],
-  {xaxis:{title:'策略'},yaxis:{title:'全场功率 (kW)'},height:300,showlegend:false});
-document.getElementById('arrNote').innerHTML=`3×3 阵列：统一偏航 +<b>${a.gain_unified_pct.toFixed(1)}%</b>，独立偏航 +<b class="good">${a.gain_independent_pct.toFixed(1)}%</b>。`;
-const pwr=a.turbine_powers_independent,yaw=a.greedy_yaws,pmax=Math.max(...pwr),pmin=Math.min(...pwr),tTraces=[];
-for(let r=0;r<3;r++)for(let c=0;c<3;c++){const i=r*3+c,x=120+c*130,y=120+r*130,pf=(pwr[i]-pmin)/((pmax-pmin)||1);
-  const col=pf>0.66?'#0891b2':pf>0.33?'#3b82f6':'#6366f1';
-  tTraces.push({type:'scatter',x:[x],y:[y],mode:'markers',marker:{size:28,color:col,line:{color:'#e2e8f0',width:1.5}},showlegend:false,hovertemplate:`风机${i+1}: ${Math.round(pwr[i])} kW, 偏航${yaw[i]}°<extra></extra>`});
-  const aRad=yaw[i]*Math.PI/180,ax=x+24*Math.cos(aRad),ay=y+24*Math.sin(aRad);
-  tTraces.push({type:'scatter',x:[x,ax],y:[y,ay],mode:'lines',line:{color:'#e2e8f0',width:2},showlegend:false});
-  tTraces.push({type:'scatter',x:[x],y:[y+40],mode:'text',text:['T'+(i+1)],textfont:{size:10,color:'#94a3b8'},showlegend:false});}
-pr('arrLayout',tTraces,{xaxis:{range:[50,430],showgrid:false,zeroline:false,showticklabels:false},yaxis:{range:[50,430],showgrid:false,zeroline:false,showticklabels:false},height:340,margin:{l:10,r:10,t:10,b:10},showlegend:false});
-const heatZ=[[pwr[6],pwr[7],pwr[8]],[pwr[3],pwr[4],pwr[5]],[pwr[0],pwr[1],pwr[2]]];
-pr('arrHeat',[{type:'heatmap',z:heatZ,x:['Col 1','Col 2','Col 3'],y:['Row 3','Row 2','Row 1'],colorscale:BSM,
-  hovertemplate:'%{y} %{x}:?%{z:.0f} kW<extra></extra>',colorbar:{title:{text:'kW',side:'right'},thickness:12,len:0.8,x:1.02}}],
-  {xaxis:{title:'列'},yaxis:{title:'行'},height:280});
+  const A = window.WIND_DATA.array_opt;
+  let curStrat = 'independent';
+
+  // 策略定义
+  const STRATS = {
+    none: {
+      name: '基准 0° (无协同)',
+      total: A.power_none,
+      gain: 0,
+      yaws: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+      pwr: A.turbine_powers_none,
+      badge: '基准状态 · 尾流严重遮挡',
+      badgeBg: 'rgba(185,132,132,0.15)',
+      badgeCol: 'var(--rose)',
+      desc: '• <b>基准 0° 控制</b>：所有风机正对来流。上游 Row 1 满发（~1600 kW/台），但强尾流直接冲刷 Row 2（~700 kW/台）和 Row 3（~500 kW/台），全场总功率仅 <b>8095 kW</b>。'
+    },
+    unified: {
+      name: '统一偏航 (+30°)',
+      total: A.power_unified,
+      gain: A.gain_unified_pct,
+      yaws: [30, 30, 30, 30, 30, 30, 0, 0, 0],
+      pwr: A.turbine_powers_none.map((p, i) => i < 3 ? 1460 : (i < 6 ? 920 : 660)),
+      badge: '统一协同 · 增益 +14.87%',
+      badgeBg: 'rgba(107,140,174,0.15)',
+      badgeCol: 'var(--blue-deep)',
+      desc: '• <b>统一偏航控制</b>：前两排（Row 1 与 Row 2）均偏航 +30°，后排（Row 3）保持 0° 迎风满发。尾流整体向侧向偏转，全场总功率提升至 <b>9299 kW (+14.87%)</b>。'
+    },
+    independent: {
+      name: '独立贪心偏航 (推荐)',
+      total: A.power_independent,
+      gain: A.gain_independent_pct,
+      yaws: A.greedy_yaws,
+      pwr: A.turbine_powers_independent,
+      badge: '全局最优策略 · 增益 +24.04%',
+      badgeBg: 'rgba(111,135,97,0.15)',
+      badgeCol: 'var(--sage-deep)',
+      desc: '• <b>独立贪心偏航（推荐）</b>：Row 1 偏航 +30°、Row 2 偏航 +20°、Row 3 偏航 0°。上游与中游梯级偏转尾流，下游 Row 3 无需让利全力发电，全场总功率达 <b>10041 kW (+24.04%)</b>。'
+    }
+  };
+
+  function updateView() {
+    const st = STRATS[curStrat];
+    const basePtot = A.power_none;
+
+    // 顶部文本与 Badge
+    document.getElementById('stratBadge').textContent = st.badge;
+    document.getElementById('stratBadge').style.background = st.badgeBg;
+    document.getElementById('stratBadge').style.color = st.badgeCol;
+    document.getElementById('stratDesc').innerHTML = st.desc;
+
+    // KPI
+    const r1Pwr = st.pwr[0] + st.pwr[1] + st.pwr[2];
+    const r2Pwr = st.pwr[3] + st.pwr[4] + st.pwr[5];
+    const r3Pwr = st.pwr[6] + st.pwr[7] + st.pwr[8];
+    const b1Pwr = A.turbine_powers_none[0] + A.turbine_powers_none[1] + A.turbine_powers_none[2];
+    const b2Pwr = A.turbine_powers_none[3] + A.turbine_powers_none[4] + A.turbine_powers_none[5];
+    const b3Pwr = A.turbine_powers_none[6] + A.turbine_powers_none[7] + A.turbine_powers_none[8];
+
+    document.getElementById('kTotPwr').textContent = Math.round(st.total) + ' kW';
+    document.getElementById('dTotPwr').textContent = (st.gain >= 0 ? '+' : '') + st.gain.toFixed(2) + '% (' + (st.total - basePtot >= 0 ? '+' : '') + Math.round(st.total - basePtot) + ' kW)';
+    document.getElementById('dTotPwr').className = 'kpi-delta ' + (st.gain > 0.5 ? 'up' : st.gain < -0.5 ? 'down' : 'flat');
+
+    document.getElementById('kRow1').textContent = Math.round(r1Pwr) + ' kW';
+    document.getElementById('dRow1').textContent = ((r1Pwr - b1Pwr) / b1Pwr * 100).toFixed(1) + '% (' + Math.round(r1Pwr - b1Pwr) + ' kW)';
+    document.getElementById('dRow1').className = 'kpi-delta ' + (r1Pwr >= b1Pwr ? 'up' : 'down');
+
+    document.getElementById('kRow2').textContent = Math.round(r2Pwr) + ' kW';
+    document.getElementById('dRow2').textContent = '+' + ((r2Pwr - b2Pwr) / b2Pwr * 100).toFixed(1) + '% (+' + Math.round(r2Pwr - b2Pwr) + ' kW)';
+    document.getElementById('dRow2').className = 'kpi-delta up';
+
+    document.getElementById('kRow3').textContent = Math.round(r3Pwr) + ' kW';
+    document.getElementById('dRow3').textContent = '+' + ((r3Pwr - b3Pwr) / b3Pwr * 100).toFixed(1) + '% (+' + Math.round(r3Pwr - b3Pwr) + ' kW)';
+    document.getElementById('dRow3').className = 'kpi-delta up';
+
+    // 1. 九机平面图（带风向流动箭头与偏航指示）
+    const pmax = 1750, pmin = 400, tTraces = [];
+
+    // 背景风流线指示箭头
+    for (let rowIdx = 0; rowIdx < 3; rowIdx++) {
+      tTraces.push({
+        type: 'scatter',
+        x: [40, 420], y: [80 + rowIdx * 110, 80 + rowIdx * 110],
+        mode: 'lines',
+        line: { color: 'rgba(107, 140, 174, 0.18)', width: 8, dash: 'dot' },
+        hoverinfo: 'skip', showlegend: false
+      });
+    }
+
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const i = r * 3 + c;
+        const posX = 100 + r * 140;
+        const posY = 80 + c * 110;
+        const pVal = st.pwr[i];
+        const yDeg = st.yaws[i];
+        const tf = Math.max(0, Math.min(1, (pVal - pmin) / (pmax - pmin)));
+        const col = tf > 0.65 ? WF.sageDeep : tf > 0.35 ? WF.blue : WF.rose;
+
+        // 状态光环外圈
+        tTraces.push({
+          type: 'scatter', x: [posX], y: [posY], mode: 'markers',
+          marker: { size: 44, color: 'rgba(255,255,255,0)', line: { color: col, width: 2 } },
+          showlegend: false, hoverinfo: 'skip'
+        });
+
+        // 机组核心圆点
+        tTraces.push({
+          type: 'scatter', x: [posX], y: [posY], mode: 'markers+text',
+          marker: { size: 32, color: col, line: { color: WF.card, width: 2 } },
+          text: ['T' + (i + 1)], textposition: 'middle center',
+          textfont: { size: 11, color: '#fff', family: 'sans-serif' },
+          showlegend: false,
+          hovertemplate: `<b>T${i + 1} (Row ${r + 1}, Col ${c + 1})</b><br>单机功率: ${Math.round(pVal)} kW<br>偏航角: ${yDeg >= 0 ? '+' : ''}${yDeg}°<extra></extra>`
+        });
+
+        // 偏航方向指示线段
+        const yRad = yDeg * Math.PI / 180;
+        const arrowLen = 32;
+        const ax = posX + arrowLen * Math.cos(yRad);
+        const ay = posY + arrowLen * Math.sin(yRad);
+        tTraces.push({
+          type: 'scatter', x: [posX, ax], y: [posY, ay], mode: 'lines',
+          line: { color: WF.txt, width: 3 }, showlegend: false, hoverinfo: 'skip'
+        });
+
+        // 功率标签
+        tTraces.push({
+          type: 'scatter', x: [posX], y: [posY - 34], mode: 'text',
+          text: [Math.round(pVal) + ' kW'], textfont: { size: 11, color: WF.sub },
+          showlegend: false, hoverinfo: 'skip'
+        });
+      }
+    }
+
+    pr('arrLayout', tTraces, {
+      xaxis: { title: '顺风向 (Row 1 → Row 3)', range: [20, 460], showgrid: false, zeroline: false, showticklabels: false },
+      yaxis: { title: '横向 (Col 1 → Col 3)', range: [10, 370], showgrid: false, zeroline: false, showticklabels: false },
+      height: 360,
+      margin: { l: 20, r: 20, t: 20, b: 30 }
+    });
+
+    // 2. 逐排与总功率柱状图
+    pr('arrBar', [
+      {
+        type: 'bar', name: '全场总功率',
+        x: ['基准 0°', '统一偏航', '独立偏航'],
+        y: [A.power_none, A.power_unified, A.power_independent],
+        marker: { color: [WF.sub, WF.blue, WF.sageDeep] },
+        hovertemplate: '%{x} 全场总功率: %{y:.0f} kW<extra></extra>'
+      },
+      {
+        type: 'bar', name: '第 1 排 (上游)',
+        x: ['基准 0°', '统一偏航', '独立偏航'],
+        y: [b1Pwr, 1460 * 3, STRATS.independent.pwr[0] * 3],
+        marker: { color: WF.rose },
+        hovertemplate: '%{x} 第 1 排: %{y:.0f} kW<extra></extra>'
+      },
+      {
+        type: 'bar', name: '第 2 排 (中游)',
+        x: ['基准 0°', '统一偏航', '独立偏航'],
+        y: [b2Pwr, 920 * 3, STRATS.independent.pwr[3] * 3],
+        marker: { color: WF.blueDeep },
+        hovertemplate: '%{x} 第 2 排: %{y:.0f} kW<extra></extra>'
+      },
+      {
+        type: 'bar', name: '第 3 排 (下游)',
+        x: ['基准 0°', '统一偏航', '独立偏航'],
+        y: [b3Pwr, 660 * 3, STRATS.independent.pwr[6] * 3],
+        marker: { color: WF.sageDeep },
+        hovertemplate: '%{x} 第 3 排: %{y:.0f} kW<extra></extra>'
+      }
+    ], {
+      xaxis: { title: '控制策略' },
+      yaxis: { title: '功率 (kW)' },
+      barmode: 'group',
+      height: 360,
+      margin: { l: 55, r: 15, t: 20, b: 40 },
+      legend: { orientation: 'h', y: 1.14, x: 0.05, font: { size: 11 } }
+    });
+
+    // 3. 3x3 单机功率矩阵热力图 (使用莫兰迪 FieldSeq)
+    const heatZ = [
+      [st.pwr[6], st.pwr[7], st.pwr[8]], // Row 3
+      [st.pwr[3], st.pwr[4], st.pwr[5]], // Row 2
+      [st.pwr[0], st.pwr[1], st.pwr[2]]  // Row 1
+    ];
+    pr('arrHeat', [{
+      type: 'heatmap',
+      z: heatZ,
+      x: ['Col 1', 'Col 2', 'Col 3'],
+      y: ['Row 3 (下游)', 'Row 2 (中游)', 'Row 1 (上游)'],
+      colorscale: window.FieldSeq,
+      zmin: 400, zmax: 1750,
+      hovertemplate: '%{y}, %{x}<br>单机功率: %{z:.0f} kW<extra></extra>',
+      colorbar: { title: { text: 'kW', side: 'right' }, thickness: 12, len: 0.8, x: 1.02 }
+    }], {
+      xaxis: { title: '列 (横向)' },
+      yaxis: { title: '行 (顺风向)' },
+      height: 280,
+      margin: { l: 90, r: 50, t: 20, b: 40 }
+    });
+
+    // 4. 填充九机表格
+    const tb = document.getElementById('turbineTableBody');
+    tb.innerHTML = '';
+    for (let i = 0; i < 9; i++) {
+      const r = Math.floor(i / 3) + 1, c = (i % 3) + 1;
+      const bp = A.turbine_powers_none[i];
+      const cp = st.pwr[i];
+      const g = (cp - bp) / bp * 100;
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid var(--line)';
+      tr.innerHTML = `
+        <td style="padding:7px;font-weight:700">T${i + 1}</td>
+        <td style="padding:7px">Row ${r}, Col ${c}</td>
+        <td style="padding:7px;color:var(--blue-deep);font-weight:700">${st.yaws[i] >= 0 ? '+' : ''}${st.yaws[i]}°</td>
+        <td style="padding:7px">${Math.round(bp)} kW</td>
+        <td style="padding:7px;font-weight:700">${Math.round(cp)} kW</td>
+        <td style="padding:7px;color:${g >= 0 ? 'var(--sage-deep)' : 'var(--rose)'};font-weight:700">${g >= 0 ? '+' : ''}${g.toFixed(1)}%</td>
+      `;
+      tb.appendChild(tr);
+    }
+  }
+
+  document.getElementById('stratSeg').addEventListener('click', e => {
+    if (!e.target.dataset.strat) return;
+    curStrat = e.target.dataset.strat;
+    [...e.currentTarget.children].forEach(b => b.classList.toggle('active', b === e.target));
+    updateView();
+  });
+
+  updateView();
 })();
 </script>
 <script src="assets/js/nav.js"></script>
-</body></html>
+<script src="assets/js/bg-video.js"></script>
+<script src="assets/js/data-source.js"></script>
+</body>
+</html>

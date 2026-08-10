@@ -94,6 +94,28 @@ out_path = os.path.join(BASE, "site", "assets", "data_3d.js")
 with open(out_path, "w") as f:
     f.write(js_content)
 
+# ---- 精简的真实三维流场（供 three.js 点云尾流使用）：只导出 fields_3d，降采样 ----
+real = {}
+d3dir = os.path.join(BASE, "fields_3d")
+if os.path.isdir(d3dir):
+    for fname in sorted(os.listdir(d3dir)):
+        if not fname.endswith(".npz"):
+            continue
+        d = np.load(os.path.join(d3dir, fname))
+        u = d["u"][:, ::2, ::2]  # 9 x 16 x 32
+        yaw = fname.replace("yaw_", "").replace(".npz", "")
+
+        def clean(v):
+            return None if not np.isfinite(v) else round(float(v), 3)
+        real[yaw] = {
+            "x": d["x"][::2].tolist(), "y": d["y"][::2].tolist(), "z": d["z"].tolist(),
+            "u": [[[clean(v) for v in row] for row in layer] for layer in u],
+        }
+    real_path = os.path.join(BASE, "site", "assets", "data_3d_real.js")
+    with open(real_path, "w") as f:
+        f.write("window.WIND_3D_REAL = " + json.dumps(real, separators=(",", ":")) + ";")
+    print(f"✅ 真实三维流场: {real_path} ({os.path.getsize(real_path)/1024:.0f} KB, {len(real)} 偏航角)")
+
 print(f"✅ 导出完成: {out_path}")
 print(f"   2D 流场工况: {len(fields_2d)}")
 print(f"   3D 流场工况: {len(fields_3d)}")

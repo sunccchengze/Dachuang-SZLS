@@ -1,13 +1,183 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>数据总览 · 风电场偏航优化</title><link rel="stylesheet" href="css/style.css"><script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script><script src="assets/js/plotly-theme.js" defer></script></head><body>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>系统总览 · 风电场偏航优化</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="assets/js/plotly-theme.js"></script>
+  <style>
+    .arch-flow { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .arch-node { flex: 1; min-width: 170px; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; text-align: center; }
+    .arch-node .nt { font-size: 13px; font-weight: 700; color: var(--txt); margin-bottom: 4px; }
+    .arch-node .nd { font-size: 11px; color: var(--sub); line-height: 1.5; }
+    .arch-arrow { color: var(--sub-soft); font-weight: 800; font-size: 18px; }
+  </style>
+</head>
+<body>
 <nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div><div class="nav-links"></div></div></nav>
-<section class="wrap pg-hero"><h1>📋 数据总览</h1><p>全工况功率柱状图、P₁/P₂ 分解曲线、原始数据表格</p></section>
-<main class="wrap"><div class="card"><div id="barPlot" class="plotly-container" style="height:320px"></div><div class="note">各风速下全场总功率（取偏航 0° 基准工况，kW）。</div></div>
-<div class="card"><div id="decompPlot" class="plotly-container" style="height:340px"></div><div class="note">U=8 m/s 时 P₁/P₂ 分解曲线。</div></div>
-<div class="card"><div style="max-height:340px;overflow:auto;background:var(--bg2);border-radius:12px;padding:12px;border:1px solid var(--line)"><table id="tbl" style="width:100%;border-collapse:collapse;font-size:12px"></table></div><div class="note">原始数据表格（cases.csv）。</div></div></main>
-<footer class="wrap">孙承泽 · 可视化模块</footer>
-<script src="assets/data.js"></script><script src="assets/js/plotly-theme.js"></script>
-<script>(function(){const W=window.WIND_DATA,m=W.multi;const us=m.wind_speeds,base=us.map(u=>{const i=m.wind_speeds.indexOf(u);return m.ptot[i][m.yaw_angles.indexOf(0)];});
-pr('barPlot',[{type:'bar',x:us.map(u=>u+' m/s'),y:base.map(v=>Math.round(v)),marker:{color:'#3b82f6',line:{color:'#2563eb',width:1}},hovertemplate:'%{x}: %{y} kW<extra></extra>'}],{xaxis:{title:'来流风速'},yaxis:{title:'总功率 (kW)'},height:320,margin:{l:55,r:20,t:5,b:45},showlegend:false});
-const i8=m.wind_speeds.indexOf(8);pr('decompPlot',[{x:m.yaw_angles,y:m.p1[i8],mode:'lines',name:'上游 P₁',line:{color:'#6366f1',width:2}},{x:m.yaw_angles,y:m.p2[i8],mode:'lines',name:'下游 P₂',line:{color:'#2563eb',width:2}},{x:m.yaw_angles,y:m.ptot[i8],mode:'lines',name:'总功率',line:{color:'#3b82f6',width:2.5}}],{xaxis:{title:'偏航角 (°)'},yaxis:{title:'功率 (kW)'},height:340});
-const s=W.single,t=document.getElementById("tbl");let h='<tr style="color:#93c5fd;font-weight:700;border-bottom:1px solid #1e293b"><th style="padding:6px 8px">偏航角</th><th>P₁</th><th>P₂</th><th>总功率</th></tr>';s.yaw_angles.forEach((y,k)=>{h+=`<tr style="color:#94a3b8;border-bottom:1px solid rgba(30,41,59,0.1)"><td style="padding:4px 8px">${y}°</td><td>${Math.round(s.p1[k])}</td><td>${Math.round(s.p2[k])}</td><td style="color:#e2e8f0;font-weight:600">${Math.round(s.ptot[k])}</td></tr>`;});t.innerHTML=h;})();</script>
-<script src="assets/js/nav.js"></script></body></html>
+
+<section class="wrap pg-hero">
+  <h1>📋 项目架构与数据总览</h1>
+  <p>大创项目全景技术路线、多风速工况基线与单机功率分解</p>
+</section>
+
+<main class="wrap">
+  <!-- 4 大核心 KPI 指标卡 -->
+  <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat-card">
+      <p class="stat-number">+8.13%</p>
+      <p class="stat-label">双机偏航最大增益 (8 m/s)</p>
+      <p class="kpi-delta up">2190 → 2368 kW</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number">+24.04%</p>
+      <p class="stat-label">3×3 阵列独立偏航增益</p>
+      <p class="kpi-delta up">8095 → 10041 kW</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number">> 0.9999</p>
+      <p class="stat-label">代理模型拟合决定系数 R²</p>
+      <p class="kpi-delta up">MAE &lt; 10.5 kW</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number">98.1%</p>
+      <p class="stat-label">POD 前 2 阶模态能量覆盖</p>
+      <p class="kpi-delta up">提速超 1000×</p>
+    </div>
+  </div>
+
+  <!-- 技术路线与模块交互架构图 -->
+  <div class="card" style="margin-bottom:18px">
+    <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">🗺️ 项目全景技术路线与模块交互架构</h3>
+    <div class="arch-flow">
+      <div class="arch-node">
+        <div class="nt">1. 物理流场建模</div>
+        <div class="nd">FLORIS 4.6.6 GCH<br>3D 尾流偏转与亏损模拟</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">
+        <div class="nt">2. 降阶与代理建模</div>
+        <div class="nd">POD 本征正交分解<br>XGBoost 高精度代理模型</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">
+        <div class="nt">3. 协同优化求解</div>
+        <div class="nd">SLSQP / 贪心独立偏航<br>全风速工况 $\gamma^*$ 求解</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node" style="border-color:var(--blue);background:rgba(107,140,174,0.06)">
+        <div class="nt" style="color:var(--blue-deep)">4. 交互可视化模块</div>
+        <div class="nd">3D 风电场 / 闭环看板<br>孙承泽负责（本系统）</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全工况柱状图与 P1/P2 分解曲线 -->
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">📊 全风速工况基准总功率分布 (6 / 8 / 10 / 12 m/s)</h3>
+      <div id="barPlot" class="plotly-container" style="height:320px"></div>
+      <div class="note">展示未偏航基准工况下全场总功率随风速非线性增长特征。</div>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">📈 额定风速 (8 m/s) 下 P₁/P₂ 功率分解与让利趋势</h3>
+      <div id="decompPlot" class="plotly-container" style="height:320px"></div>
+      <div class="note">上游 P₁ 功率随偏航单调下降（主动让利），下游 P₂ 随偏航显著回升。</div>
+    </div>
+  </div>
+
+  <!-- 原始数据表格 -->
+  <div class="card" style="margin-top:18px">
+    <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">📋 双机全工况功率响应数据集 (8 m/s, cases_multi)</h3>
+    <div style="max-height:280px;overflow-y:auto;border:1px solid var(--line);border-radius:6px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:center">
+        <thead style="position:sticky;top:0;background:var(--bg2);border-bottom:1px solid var(--line)">
+          <tr style="color:var(--txt)">
+            <th style="padding:8px">偏航角 γ₁</th>
+            <th style="padding:8px">上游功率 P₁ (kW)</th>
+            <th style="padding:8px">下游功率 P₂ (kW)</th>
+            <th style="padding:8px">全场总功率 P_tot (kW)</th>
+            <th style="padding:8px">相对 0° 增益</th>
+            <th style="padding:8px">工况状态</th>
+          </tr>
+        </thead>
+        <tbody id="tblBody" style="color:var(--txt)"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<footer class="wrap">孙承泽 · 可视化模块 · 西安交通大学</footer>
+
+<script src="assets/data.js"></script>
+<script>
+(function(){
+  const W = window.WIND_DATA, m = W.multi;
+  const us = m.wind_speeds;
+  const basePowers = us.map(u => {
+    const i = m.wind_speeds.indexOf(u);
+    return m.ptot[i][m.yaw_angles.indexOf(0)];
+  });
+
+  // 1. 全风速柱状图
+  pr('barPlot', [{
+    type: 'bar',
+    x: us.map(u => u + ' m/s'),
+    y: basePowers.map(v => Math.round(v)),
+    marker: { color: WF.blue },
+    hovertemplate: '%{x} 基准总功率: %{y} kW<extra></extra>'
+  }], {
+    xaxis: { title: '来流风速' },
+    yaxis: { title: '总功率 (kW)' },
+    height: 320,
+    margin: { l: 55, r: 20, t: 15, b: 40 },
+    showlegend: false
+  });
+
+  // 2. 8 m/s 分解曲线
+  const i8 = m.wind_speeds.indexOf(8);
+  pr('decompPlot', [
+    { x: m.yaw_angles, y: m.ptot[i8], mode: 'lines', name: '全场总功率', line: { color: WF.blue, width: 2.8 }, fill: 'tozeroy', fillcolor: 'rgba(107,140,174,0.08)' },
+    { x: m.yaw_angles, y: m.p1[i8], mode: 'lines', name: '上游 P₁ (让利)', line: { color: WF.rose, width: 2, dash: 'dot' } },
+    { x: m.yaw_angles, y: m.p2[i8], mode: 'lines', name: '下游 P₂ (回升)', line: { color: WF.sageDeep, width: 2, dash: 'dash' } }
+  ], {
+    xaxis: { title: '偏航角 γ₁ (°)' },
+    yaxis: { title: '功率 (kW)' },
+    height: 320,
+    margin: { l: 55, r: 15, t: 15, b: 40 },
+    legend: { orientation: 'h', y: 1.14, x: 0.05 }
+  });
+
+  // 3. 填充表格
+  const tbody = document.getElementById("tblBody");
+  const p0 = m.ptot[i8][m.yaw_angles.indexOf(0)];
+  m.yaw_angles.forEach((y, k) => {
+    const p1 = m.p1[i8][k], p2 = m.p2[i8][k], ptot = m.ptot[i8][k];
+    const gain = (ptot - p0) / p0 * 100;
+    const isOpt = y === 25;
+    const isBase = y === 0;
+
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--line)';
+    if (isOpt) tr.style.background = 'rgba(111,135,97,0.1)';
+    if (isBase) tr.style.background = 'rgba(185,132,132,0.06)';
+
+    tr.innerHTML = `
+      <td style="padding:7px;font-weight:700">${y >= 0 ? '+' : ''}${y}°</td>
+      <td style="padding:7px;color:var(--rose)">${Math.round(p1)}</td>
+      <td style="padding:7px;color:var(--sage-deep)">${Math.round(p2)}</td>
+      <td style="padding:7px;font-weight:700">${Math.round(ptot)}</td>
+      <td style="padding:7px;font-weight:700;color:${gain > 0.5 ? 'var(--sage-deep)' : gain < -0.5 ? 'var(--rose)' : 'var(--sub)'}">${gain >= 0 ? '+' : ''}${gain.toFixed(2)}%</td>
+      <td style="padding:7px;font-size:11px">${isOpt ? '<span style="color:var(--sage-deep);font-weight:700">★ 推荐最优</span>' : isBase ? '<span style="color:var(--rose)">0° 基准</span>' : '常规偏航'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+})();
+</script>
+<script src="assets/js/nav.js"></script>
+<script src="assets/js/bg-video.js"></script>
+<script src="assets/js/data-source.js"></script>
+</body>
+</html>

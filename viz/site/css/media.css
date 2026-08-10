@@ -1,0 +1,47 @@
+/* ===== 全站媒体：视频背景板 + 图片占位 ===== */
+
+/* 视频背景板：固定整屏，上层加蒙版，内容滚动在其之上 */
+.bg-video{position:fixed;inset:0;z-index:-2;overflow:hidden;background:var(--bg)}
+.bg-video video{width:100%;height:100%;object-fit:cover;display:block}
+/* 蒙版：莫兰迪高不透明度柔光蒙版，进一步提升对比度与文字清晰度 */
+.bg-video-mask{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(241,237,230,0.88) 0%,rgba(241,237,230,0.94) 100%);
+  opacity:0;transition:opacity .8s ease}
+body.has-video .bg-video-mask{opacity:1}
+/* 有视频时，卡片采用高保真磨砂玻璃质感，通透且字体极其清晰 */
+body.has-video .card,
+body.has-video .stat-card,
+body.has-video .dk-card,
+body.has-video .page-card{background:rgba(251,250,246,0.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+body.has-video nav{background:rgba(241,237,230,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+body.has-video .wf-banner{background:rgba(241,237,230,0.90)}
+
+/* 视频占位说明（没放视频时显示） */
+.bg-video-hint{position:fixed;right:14px;bottom:12px;z-index:0;
+  font-size:11px;color:var(--sub-soft);background:rgba(251,250,246,0.7);
+  border:1px dashed var(--line-strong);border-radius:8px;padding:4px 10px;
+  backdrop-filter:blur(6px)}
+
+/* 图片占位：队友给图之前的统一虚线框，带图标和说明文字 */
+.img-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;min-height:200px;border:1.5px dashed var(--line-strong);border-radius:var(--radius);
+  background:repeating-linear-gradient(45deg,rgba(107,140,174,0.04),rgba(107,140,174,0.04) 10px,rgba(107,140,174,0.07) 10px,rgba(107,140,174,0.07) 20px);
+  color:var(--sub-soft);text-align:center;padding:24px}
+.img-placeholder .ip-icon{font-size:30px;opacity:.6}
+.img-placeholder .ip-text{font-size:12.5px;line-height:1.6;max-width:320px}
+.img-placeholder .ip-text b{color:var(--sub);font-weight:700}
+.img-placeholder.tall{min-height:360px}
+.img-placeholder.short{min-height:120px}
+
+/* hero 媒体位（首页/子页 hero 可放图片或视频） */
+.hero-media{margin:24px auto 0;max-width:900px;border-radius:var(--radius);overflow:hidden;
+  border:1px solid var(--line);box-shadow:var(--glow)}
+.hero-media img,.hero-media video{width:100%;display:block}
+
+/* 页头封面图（子页面顶部 banner 位） */
+.page-cover{height:180px;border-radius:0 0 var(--radius) var(--radius);overflow:hidden;
+  position:relative;margin:-40px -24px 24px;display:flex;align-items:flex-end;padding:24px}
+.page-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.page-cover::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(241,237,230,0.1),rgba(241,237,230,0.92))}
+.page-cover .pc-text{position:relative;z-index:1}

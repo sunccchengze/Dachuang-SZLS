@@ -1,16 +1,205 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>功率需求跟踪 · 风电场偏航优化</title><link rel="stylesheet" href="css/style.css"><script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script><script src="assets/js/plotly-theme.js" defer></script></head><body>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>功率需求跟踪 · 风电场偏航优化</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="assets/js/plotly-theme.js"></script>
+  <style>
+    .target-presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .target-presets button { border: 1px solid var(--line); background: var(--bg2); padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--txt); cursor: pointer; transition: all .15s; }
+    .target-presets button:hover { border-color: var(--blue); color: var(--blue-deep); }
+  </style>
+</head>
+<body>
 <nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div><div class="nav-links"></div></div></nav>
-<section class="wrap pg-hero"><h1>🎛️ 功率需求跟踪</h1><p>输入电网目标功率，系统自动搜索满足需求的最优偏航角</p></section>
-<main class="wrap"><div class="grid2"><div class="card"><div class="controls"><label>来流风速 U∞</label><select id="ptU"><option value="6">6 m/s</option><option value="8" selected>8 m/s</option><option value="10">10 m/s</option><option value="12">12 m/s</option></select><label>目标功率</label><input type="number" id="ptT" value="2400" step="10" min="0" style="width:110px"><span style="font-size:12px;color:var(--sub)">kW</span></div><div id="gaugePlot" class="plotly-container" style="height:260px"></div><div id="curvePlot" class="plotly-container" style="height:220px;margin-top:8px"></div><div class="note" id="ptNote"></div></div>
-<div class="card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="stat"><div class="v blue" id="ptYaw">–</div><div class="k">推荐偏航角</div></div><div class="stat"><div class="v cyan" id="ptPow">–</div><div class="k">实际总功率(kW)</div></div><div class="stat"><div class="v indigo" id="ptErr">–</div><div class="k">跟踪误差</div></div><div class="stat"><div class="v" id="ptBase">–</div><div class="k">0° 基准(kW)</div></div></div><div class="note" style="margin-top:16px">接口：<span class="code" style="display:block;margin-top:8px">find_yaw_for_target(target_power, U_inf) -> (best_yaw, actual_power, error_pct)</span></div></div></div></main>
-<footer class="wrap">孙承泽 · 可视化模块</footer>
-<script src="assets/data.js"></script><script src="assets/js/interp.js"></script><script src="assets/js/plotly-theme.js"></script>
-<script>(function(){const S=window.SURROGATE,m=window.WIND_DATA.multi;const ptU=document.getElementById('ptU'),ptT=document.getElementById('ptT');
-function render(){const u=+ptU.value||8,t=+ptT.value||0,r=S.find_yaw_for_target(t,u);document.getElementById('ptYaw').textContent=r.yaw+'°';document.getElementById('ptPow').textContent=Math.round(r.ptot);document.getElementById('ptErr').textContent=(r.error>=0?'+':'')+r.error.toFixed(1)+'%';document.getElementById('ptBase').textContent=Math.round(r.base);document.getElementById('ptNote').innerHTML=`风速 ${u} m/s：基准(0°)≈${Math.round(r.base)} kW，推荐偏航 <b>${r.yaw}°</b> 后≈<b>${Math.round(r.ptot)} kW</b>。`;
-const maxP=Math.max(r.ptot,r.base,t)*1.15,frac=Math.max(0,Math.min(1,r.ptot/maxP)),fracT=Math.max(0,Math.min(1,t/maxP)),angV=180-frac*180,angT=180-fracT*180;
-function arcR(cx,cy,r,a0,a1){const d2r=Math.PI/180,x0=cx+r*Math.cos(a0*d2r),y0=cy+r*Math.sin(a0*d2r),x1=cx+r*Math.cos(a1*d2r),y1=cy+r*Math.sin(a1*d2r);return `M${x0} ${y0} A${r} ${r} 0 ${Math.abs(a1-a0)>180?1:0} 1 ${x1} ${y1}`;}
-const cx=200,cy=190,r=140;const gCol=frac>=0.9?'#0891b2':frac>=0.6?'#3b82f6':'#2563eb';
-pr('gaugePlot',[{type:'path',path:arcR(cx,cy,r,180,0),line:{color:'rgba(255,255,255,0.05)',width:22},fillcolor:'rgba(255,255,255,0.02)',showlegend:false},{type:'path',path:arcR(cx,cy,r,180,angV),line:{color:gCol,width:22},fillcolor:'rgba(0,0,0,0)',showlegend:false},{type:'path',path:arcR(cx,cy,r-40,angT-1,angT+1),line:{color:'#7c3aed',width:4},fillcolor:'rgba(0,0,0,0)',showlegend:false},{x:[cx],y:[cy-30],mode:'text',text:[Math.round(r.ptot)+''],textfont:{size:28,color:'#e2e8f0'},showlegend:false},{x:[cx],y:[cy-55],mode:'text',text:['实际总功率 (kW)'],textfont:{size:12,color:'#94a3b8'},showlegend:false},{x:[cx],y:[cy+10],mode:'text',text:['目标 '+Math.round(t)+' kW'],textfont:{size:11,color:'#7c3aed'},showlegend:false}],{xaxis:{range:[0,400],showgrid:false,zeroline:false,showticklabels:false},yaxis:{range:[0,210],showgrid:false,zeroline:false,showticklabels:false},height:260,margin:{l:0,r:0,t:5,b:0},showlegend:false});
-const iU=m.wind_speeds.indexOf(u);if(iU>=0){pr('curvePlot',[{x:m.yaw_angles,y:m.ptot[iU],mode:'lines',name:'总功率',line:{color:'#3b82f6',width:2.5},fill:'tozeroy',fillcolor:'rgba(59,130,246,0.06)'},{x:[m.yaw_angles[0],m.yaw_angles[m.yaw_angles.length-1]],y:[t,t],mode:'lines',name:'目标',line:{color:'#7c3aed',width:1.5,dash:'dash'}},{x:[r.yaw],y:[r.ptot],mode:'markers',name:'推荐',marker:{size:12,color:'#0891b2',line:{color:'#0f172a',width:2}}}],{xaxis:{title:'偏航角 (°)'},yaxis:{title:'功率 (kW)'},height:220});}}
-ptU.onchange=render;ptT.oninput=render;render();})();</script>
-<script src="assets/js/nav.js"></script></body></html>
+
+<section class="wrap pg-hero">
+  <h1>🎛️ 电网调度功率需求跟踪 (AGC 闭环)</h1>
+  <p>输入电网调度期望总功率，系统自动逆向求解满足需求的最优协同偏航角序列</p>
+</section>
+
+<main class="wrap">
+  <!-- 4 大核心 KPI -->
+  <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat-card">
+      <p class="stat-number" id="ptYaw">+25°</p>
+      <p class="stat-label">推荐上游偏航角</p>
+      <p class="kpi-delta up" id="ptYawStatus">逆向求解完成</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number" id="ptPow">2368 kW</p>
+      <p class="stat-label">优化实际输出总功率</p>
+      <p class="kpi-delta up" id="ptPowDelta">+178 kW vs 基准</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number" id="ptErr">0.0%</p>
+      <p class="stat-label">电网需求跟踪误差</p>
+      <p class="kpi-delta flat" id="ptErrStatus">精准跟踪</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number" id="ptBase">2190 kW</p>
+      <p class="stat-label">0° 无偏航基准功率</p>
+      <p class="kpi-delta down">自然对风出力</p>
+    </div>
+  </div>
+
+  <!-- 控制与跟踪可视化 -->
+  <div class="grid2">
+    <div class="card">
+      <div class="controls" style="flex-wrap:wrap;gap:12px">
+        <div>
+          <label style="font-weight:700">来流风速：</label>
+          <select id="ptU" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--txt)">
+            <option value="6">6.0 m/s</option>
+            <option value="8" selected>8.0 m/s (额定)</option>
+            <option value="10">10.0 m/s</option>
+            <option value="12">12.0 m/s</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-weight:700">电网期望目标功率：</label>
+          <input type="number" id="ptT" value="2350" step="20" min="500" max="8000" style="width:110px;padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--txt)">
+          <span style="font-size:12px;color:var(--sub)">kW</span>
+        </div>
+      </div>
+
+      <div class="target-presets">
+        <span style="font-size:12px;color:var(--sub);line-height:24px">快捷预设：</span>
+        <button onclick="setTarget(2200)">2200 kW (略高于基准)</button>
+        <button onclick="setTarget(2300)">2300 kW (协同区间)</button>
+        <button onclick="setTarget(2368)">2368 kW (物理极值)</button>
+        <button onclick="setTarget(2500)">2500 kW (超限预警)</button>
+      </div>
+
+      <div id="curvePlot" class="plotly-container" style="height:320px;margin-top:12px"></div>
+      <div class="note" id="ptNote" style="margin-top:8px"></div>
+      <div class="note" id="ptWarn" style="color:var(--rose);background:rgba(185,132,132,0.1);padding:8px;border-radius:6px;display:none;margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">📊 目标功率与实际出力对比仪表 (Gauge)</h3>
+      <div id="gaugePlot" class="plotly-container" style="height:320px"></div>
+      <div class="note">绿色指针代表实际输出总功率，虚线/刻度代表电网目标下达需求。</div>
+    </div>
+  </div>
+
+  <!-- 闭环控制算法说明 -->
+  <div class="card" style="margin-top:18px">
+    <h3 style="margin:0 0 12px;font-size:15px;color:var(--txt)">⚙️ 自动发电控制 (AGC) 功率跟踪闭环流程</h3>
+    <div class="grid3">
+      <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
+        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">1. 目标下发与边界校验</div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.6">
+          电网下达当前调度周期期望总功率 <i>P</i><sub>target</sub>，系统校验其是否处于风场物理可达功率区间 [<i>P</i><sub>min</sub>, <i>P</i><sub>max</sub>]。
+        </div>
+      </div>
+      <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
+        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">2. 代理模型反向搜索</div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.6">
+          调用 <code>find_yaw_for_target</code> 接口，在 1 毫秒内反向搜索使 |<i>P</i><sub>tot</sub>(γ) − <i>P</i><sub>target</sub>| 最小的最优偏航角 γ<sup>*</sup>。
+        </div>
+      </div>
+      <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
+        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">3. 闭环指令执行与补偿</div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.6">
+          将优化角下发至风电机组偏航驱动机构，若存在未建模扰动则由下层变桨/转矩控制器进行快速微调补偿。
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="wrap">孙承泽 · 可视化模块 · 西安交通大学</footer>
+
+<script src="assets/data.js"></script>
+<script src="assets/js/interp.js"></script>
+<script>
+const S = window.SURROGATE, m = window.WIND_DATA.multi;
+const ptU = document.getElementById('ptU'), ptT = document.getElementById('ptT');
+
+window.setTarget = function(val) {
+  ptT.value = val;
+  render();
+};
+
+function render() {
+  const u = +ptU.value || 8;
+  const t = +ptT.value || 0;
+  const r = S.find_yaw_for_target(t, u);
+
+  document.getElementById('ptYaw').textContent = (r.yaw >= 0 ? '+' : '') + r.yaw + '°';
+  document.getElementById('ptPow').textContent = Math.round(r.ptot) + ' kW';
+  document.getElementById('ptErr').textContent = (r.error >= 0 ? '+' : '') + r.error.toFixed(1) + '%';
+  document.getElementById('ptBase').textContent = Math.round(r.base) + ' kW';
+  document.getElementById('ptPowDelta').textContent = (r.ptot - r.base >= 0 ? '+' : '') + Math.round(r.ptot - r.base) + ' kW vs 基准';
+
+  const errVal = Math.abs(r.error);
+  document.getElementById('ptErrStatus').textContent = errVal < 1.0 ? '精准跟踪' : errVal < 5.0 ? '基本吻合' : '超出能力范围';
+  document.getElementById('ptErrStatus').className = 'kpi-delta ' + (errVal < 2.0 ? 'up' : 'down');
+
+  document.getElementById('ptNote').innerHTML =
+    `当前环境风速 <b>${u} m/s</b>：0° 基准出力 <b>${Math.round(r.base)} kW</b>，逆向求解推荐偏航角 <b class="up">${r.yaw >= 0 ? '+' : ''}${r.yaw}°</b>，优化后输出 <b>${Math.round(r.ptot)} kW</b>。`;
+
+  const pw = document.getElementById('ptWarn');
+  if (r.outOfRange && r.reasons && r.reasons.length) {
+    pw.style.display = 'block';
+    pw.textContent = '⚠️ ' + r.reasons.join('；') + '（目标功率超出物理上限，系统已收敛至当前风速最大可能出力）';
+  } else {
+    pw.style.display = 'none';
+    pw.textContent = '';
+  }
+
+  // 1. 功率响应与目标水平线图
+  const iU = m.wind_speeds.indexOf(u);
+  if (iU >= 0) {
+    pr('curvePlot', [
+      { x: m.yaw_angles, y: m.ptot[iU], mode: 'lines', name: '全场总功率曲线', line: { color: WF.blue, width: 2.5 }, fill: 'tozeroy', fillcolor: 'rgba(107,140,174,0.08)' },
+      { x: [m.yaw_angles[0], m.yaw_angles[m.yaw_angles.length - 1]], y: [t, t], mode: 'lines', name: '电网目标功率', line: { color: WF.rose, width: 2, dash: 'dash' } },
+      { x: [r.yaw], y: [r.ptot], mode: 'markers', name: '匹配偏航点', marker: { size: 14, color: WF.sageDeep, line: { color: WF.plotBg, width: 2.5 } } }
+    ], {
+      xaxis: { title: '偏航角 γ₁ (°)' },
+      yaxis: { title: '功率 (kW)' },
+      height: 320,
+      margin: { l: 55, r: 15, t: 20, b: 40 },
+      legend: { orientation: 'h', y: 1.14, x: 0.05 }
+    });
+  }
+
+  // 2. 目标 vs 实际 仪表图 (精细自适应尺度，清晰呈现百千瓦级微调)
+  const pMin = Math.min(r.base, r.ptot, t);
+  const pMax = Math.max(r.base, r.ptot, t);
+  const span = Math.max(20, pMax - pMin);
+  const yLow = Math.max(0, Math.floor((pMin - span * 0.35) / 10) * 10);
+  const yHigh = Math.ceil((pMax + span * 0.35) / 10) * 10;
+
+  pr('gaugePlot', [
+    {
+      type: 'bar',
+      x: ['0° 自然基准', '实际优化出力', '电网调度目标'],
+      y: [r.base, r.ptot, t],
+      marker: { color: [WF.sub, WF.sageDeep, WF.rose] },
+      text: [Math.round(r.base) + ' kW', Math.round(r.ptot) + ' kW', Math.round(t) + ' kW'],
+      textposition: 'outside',
+      hovertemplate: '%{x}: %{y:.0f} kW<extra></extra>'
+    }
+  ], {
+    xaxis: { title: '工况分类' },
+    yaxis: { title: '功率 (kW)', range: [yLow, yHigh] },
+    height: 320,
+    margin: { l: 55, r: 15, t: 30, b: 40 },
+    showlegend: false
+  });
+}
+
+ptU.onchange = render;
+ptT.oninput = render;
+render();
+</script>
+<script src="assets/js/nav.js"></script>
+<script src="assets/js/bg-video.js"></script>
+<script src="assets/js/data-source.js"></script>
+</body>
+</html>

@@ -2,27 +2,34 @@
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>3D 体渲染 · 风电场偏航优化</title>
 <link rel="stylesheet" href="css/style.css">
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script><script src="assets/js/plotly-theme.js"></script>
+<style>
+  .spin-btn{background:rgba(138,161,122,0.12);border:1px solid rgba(138,161,122,0.4);color:var(--sage-deep);border-radius:10px;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600;transition:all .18s}
+  .spin-btn:hover{background:rgba(138,161,122,0.22)}
+  .spin-btn.active{background:var(--sage);color:#fff;border-color:var(--sage)}
+</style>
 </head>
 <body>
 <nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div>
-<div class="nav-links"><a href="index.html">首页</a><a href="wake.html">尾流</a><a href="optimization.html">优化</a><a href="overview.html">总览</a><a href="3d_surface.html">3D曲面</a><a href="3d_volume.html" class="active">3D体</a><a href="heatmap.html">热力矩阵</a><a href="solver.html">求解器</a><a href="pod.html">POD</a><a href="array.html">阵列</a><a href="power_tracking.html">功率跟踪</a><a href="dashboard.html">Dashboard</a><a href="windrose.html">风玫瑰</a><a href="model.html">模型精度</a><a href="interface.html">接口</a></div></div></nav>
-<section class="wrap pg-hero"><h1>🫧 3D 体渲染</h1><p>真实三维尾流低速泡，可调阈值与透明度，含风机转子几何</p></section>
+<div class="nav-links"><a href="index.html">首页</a><a href="wake.html">尾流</a><a href="optimization.html">优化</a><a href="overview.html">总览</a><a href="3d_surface.html">3D曲面</a><a href="3d_volume.html" class="active">3D体</a><a href="3d_farm.html">3D风场</a><a href="heatmap.html">热力矩阵</a><a href="solver.html">求解器</a><a href="pod.html">POD</a><a href="array.html">阵列</a><a href="power_tracking.html">功率跟踪</a><a href="dashboard.html">Dashboard</a><a href="windrose.html">风玫瑰</a><a href="model.html">模型精度</a><a href="interface.html">接口</a></div></div></nav>
+<section class="wrap pg-hero"><h1>🫧 3D 体渲染</h1><p>真实三维尾流低速泡，蓝白色系，自动环绕动画展示尾流偏转</p></section>
 <main class="wrap">
   <div class="card">
     <div class="controls">
       <label>偏航角</label>
       <select id="yawSel"></select>
+      <button class="btn" id="sweepBtn">▶ 偏航扫描</button>
       <label>风速阈值</label>
       <input type="range" id="threshR" min="4.5" max="8.0" value="6.5" step="0.1" style="width:140px">
       <span id="threshV" style="font-size:13px;color:var(--txt)">6.5 m/s</span>
       <label>透明度</label>
-      <input type="range" id="opacR" min="0.1" max="0.9" value="0.4" step="0.05" style="width:100px">
+      <input type="range" id="opacR" min="0.1" max="0.9" value="0.55" step="0.05" style="width:100px">
       <label><input type="checkbox" id="chkSlices" checked> 截面</label>
       <label><input type="checkbox" id="chkTurbines" checked> 风机</label>
+      <button class="spin-btn active" id="spinBtn">⟳ 自动环绕</button>
     </div>
-    <div id="plot3d" class="plotly-container" style="height:600px"></div>
-    <div class="note">蓝色半透明区域为尾流低速泡，白色圆圈为风机转子扫掠面。拖拽旋转，滚轮缩放。调整阈值改变尾流泡显示范围。</div>
+    <div id="plot3d" class="plotly-container" style="height:620px"></div>
+    <div class="note">乳白–蓝色半透明区域为尾流低速泡（越白风速越低），白色圆环为风机转子扫掠面。默认开启自动环绕；可拖拽旋转、滚轮缩放。<b>偏航扫描</b>会循环播放 −30°→+30°，直观展示尾流随偏航偏转。</div>
   </div>
 </main>
 <footer class="wrap">孙承泽 · 可视化模块</footer>
@@ -30,8 +37,9 @@
 <script>
 (function(){
   const D3=window.WIND_3D_DATA;
+  const plot=document.getElementById('plot3d');
   if(!D3||!D3.fields_3d||Object.keys(D3.fields_3d).length===0){
-    document.getElementById('plot3d').innerHTML='<p style="color:var(--sub);text-align:center;padding:40px">3D 流场数据未就绪</p>';return;
+    plot.innerHTML='<p style="color:var(--sub);text-align:center;padding:40px">3D 流场数据未就绪</p>';return;
   }
   const keys=Object.keys(D3.fields_3d).sort((a,b)=>parseFloat(a)-parseFloat(b));
   const yawSel=document.getElementById('yawSel');
@@ -42,62 +50,138 @@
   const threshR=document.getElementById('threshR'),threshV=document.getElementById('threshV');
   threshR.oninput=()=>{threshV.textContent=threshR.value+' m/s';render();};
 
+  // 默认相机
+  const BASE_EYE={x:-2.0,y:-1.8,z:0.9};
+  let spinning=true, sweepTimer=null, spinAngle=0, rafId=null;
+
+  function buildTraces(yaw,threshold,opacity,showSlices,showTurb){
+    const fd=D3.fields_3d[yaw];
+    const x=fd.x,y=fd.y,z=fd.z,U=fd.u; // U[n_z][n_y][n_x]
+    const xF=[],yF=[],zF=[],vF=[];
+    for(let iz=0;iz<z.length;iz++)
+      for(let iy=0;iy<y.length;iy++)
+        for(let ix=0;ix<x.length;ix++){
+          xF.push(x[ix]);yF.push(y[iy]);zF.push(z[iz]);vF.push(U[iz][iy][ix]);
+        }
+    const traces=[];
+    // 等直面：蓝白 VolumeSeq（乳白=低速尾流核心 → 深蓝=高速背景）
+    traces.push({type:'isosurface',x:xF,y:yF,z:zF,value:vF,
+      isomin:4.0,isomax:threshold,surface_count:4,
+      colorscale:window.VolumeSeq,showscale:true,
+      colorbar:{title:{text:'风速 (m/s)',side:'right'},thickness:15,len:0.6,x:1.02},
+      opacity:opacity,caps:{x_show:false,y_show:false,z_show:false},name:'尾流区',
+      hovertemplate:'x:%{x:.0f} y:%{y:.0f} z:%{z:.0f}<br>u:%{value:.2f} m/s<extra></extra>'});
+    // 轮毂高度截面
+    if(showSlices){
+      const hubZIdx=z.reduce((bi,zi,i)=>Math.abs(zi-90)<Math.abs(z[bi]-90)?i:bi,0);
+      const uHub=U[hubZIdx];
+      traces.push({type:'surface',x:x,y:y,z:Array.from({length:y.length},()=>Array.from({length:x.length},()=>z[hubZIdx])),
+        surfacecolor:uHub,colorscale:window.VolumeSeq,cmin:4,cmax:9,showscale:false,opacity:0.55,
+        name:'轮毂截面 ('+Math.round(z[hubZIdx])+'m)',hoverinfo:'skip'});
+    }
+    // 风机几何（塔架+转子圆环）
+    if(showTurb){
+      for(const[tx,lbl]of[[0,'风机1'],[630,'风机2']]){
+        traces.push({type:'scatter3d',x:[tx,tx],y:[0,0],z:[0,90],mode:'lines',
+          line:{color:WF.txt,width:5},showlegend:false,hoverinfo:'skip'});
+        const nPts=64,ry=[],rz=[];
+        for(let i=0;i<nPts;i++){const a=2*Math.PI*i/nPts;ry.push(63*Math.sin(a));rz.push(90+63*Math.cos(a));}
+        traces.push({type:'scatter3d',x:Array(nPts).fill(tx),y:ry,z:rz,mode:'lines',
+          line:{color:WF.txt,width:2.5},showlegend:false,hoverinfo:'skip'});
+        // 偏航指示（转子法向短线）——风机1偏航，风机2固定
+        const yawDeg = (lbl==='风机1') ? parseFloat(yaw) : 0;
+        const aRad = (90-yawDeg)*Math.PI/180;
+        traces.push({type:'scatter3d',x:[tx,tx+70*Math.cos(aRad)],y:[0,70*Math.sin(aRad)],z:[90,90],mode:'lines',
+          line:{color:WF.gold,width:3},showlegend:false,hoverinfo:'skip'});
+        traces.push({type:'scatter3d',x:[tx],y:[0],z:[175],mode:'text',text:[lbl+' '+(lbl==='风机1'?yawDeg+'°':'(0°)')],
+          textfont:{color:WF.txt,size:12},showlegend:false,hoverinfo:'skip'});
+      }
+    }
+    return traces;
+  }
+
+  function layoutFor(yaw,threshold){
+    return {
+      scene:{xaxis:{title:'顺风 x (m)',backgroundcolor:WF.plotBg,gridcolor:WF.grid,showbackground:true,color:WF.sub},
+        yaxis:{title:'横向 y (m)',backgroundcolor:WF.plotBg,gridcolor:WF.grid,showbackground:true,color:WF.sub},
+        zaxis:{title:'高度 z (m)',backgroundcolor:WF.card,gridcolor:WF.grid,showbackground:true,color:WF.sub,range:[0,200]},
+        bgcolor:'rgba(0,0,0,0)',aspectmode:'manual',aspectratio:{x:3,y:3,z:1},
+        camera:{eye:Object.assign({},BASE_EYE)}},
+      title:{text:'三维尾流体渲染  |  偏航 = '+parseFloat(yaw)+'°  |  阈值 < '+threshold+' m/s',
+        font:{color:WF.txt,size:14},x:0.5},
+      height:620,margin:{l:0,r:0,t:50,b:0},paper_bgcolor:'rgba(0,0,0,0)',font:{color:WF.txt},
+      hoverlabel:{bgcolor:WF.card,bordercolor:WF.axis,font:{color:WF.txt}}};
+  }
+
   function render(){
+    if(sweepTimer) return; // 扫描中由动画循环控制
     const yaw=yawSel.value;
     const threshold=parseFloat(threshR.value);
     const opacity=parseFloat(document.getElementById('opacR').value);
     const showSlices=document.getElementById('chkSlices').checked;
     const showTurb=document.getElementById('chkTurbines').checked;
-    const fd=D3.fields_3d[yaw];if(!fd)return;
-    const x=fd.x,y=fd.y,z=fd.z,U=fd.u; // U[n_z][n_y][n_x]
-    // Flatten for Isosurface
-    const xFlat=[],yFlat=[],zFlat=[],vFlat=[];
-    for(let iz=0;iz<z.length;iz++)
-      for(let iy=0;iy<y.length;iy++)
-        for(let ix=0;ix<x.length;ix++){
-          xFlat.push(x[ix]);yFlat.push(y[iy]);zFlat.push(z[iz]);vFlat.push(U[iz][iy][ix]);
-        }
-    const traces=[];
-    // Isosurface
-    traces.push({type:'isosurface',x:xFlat,y:yFlat,z:zFlat,value:vFlat,
-      isomin:4.0,isomax:threshold,surface_count:3,
-      colorscale:'Blues_r',showscale:true,
-      colorbar:{title:'风速 (m/s)',thickness:15,len:0.6,x:1.02},
-      opacity:opacity,caps:{x_show:false,y_show:false,z_show:false},name:'尾流区'});
-    // Hub-height slice
-    if(showSlices){
-      const hubZIdx=z.reduce((bi,zi,i)=>Math.abs(zi-90)<Math.abs(z[bi]-90)?i:bi,0);
-      const uHub=U[hubZIdx];
-      traces.push({type:'surface',x:x,y:y,z:Array.from({length:y.length},()=>Array.from({length:x.length},()=>z[hubZIdx])),
-        surfacecolor:uHub,colorscale:'RdBu_r',cmin:4,cmax:9,showscale:false,opacity:0.6,
-        name:'轮毂截面 ('+Math.round(z[hubZIdx])+'m)'});
-    }
-    // Turbine geometry
-    if(showTurb){
-      for(const[tx,lbl]of[[0,'风机1'],[630,'风机2']]){
-        traces.push({type:'scatter3d',x:[tx,tx],y:[0,0],z:[0,90],mode:'lines',line:{color:'#fff',width:4},showlegend:false});
-        // Rotor circle
-        const nPts=60,ry=[],rz=[];
-        for(let i=0;i<nPts;i++){const a=2*Math.PI*i/nPts;ry.push(63*Math.sin(a));rz.push(90+63*Math.cos(a));}
-        traces.push({type:'scatter3d',x:Array(nPts).fill(tx),y:ry,z:rz,mode:'lines',line:{color:'#fff',width:2},showlegend:false});
-        traces.push({type:'scatter3d',x:[tx],y:[0],z:[170],mode:'text',text:[lbl],textfont:{color:'#fff',size:12},showlegend:false});
-      }
-    }
-    const layout={
-      scene:{xaxis:{title:'顺风方向 x (m)',backgroundcolor:'#0b1220',gridcolor:'#1e293b',showbackground:true,color:'#94a3b8'},
-        yaxis:{title:'横向 y (m)',backgroundcolor:'#0b1220',gridcolor:'#1e293b',showbackground:true,color:'#94a3b8'},
-        zaxis:{title:'高度 z (m)',backgroundcolor:'#020617',gridcolor:'#1e293b',showbackground:true,color:'#94a3b8',range:[0,200]},
-        bgcolor:'#020617',aspectmode:'manual',aspectratio:{x:3,y:3,z:1},camera:{eye:{x:-1.8,y:-1.5,z:0.8}}},
-      title:{text:'三维尾流体渲染  |  偏航角 = '+parseFloat(yaw)+'°  |  阈值 < '+threshold+' m/s',
-        font:{color:'#e2e8f0',size:14},x:0.5},
-      height:600,margin:{l:0,r:0,t:50,b:0},paper_bgcolor:'#020617',font:{color:'#e2e8f0'}};
-    Plotly.newPlot('plot3d',traces,layout,{responsive:true});
+    Plotly.react('plot3d',buildTraces(yaw,threshold,opacity,showSlices,showTurb),layoutFor(yaw,threshold),
+      {responsive:true,displayModeBar:'hover',modeBarButtonsToRemove:['lasso2d','select2d']});
   }
-  yawSel.onchange=render;
+
+  // ===== 自动环绕相机 =====
+  function spinLoop(){
+    if(!spinning){rafId=null;return;}
+    spinAngle = (spinAngle + 0.0045) % (2*Math.PI); // ~23s/圈
+    const r = Math.sqrt(BASE_EYE.x*BASE_EYE.x+BASE_EYE.y*BASE_EYE.y);
+    const eye={x:r*Math.cos(spinAngle), y:r*Math.sin(spinAngle), z:BASE_EYE.z + 0.12*Math.sin(spinAngle*0.5)};
+    Plotly.relayout('plot3d',{'scene.camera.eye':eye});
+    rafId=requestAnimationFrame(spinLoop);
+  }
+  function setSpin(on){
+    spinning=on;
+    document.getElementById('spinBtn').classList.toggle('active',on);
+    document.getElementById('spinBtn').textContent=on?'⏸ 暂停环绕':'⟳ 自动环绕';
+    if(on && !rafId) spinLoop();
+    else if(!on && rafId){cancelAnimationFrame(rafId);rafId=null;}
+  }
+
+  // ===== 偏航扫描：-30 → +30 循环，重建等直面展示尾流偏转 =====
+  const sweepBtn=document.getElementById('sweepBtn');
+  function startSweep(){
+    if(sweepTimer){stopSweep();return;}
+    sweepBtn.textContent='⏸ 停止扫描';sweepBtn.classList.add('active');
+    setSpin(false);
+    const threshold=parseFloat(threshR.value);
+    const opacity=parseFloat(document.getElementById('opacR').value);
+    const showSlices=document.getElementById('chkSlices').checked;
+    const showTurb=document.getElementById('chkTurbines').checked;
+    let idx=0, dir=1;
+    // 初始绘制
+    Plotly.react('plot3d',buildTraces(keys[0],threshold,opacity,showSlices,showTurb),layoutFor(keys[0],threshold),
+      {responsive:true,displayModeBar:'hover',modeBarButtonsToRemove:['lasso2d','select2d']});
+    sweepTimer=setInterval(()=>{
+      idx+=dir;
+      if(idx>=keys.length-1){idx=keys.length-1;dir=-1;}
+      if(idx<=0){idx=0;dir=1;}
+      const k=keys[idx];
+      yawSel.value=k;
+      Plotly.react('plot3d',buildTraces(k,threshold,opacity,showSlices,showTurb),layoutFor(k,threshold),
+        {responsive:true,displayModeBar:'hover',modeBarButtonsToRemove:['lasso2d','select2d']});
+    },420);
+  }
+  function stopSweep(){
+    if(sweepTimer){clearInterval(sweepTimer);sweepTimer=null;}
+    sweepBtn.textContent='▶ 偏航扫描';sweepBtn.classList.remove('active');
+    render();
+  }
+
+  yawSel.onchange=()=>{if(sweepTimer)stopSweep();render();};
   document.getElementById('opacR').oninput=render;
   document.getElementById('chkSlices').onchange=render;
   document.getElementById('chkTurbines').onchange=render;
+  document.getElementById('spinBtn').onclick=()=>{ if(sweepTimer)stopSweep(); setSpin(!spinning); };
+  sweepBtn.onclick=()=>{ sweepTimer?stopSweep():startSweep(); };
+  plot.addEventListener('mousedown',()=>{ if(spinning) setSpin(false); });
+
   render();
+  setSpin(true);
 })();
 </script>
-</body></html>
+<script src="assets/js/nav.js"></script>
+<script src="assets/js/bg-video.js"></script><script src="assets/js/data-source.js"></script></body></html>

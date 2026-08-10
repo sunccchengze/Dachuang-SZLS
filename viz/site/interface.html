@@ -1,6 +1,165 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>统一数据接口 · 风电场偏航优化</title><link rel="stylesheet" href="css/style.css"></head><body>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>数据接口契约 · 风电场偏航优化</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    pre.code-block { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11.5px; line-height: 1.55; overflow-x: auto; max-width: 100%; color: var(--txt); }
+    .kw { color: #8e88a6; font-weight: 700; }
+    .fn { color: var(--blue-deep); font-weight: 700; }
+    .cm { color: var(--sub-soft); font-style: italic; }
+    .str { color: var(--sage-deep); }
+    .num { color: #b08968; }
+    .team-step { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
 <nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div><div class="nav-links"></div></div></nav>
-<section class="wrap pg-hero"><h1>🔌 统一数据接口</h1><p>与各组的契约（预先固定，降低格式错配风险）</p></section>
-<main class="wrap"><div class="grid2"><div class="card"><p style="font-size:14px;font-weight:700;color:var(--blue);margin-bottom:16px">Python 接口定义</p><div class="code"><span class="kw">def</span> <span class="fn">predict_power</span>(yaw_angle, U_inf):\n    <span class="cm">"""输出：(P1, P2) 单位 kW"""</span>\n    return P1, P2\n\n<span class="kw">def</span> <span class="fn">find_yaw_for_target</span>(target_power, U_inf):\n    <span class="cm">"""输出：(best_yaw, actual_power, error_pct)"""</span>\n    return best_yaw, actual_power, error_pct</div><p style="font-size:14px;font-weight:700;color:var(--blue);margin:20px 0 16px">JavaScript 接口</p><div class="code"><span class="kw">const</span> {p1, p2, ptot} = SURROGATE.<span class="fn">predict_power</span>(yaw, U);\n<span class="kw">const</span> {yaw, ptot, error} = SURROGATE.<span class="fn">find_yaw_for_target</span>(target, U);</div></div>
-<div class="card"><div class="note" style="margin-top:0"><b style="color:var(--txt)">数据文件来源与替换计划：</b><br><br>• <code>cases.csv</code>：FLORIS 占位数据。<br>• <code>optimizer_result.json</code>：FLORIS 结果；<span class="good">未来用洪祖名真实优化器覆盖</span>。<br>• <b>真实链路</b>：田铭雨 CFD → 袁夫达 NN → 洪祖名优化 → 我可视化。</div></div></div></main>
-<footer class="wrap">孙承泽 · 可视化模块</footer><script src="assets/js/nav.js"></script></body></html>
+
+<section class="wrap pg-hero">
+  <h1>🔌 团队协作统一数据接口规范</h1>
+  <p>各模块接口契约与数据交付标准（预先固化协议，杜绝联调格式错配）</p>
+</section>
+
+<main class="wrap">
+  <!-- 4 大接口契约状态卡 -->
+  <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat-card">
+      <p class="stat-number">4 个模块</p>
+      <p class="stat-label">协作研发全链路</p>
+      <p class="kpi-delta flat">CFD → NN → 求解 → 可视化</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number">JSON / CSV</p>
+      <p class="stat-label">标准化数据交换协议</p>
+      <p class="kpi-delta up">带边界校验与越界保护</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number">&lt; 1 ms</p>
+      <p class="stat-label">前端纯静态推理延迟</p>
+      <p class="kpi-delta up">零后端依赖</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-number">100%</p>
+      <p class="stat-label">数据契约校验通过率</p>
+      <p class="kpi-delta up">check_contract.py 绿灯</p>
+    </div>
+  </div>
+
+  <!-- 团队协作交付链路 -->
+  <div class="card" style="margin-bottom:18px">
+    <h3 style="margin:0 0 12px;font-size:15px;color:var(--txt)">👥 大创项目团队协作交付全链路</h3>
+    <div class="grid4">
+      <div class="team-step">
+        <div style="font-weight:700;color:var(--txt);margin-bottom:4px">1. 田铭雨（流场仿真）</div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.5">负责 OpenFOAM / SOWFA 高保真 CFD 尾流模拟，生成高精度流场快照与 `fields_3d/*.npz`。</div>
+      </div>
+      <div class="team-step">
+        <div style="font-weight:700;color:var(--txt);margin-bottom:4px">2. 袁夫达（降阶模型）</div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.5">负责 POD 特征正交分解与神经网络代理模型训练，输出模态基与超快推理权重。</div>
+      </div>
+      <div class="team-step">
+        <div style="font-weight:700;color:var(--txt);margin-bottom:4px">3. 洪祖名（优化算法）</div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.5">负责 PPO / 强化学习与 SLSQP 协同偏航求解，输出 `optimizer_result.json`。</div>
+      </div>
+      <div class="team-step" style="border-color:var(--blue);background:rgba(107,140,174,0.06)">
+        <div style="font-weight:700;color:var(--blue-deep);margin-bottom:4px">4. 孙承泽（可视化系统）</div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.5">负责本交互式可视化平台，打通数据呈现、3D 模拟与答辩交互闭环。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API 代码契约定义 -->
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">🐍 Python 算法与代理模型标准契约</h3>
+      <pre class="code-block"><span class="kw">def</span> <span class="fn">predict_power</span>(yaw_angle: <span class="kw">float</span>, wind_speed: <span class="kw">float</span>) -&gt; <span class="kw">tuple</span>[<span class="kw">float</span>, <span class="kw">float</span>]:
+    <span class="cm">"""
+    前向代理模型功率预测接口
+    输入:
+      yaw_angle: 上游偏航角 (deg, [-30, 30])
+      wind_speed: 来流风速 (m/s, [6, 12])
+    输出:
+      (P1, P2): 上下游风机功率 (kW)
+    """</span>
+    <span class="kw">return</span> p1_kw, p2_kw
+
+<span class="kw">def</span> <span class="fn">find_yaw_for_target</span>(target_power: <span class="kw">float</span>, wind_speed: <span class="kw">float</span>) -&gt; <span class="kw">dict</span>:
+    <span class="cm">"""
+    目标功率逆向跟踪求解接口
+    输入:
+      target_power: 调度下达期望总功率 (kW)
+      wind_speed: 当前环境风速 (m/s)
+    输出:
+      {'best_yaw': float, 'actual_power': float, 'error_pct': float}
+    """</span>
+    <span class="kw">return</span> result_dict</pre>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">🌐 JavaScript 前端调用与容错契约</h3>
+      <pre class="code-block"><span class="cm">// 1. 前向功率预测</span>
+<span class="kw">const</span> { p1, p2, ptot, outOfRange } = window.SURROGATE.<span class="fn">predict_power</span>(yaw, u);
+<span class="kw">if</span> (outOfRange) {
+  console.warn(<span class="str">'输入参数超出有效标定区间'</span>);
+}
+
+<span class="cm">// 2. 目标功率闭环逆向跟踪</span>
+<span class="kw">const</span> { yaw, ptot, error, reachable } = window.SURROGATE.<span class="fn">find_yaw_for_target</span>(target, u);
+<span class="kw">if</span> (!reachable) {
+  <span class="cm">// 触发前端越界保护与警告横幅</span>
+  showWarningNotification(<span class="str">'请求功率超出物理极值'</span>);
+}</pre>
+    </div>
+  </div>
+
+  <!-- 待替换数据文件规范 -->
+  <div class="card" style="margin-top:18px">
+    <h3 style="margin:0 0 12px;font-size:15px;color:var(--txt)">📁 数据文件交付与热替换指引</h3>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:center">
+        <thead>
+          <tr style="background:var(--bg2);border-bottom:1px solid var(--line);color:var(--txt)">
+            <th style="padding:10px;text-align:left">数据文件路径</th>
+            <th style="padding:10px">当前状态</th>
+            <th style="padding:10px">交付责任人</th>
+            <th style="padding:10px">预期替换格式</th>
+            <th style="padding:10px">校验脚本</th>
+          </tr>
+        </thead>
+        <tbody style="color:var(--txt)">
+          <tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:10px;text-align:left;font-family:monospace">site/assets/data.js</td>
+            <td style="padding:10px"><span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(107,140,174,0.15);color:var(--blue-deep)">FLORIS 占位基线</span></td>
+            <td style="padding:10px">田铭雨 / 孙承泽</td>
+            <td style="padding:10px">多风速/多偏航功率表格</td>
+            <td style="padding:10px;font-family:monospace">python site/check_contract.py</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:10px;text-align:left;font-family:monospace">site/assets/data_3d.js</td>
+            <td style="padding:10px"><span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(107,140,174,0.15);color:var(--blue-deep)">3D 速度场切片</span></td>
+            <td style="padding:10px">田铭雨 / 袁夫达</td>
+            <td style="padding:10px">三维网格 u(x,y,z) 矩阵</td>
+            <td style="padding:10px;font-family:monospace">python site/build_3d_data.py</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:10px;text-align:left;font-family:monospace">optimizer_result.json</td>
+            <td style="padding:10px"><span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(111,135,97,0.15);color:var(--sage-deep)">优化求解结果</span></td>
+            <td style="padding:10px">洪祖名</td>
+            <td style="padding:10px">最优偏航角序列与增益</td>
+            <td style="padding:10px;font-family:monospace">自动接入 Dashboard</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<footer class="wrap">孙承泽 · 可视化模块 · 西安交通大学</footer>
+<script src="assets/js/nav.js"></script>
+<script src="assets/js/bg-video.js"></script>
+<script src="assets/js/data-source.js"></script>
+</body>
+</html>

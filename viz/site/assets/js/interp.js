@@ -1,46 +1,86 @@
 // 浏览器内插值（对应仓库 surrogate_model.py 的 predict_power / find_yaw_for_target）
 // 纯表格双线性插值，无需任何后端。未来替换真实模型时只改这两个函数体即可。
-(function(){
-  const W = window.WIND_DATA;
-  const lerp = (a,b,t)=>a+(b-a)*t;
+//
+// 数据可信域取自 window.WF_DATA_CONFIG（data-source.js 定义）；超出范围时返回值里
+// 带 outOfRange 标志与越界说明，调用方可据此在 UI 提示"外推结果，仅供参考"。
+(function () {
+  var W = window.WIND_DATA;
+  var lerp = function (a, b, t) { return a + (b - a) * t; };
 
-  function bilinear(gx, gy, mat, x, y){
-    x = Math.max(gx[0], Math.min(gx[gx.length-1], x));
-    y = Math.max(gy[0], Math.min(gy[gy.length-1], y));
-    let i=0; while(i<gx.length-1 && gx[i+1] < x) i++;
-    let j=0; while(j<gy.length-1 && gy[j+1] < y) j++;
-    const x0=gx[i], x1=gx[Math.min(i+1,gx.length-1)];
-    const y0=gy[j], y1=gy[Math.min(j+1,gy.length-1)];
-    const tx = (x1===x0)?0:(x-x0)/(x1-x0);
-    const ty = (y1===y0)?0:(y-y0)/(y1-y0);
-    const v00=mat[i][j], v01=mat[i][j+1], v10=mat[Math.min(i+1,gx.length-1)][j], v11=mat[Math.min(i+1,gx.length-1)][j+1];
-    return lerp(lerp(v00,v01,ty), lerp(v10,v11,ty), tx);
+  function trustDomain() {
+    var cfg = window.WF_DATA_CONFIG && window.WF_DATA_CONFIG.trustDomain;
+    var m = W && W.multi;
+    // 优先用配置；没有就从数据本身推断
+    if (cfg) return { U: cfg.windSpeed, yaw: cfg.yaw };
+    if (m) return {
+      U: [m.wind_speeds[0], m.wind_speeds[m.wind_speeds.length - 1]],
+      yaw: [m.yaw_angles[0], m.yaw_angles[m.yaw_angles.length - 1]]
+    };
+    return null;
   }
 
-  // 接口契约：predict_power(yaw_angle, U_inf) -> (P1, P2) kW
-  function predict_power(yaw, U){
-    const m = W.multi;
-    const p1 = bilinear(m.wind_speeds, m.yaw_angles, m.p1, U, yaw);
-    const p2 = bilinear(m.wind_speeds, m.yaw_angles, m.p2, U, yaw);
-    const ptot = bilinear(m.wind_speeds, m.yaw_angles, m.ptot, U, yaw);
-    return {p1, p2, ptot};
-  }
-
-  // 接口契约：find_yaw_for_target(target_power, U_inf) -> (best_yaw, actual_power, error_pct)
-  function find_yaw_for_target(target, U){
-    const m = W.multi;
-    const ys = m.yaw_angles;
-    const pts = ys.map(y=>bilinear(m.wind_speeds, ys, m.ptot, U, y));
-    const base = bilinear(m.wind_speeds, ys, m.ptot, U, 0);
-    let best=ys[0], bestErr=Infinity;
-    for(let k=0;k<ys.length;k++){
-      const e=Math.abs(pts[k]-target);
-      if(e<bestErr){bestErr=e;best=ys[k];}
+  function checkRange(U, yaw) {
+    var td = trustDomain();
+    if (!td) return { outOfRange: false, reasons: [] };
+    var reasons = [];
+    if (typeof U === "number" && (U < td.U[0] || U > td.U[1])) {
+      reasons.push("风速 " + U + " m/s 超出可信域 " + td.U[0] + "–" + td.U[1] + " m/s");
     }
-    const actual = bilinear(m.wind_speeds, ys, m.ptot, U, best);
-    const error = base>0 ? (actual-target)/target*100 : 0;
-    return {yaw:best, ptot:actual, error, base};
+    if (typeof yaw === "number" && (yaw < td.yaw[0] || yaw > td.yaw[1])) {
+      reasons.push("偏航 " + yaw + "° 超出可信域 " + td.yaw[0] + "–" + td.yaw[1] + "°");
+    }
+    return { outOfRange: reasons.length > 0, reasons: reasons };
   }
 
-  window.SURROGATE = {predict_power, find_yaw_for_target, bilinear};
+  function bilinear(gx, gy, mat, x, y) {
+    // 夹紧到网格内（网格外无数据；是否外推由 outOfRange 标志告知调用方）
+    var cx = Math.max(gx[0], Math.min(gx[gx.length - 1], x));
+    var cy = Math.max(gy[0], Math.min(gy[gy.length - 1], y));
+    var i = 0; while (i < gx.length - 1 && gx[i + 1] < cx) i++;
+    var j = 0; while (j < gy.length - 1 && gy[j + 1] < cy) j++;
+    var x0 = gx[i], x1 = gx[Math.min(i + 1, gx.length - 1)];
+    var y0 = gy[j], y1 = gy[Math.min(j + 1, gy.length - 1)];
+    var tx = (x1 === x0) ? 0 : (cx - x0) / (x1 - x0);
+    var ty = (y1 === y0) ? 0 : (cy - y0) / (y1 - y0);
+    var v00 = mat[i][j], v01 = mat[i][j + 1],
+        v10 = mat[Math.min(i + 1, gx.length - 1)][j],
+        v11 = mat[Math.min(i + 1, gx.length - 1)][j + 1];
+    return lerp(lerp(v00, v01, ty), lerp(v10, v11, ty), tx);
+  }
+
+  // 接口契约：predict_power(yaw_angle, U_inf) -> {p1,p2,ptot,outOfRange,reasons}
+  function predict_power(yaw, U) {
+    var m = W.multi;
+    var p1 = bilinear(m.wind_speeds, m.yaw_angles, m.p1, U, yaw);
+    var p2 = bilinear(m.wind_speeds, m.yaw_angles, m.p2, U, yaw);
+    var ptot = bilinear(m.wind_speeds, m.yaw_angles, m.ptot, U, yaw);
+    var rng = checkRange(U, yaw);
+    return { p1: p1, p2: p2, ptot: ptot, outOfRange: rng.outOfRange, reasons: rng.reasons };
+  }
+
+  // 接口契约：find_yaw_for_target(target_power, U_inf) -> {yaw,ptot,error,base,outOfRange,reasons}
+  // 在离散偏航角中选最接近目标的；不做越界偏航的连续外推。
+  function find_yaw_for_target(target, U) {
+    var m = W.multi, ys = m.yaw_angles;
+    var pts = ys.map(function (y) { return bilinear(m.wind_speeds, ys, m.ptot, U, y); });
+    var base = bilinear(m.wind_speeds, ys, m.ptot, U, 0);
+    var best = ys[0], bestErr = Infinity;
+    for (var k = 0; k < ys.length; k++) {
+      var e = Math.abs(pts[k] - target);
+      if (e < bestErr) { bestErr = e; best = ys[k]; }
+    }
+    var actual = bilinear(m.wind_speeds, ys, m.ptot, U, best);
+    var error = target > 0 ? (actual - target) / target * 100 : 0;
+    var rng = checkRange(U, best);
+    // 目标功率超过该风速最大可达功率时，单独标记"不可达"
+    var maxP = Math.max.apply(null, pts);
+    if (target > maxP) {
+      rng.outOfRange = true;
+      rng.reasons.push("目标功率 " + Math.round(target) + " kW 超过当前风速可达上限约 " + Math.round(maxP) + " kW");
+    }
+    return { yaw: best, ptot: actual, error: error, base: base,
+             outOfRange: rng.outOfRange, reasons: rng.reasons };
+  }
+
+  window.SURROGATE = { predict_power: predict_power, find_yaw_for_target: find_yaw_for_target, bilinear: bilinear, checkRange: checkRange };
 })();
