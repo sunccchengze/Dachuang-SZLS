@@ -169,3 +169,14 @@ $$\text{PRD 功能需求} \xrightarrow{\text{Refero DESIGN.md (设计约束)}} \
 
 ### 11.1 核心用途
 为科研静态站 `site/`（原默认 `https://wind-farm-viz.pages.dev/`）提供免费独立域名（如 `https://wind-farm-viz.dpdns.org/`），无缝绑定 Cloudflare Pages 与免费 SSL 证书。
+
+---
+
+## 12. 全网多平台连接器 (Agent Reach - 69k Stars)
+
+装载模块：`技能库&准则/agent-reach/`
+实操指南：`技能库&准则/agent-reach/AGENT_REACH实战操作与多平台接入指南.md`
+覆盖平台：B站、小红书、微信公众号、小宇宙播客、雪球、Twitter/X、Reddit、YouTube 等 15+ 平台。
+
+### 12.1 核心价值
+通过本地 Cookie 映射与各平台专用 CLI（`bili-cli`、`xhs-cli`、`yt-dlp`），让 Agent 能够实时检索并读取国内全平台内容，作为风电行业动态与答辩素材的一手来源。
