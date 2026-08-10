@@ -18,21 +18,30 @@
 
 <section class="wrap pg-hero">
   <h1>🌬️ 风玫瑰与年发电量 (AEP) 分析</h1>
-  <p>12 风向 × 4 风速 × 13 偏航角共 624 工况实扫描 · 收益扇区与频率假设全部显式声明</p>
+  <p>两台串列与 3×3 阵列双布局 · 12 风向 × 4 风速实扫描 · 收益扇区与频率假设全部显式声明</p>
 </section>
 
 <main class="wrap">
+  <!-- 布局切换：两台串列 / 3×3 阵列 -->
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+    <span style="font-size:13px;color:var(--sub);font-weight:700">对比布局</span>
+    <div class="rose-tab" id="modeTab" style="margin-bottom:0">
+      <button data-m="tandem" class="active">两台串列 · 间距 5D</button>
+      <button data-m="array">3×3 阵列 · 5D×3D</button>
+    </div>
+  </div>
+
   <!-- 4 大核心 KPI 指标卡（数值由本页 JS 从 data.js 实算填充） -->
   <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
     <div class="stat-card">
-      <p class="stat-number" id="kGain270">—</p>
-      <p class="stat-label">270° 正对串列扇区最优增益（8 m/s）</p>
-      <p class="kpi-delta up">全扫描域唯一非零扇区</p>
+      <p class="stat-number" id="kGainDir">—</p>
+      <p class="stat-label" id="kGainDirLbl">—</p>
+      <p class="kpi-delta up" id="kGainDirDelta">—</p>
     </div>
     <div class="stat-card">
       <p class="stat-number" id="kGainMean">—</p>
-      <p class="stat-label">270° 扇区四速平均增益</p>
-      <p class="kpi-delta up">6 / 8 / 10 / 12 m/s 均为 +25° 最优</p>
+      <p class="stat-label" id="kGainMeanLbl">—</p>
+      <p class="kpi-delta up" id="kGainMeanDelta">—</p>
     </div>
     <div class="stat-card">
       <p class="stat-number" id="kAep">—</p>
@@ -41,7 +50,7 @@
     </div>
     <div class="stat-card">
       <p class="stat-number" id="kElec">—</p>
-      <p class="stat-label">两台机组年增电量（等权假设）</p>
+      <p class="stat-label" id="kElecLbl">年增电量（等权假设）</p>
       <p class="kpi-delta flat">8760 h 折算</p>
     </div>
   </div>
@@ -60,7 +69,7 @@
     <div class="card">
       <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">📊 各风向扇区增益分布（实扫描）</h3>
       <div id="sectorPlot" class="plotly-container" style="height:420px"></div>
-      <div class="note">柱为当前选择风速下该风向的最优偏航增益；折线为四速平均增益。除 270° 外各向均为 0——布局决定，非数据缺失。</div>
+      <div class="note" id="sectorNote"></div>
     </div>
   </div>
 
@@ -70,9 +79,7 @@
     <div class="grid3">
       <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
         <div style="font-weight:700;color:var(--txt);margin-bottom:6px">1. 真实样本域</div>
-        <div style="font-size:12px;color:var(--sub);line-height:1.6">
-          两台串列 NREL 5MW（间距 5D = 630 m，TI = 6%），FLORIS GCH 扫描 12 风向 × 4 风速 × 13 偏航角 = 624 工况；每格取最优偏航收益，见 <code>cases_windrose*.csv</code>。
-        </div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.6" id="aepDomain"></div>
       </div>
       <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
         <div style="font-weight:700;color:var(--txt);margin-bottom:6px">2. 加权公式与等权假设</div>
@@ -83,12 +90,12 @@
       <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
         <div style="font-weight:700;color:var(--txt);margin-bottom:6px">3. 风向频率敏感性</div>
         <div style="font-size:12px;color:var(--sub);line-height:1.6">
-          扇区增益高不等于 AEP 增益高。若盛行西风、270° 扇区频率 30%（其余 11 向均分 70%）：ΔAEP ≈ <b id="aepWest">—</b>，两台机组年增电量 ≈ <b id="elecWest">—</b>。
+          扇区增益高不等于 AEP 增益高。若盛行西风、270° 扇区频率 30%（其余 11 向均分 70%）：ΔAEP ≈ <b id="aepWest">—</b>，<span id="westUnit">机组</span>年增电量 ≈ <b id="elecWest">—</b>。
         </div>
       </div>
     </div>
     <div class="note" style="margin-top:12px">
-      数据边界：偏航网格 ±30°（5° 步长）、风向分辨率 30°（加密至 15° 可能显现 240°~300° 间的弱旁瓣）；3×3 阵列全风向扫描待 CFD 数据接入。本页不再给出金额与碳减排估算——缺少电价与排放因子假设，留待答辩素材按真实参数补。
+      数据边界：候选偏航网格 ±30°（5° 步长）、风向分辨率 30°（加密至 15° 可能在斜向显现弱旁瓣）；两台串列为逐格全枚举最优，3×3 阵列为双通道贪心（逐机 + 逐排秩次取优）局部最优——贪心是收益下限，真最优或更高。本页不再给出金额与碳减排估算——缺少电价与排放因子假设，留待答辩素材按真实参数补。
     </div>
   </div>
 </main>
@@ -98,51 +105,109 @@
 <script src="assets/data.js"></script>
 <script>
 (function(){
-  var rows = (window.WIND_DATA && WIND_DATA.windrose_opt) || [];
-  if (!rows.length) { document.getElementById('roseNote').textContent = 'windrose_opt 数据缺失'; return; }
+  var WD = window.WIND_DATA || {};
 
-  var dirs = [], speeds = [];
-  rows.forEach(function(r){
-    if (dirs.indexOf(r.wind_direction) < 0) dirs.push(r.wind_direction);
-    if (speeds.indexOf(r.U_inf) < 0) speeds.push(r.U_inf);
-  });
-  dirs.sort(function(a,b){return a-b;}); speeds.sort(function(a,b){return a-b;});
-  var LUT = {};
-  rows.forEach(function(r){ LUT[r.wind_direction + '|' + r.U_inf] = r; });
+  // ===== 两种布局的统一行结构：{dir, U, base, opt, gain} =====
+  var MODES = {
+    tandem: {
+      rows: (WD.windrose_opt || []).map(function(r){
+        return { dir: r.wind_direction, U: r.U_inf, base: r.power_base, opt: r.power_opt, gain: r.gain_pct };
+      }),
+      headline: { dir: 270, lbl: '270° 正对串列', dec: 1 },
+      meanDir: 270,
+      unit: '两台机组',
+      delta1: '全扫描域唯一非零扇区',
+      delta2: '6 / 8 / 10 / 12 m/s 均为 +25° 最优',
+      domain: '两台串列 NREL 5MW（间距 5D = 630 m，TI = 6%），FLORIS GCH 扫描 12 风向 × 4 风速 × 13 偏航角 = 624 工况；每格取最优偏航收益，见 <code>cases_windrose*.csv</code>。',
+      roseNote: '<b>单瓣玫瑰成因</b>：两台串列布局、横向无交叠——只有当来流正对机组串列轴（270°）时下游机组才处于尾流内，偏航引导才有收益；其余 11 个风向两机互不遮挡，增益为 0。风向分辨率现为 30°，加密至 15° 后 240°~300° 区间可能出现弱旁瓣。',
+      sectorNote: '柱为当前选择风速下该风向的最优偏航增益；折线为四速平均增益。除 270° 外各向均为 0——布局决定，非数据缺失。'
+    },
+    array: {
+      rows: (WD.array_rose || []).map(function(r){
+        return { dir: r.wind_direction, U: r.U_inf, base: r.power_base, opt: r.power_greedy, gain: r.gain_pct };
+      }),
+      headline: { dir: 90, lbl: '90° 轴向串列', dec: 2 },
+      meanDir: 90,
+      unit: '九台机组',
+      delta1: '90°/270° 镜像并列最强，Δ0.01 pct 为数值噪声',
+      delta2: '6~12 m/s 逐风速自适应组合偏航（±30°）',
+      domain: '3×3 阵列 NREL 5MW（行距 5D = 630 m、列距 3D = 378 m，TI = 6%），FLORIS GCH；48 个风向×风速条件，每条件双通道贪心（逐机 9×13 候选 + 逐排秩次 3×13 候选取优），共 7536 次求解，见 <code>cases_array_windrose.csv</code>。',
+      roseNote: '<b>四瓣玫瑰成因</b>：增益只在来流与阵列格点成线时出现——90°/270° 沿 5D 行轴（三机串列）最强（8 m/s 时 +24.0% 级），0°/180° 沿 3D 列轴次之（+21.6%），60°/120°/240°/300° 沿晶格对角（斜距 √(5²+3²)·D ≈ 5.83D，与完全对齐角仅差约 1°）中等（+10.7~11.3%），30°/150°/210°/330° 斜穿格点间隙、尾流互不相交，增益 ≈ 0。八扇区结构由几何决定，非数据缺失。',
+      sectorNote: '柱为当前选择风速下该风向的贪心最优增益；折线为四速平均增益。30° / 150° / 210° / 330° 无格点对齐，增益为 0——布局决定，非数据缺失。'
+    }
+  };
 
-  var curSpeed = 8.0;
+  var mode = 'tandem', rows = [], dirs = [], speeds = [], LUT = {}, curSpeed = 8.0;
 
-  // ===== KPI 与 AEP 实算（功率加权） =====
+  function rebuildMode(m){
+    mode = m;
+    rows = MODES[m].rows;
+    dirs = []; speeds = []; LUT = {};
+    rows.forEach(function(r){
+      if (dirs.indexOf(r.dir) < 0) dirs.push(r.dir);
+      if (speeds.indexOf(r.U) < 0) speeds.push(r.U);
+      LUT[r.dir + '|' + r.U] = r;
+    });
+    dirs.sort(function(a,b){return a-b;}); speeds.sort(function(a,b){return a-b;});
+  }
+
   function meanOf(dir, key){
     var s = 0, n = 0;
     speeds.forEach(function(v){ s += LUT[dir + '|' + v][key]; n++; });
     return s / n;
   }
-  var sumBase = 0, sumOpt = 0;
-  rows.forEach(function(r){ sumBase += r.power_base; sumOpt += r.power_opt; });
-  var dAep = (sumOpt - sumBase) / sumBase * 100;              // 等权 ΔAEP %
-  var dElec = (sumOpt - sumBase) / rows.length * 8760 / 1e4;  // 万 kWh/年
 
-  // 盛行西风示例：270° 频率 30%，其余均分
-  var wBase = 0, wOpt = 0;
-  dirs.forEach(function(d){
-    var w = (d === 270) ? 0.30 : 0.70 / (dirs.length - 1);
-    wBase += w * meanOf(d, 'power_base');
-    wOpt  += w * meanOf(d, 'power_opt');
+  // ===== KPI 与 AEP 实算（功率加权） =====
+  function fillStatic(){
+    var C = MODES[mode];
+    var sumBase = 0, sumOpt = 0;
+    rows.forEach(function(r){ sumBase += r.base; sumOpt += r.opt; });
+    var dAep = (sumOpt - sumBase) / sumBase * 100;              // 等权 ΔAEP %
+    var dElec = (sumOpt - sumBase) / rows.length * 8760 / 1e4;  // 万 kWh/年
+
+    // 盛行西风示例：270° 频率 30%，其余均分
+    var wBase = 0, wOpt = 0;
+    dirs.forEach(function(d){
+      var w = (d === 270) ? 0.30 : 0.70 / (dirs.length - 1);
+      wBase += w * meanOf(d, 'base');
+      wOpt  += w * meanOf(d, 'opt');
+    });
+    var aepWest = (wOpt - wBase) / wBase * 100;
+    var elecWest = (wOpt - wBase) * 8760 / 1e4;
+
+    var g = LUT[C.headline.dir + '|8'];
+    document.getElementById('kGainDir').textContent = '+' + g.gain.toFixed(C.headline.dec) + '%';
+    document.getElementById('kGainDirLbl').textContent = C.headline.lbl + ' 扇区最优增益（8 m/s）';
+    document.getElementById('kGainDirDelta').textContent = C.delta1;
+    document.getElementById('kGainMean').textContent = meanOf(C.meanDir, 'gain').toFixed(1) + '%';
+    document.getElementById('kGainMeanLbl').textContent = C.meanDir + '° 扇区四速平均增益';
+    document.getElementById('kGainMeanDelta').textContent = C.delta2;
+    document.getElementById('kAep').textContent = '+' + dAep.toFixed(2) + '%';
+    document.getElementById('kElec').textContent = dElec.toFixed(1) + ' 万 kWh';
+    document.getElementById('kElecLbl').textContent = C.unit + '年增电量（等权假设）';
+    document.getElementById('aepPct').textContent = '+' + dAep.toFixed(2) + '%';
+    document.getElementById('aepWest').textContent = '+' + aepWest.toFixed(2) + '%';
+    document.getElementById('elecWest').textContent = elecWest.toFixed(0) + ' 万 kWh';
+    document.getElementById('westUnit').textContent = C.unit;
+    document.getElementById('aepDomain').innerHTML = C.domain;
+    document.getElementById('roseNote').innerHTML = C.roseNote;
+    document.getElementById('sectorNote').textContent = C.sectorNote;
+  }
+
+  // ===== 布局切换 tab =====
+  document.getElementById('modeTab').addEventListener('click', function(e){
+    var m = e.target.dataset && e.target.dataset.m;
+    if (!m || m === mode) return;
+    Array.prototype.forEach.call(e.currentTarget.children, function(c){
+      c.classList.toggle('active', c === e.target);
+    });
+    rebuildMode(m);
+    fillStatic();
+    renderAll();
   });
-  var aepWest = (wOpt - wBase) / wBase * 100;
-  var elecWest = (wOpt - wBase) * 8760 / 1e4;
-
-  var g = LUT['270|8']; 
-  document.getElementById('kGain270').textContent = '+' + g.gain_pct.toFixed(1) + '%';
-  document.getElementById('kGainMean').textContent = meanOf(270, 'gain_pct').toFixed(1) + '%';
-  document.getElementById('kAep').textContent = '+' + dAep.toFixed(2) + '%';
-  document.getElementById('kElec').textContent = dElec.toFixed(1) + ' 万 kWh';
-  document.getElementById('aepPct').textContent = '+' + dAep.toFixed(2) + '%';
-  document.getElementById('aepWest').textContent = '+' + aepWest.toFixed(2) + '%';
-  document.getElementById('elecWest').textContent = elecWest.toFixed(0) + ' 万 kWh';
 
   // ===== 风速切换 tab =====
+  rebuildMode(mode);
   var tabEl = document.getElementById('speedTab');
   speeds.forEach(function(v){
     var b = document.createElement('button');
@@ -161,7 +226,7 @@
   function dirLabel(d){ return d + '°'; }
 
   function renderAll(){
-    var gains = dirs.map(function(d){ return LUT[d + '|' + curSpeed].gain_pct; });
+    var gains = dirs.map(function(d){ return LUT[d + '|' + curSpeed].gain; });
     var maxG = Math.max.apply(null, gains.concat([1]));
     pr('rosePlot', [{
       type: 'barpolar',
@@ -178,8 +243,6 @@
       margin: { l: 40, r: 40, t: 25, b: 30 },
       showlegend: false
     });
-    document.getElementById('roseNote').innerHTML =
-      '<b>单瓣玫瑰成因</b>：两台串列布局、横向无交叠——只有当来流正对机组串列轴（270°）时下游机组才处于尾流内，偏航引导才有收益；其余 11 个风向两机互不遮挡，增益为 0。风向分辨率现为 30°，加密至 15° 后 240°~300° 区间可能出现弱旁瓣。';
 
     pr('sectorPlot', [
       {
@@ -192,7 +255,7 @@
       {
         type: 'scatter', name: '四速平均增益（%）',
         x: dirs.map(dirLabel),
-        y: dirs.map(function(d){ return meanOf(d, 'gain_pct'); }),
+        y: dirs.map(function(d){ return meanOf(d, 'gain'); }),
         mode: 'lines+markers',
         line: { color: WF.blue, width: 2.4 },
         marker: { size: 7, color: WF.blueDeep },
@@ -207,6 +270,11 @@
     });
   }
 
+  if (!MODES.tandem.rows.length || !MODES.array.rows.length) {
+    document.getElementById('roseNote').textContent = '风玫瑰数据缺失（windrose_opt 或 array_rose）';
+    return;
+  }
+  fillStatic();
   renderAll();
 })();
 </script>

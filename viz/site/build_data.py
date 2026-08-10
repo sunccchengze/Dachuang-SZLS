@@ -78,6 +78,16 @@ data["windrose_opt"] = [
     for r in rows
 ]
 
+# ---- cases_array_windrose.csv: 3x3 阵列全风向贪心扫描 ----
+rows = read_csv("cases_array_windrose.csv")
+data["array_rose"] = [
+    {"wind_direction": f(r["wind_direction"]), "U_inf": f(r["U_inf"]),
+     "power_base": f(r["power_base"]), "power_greedy": f(r["power_greedy"]),
+     "gain_pct": f(r["gain_pct"]), "greedy_method": r["greedy_method"],
+     "yaws": [f(r[f"yaw_{k}"]) for k in range(1, 10)]}
+    for r in rows
+]
+
 # ---- optimizer_result.json / array_independent_result.json ----
 with open(os.path.join(ROOT, "optimizer_result.json")) as fh:
     data["opt"] = json.load(fh)
@@ -91,3 +101,4 @@ print("wrote", OUT, "bytes=", len(js))
 print("multi grid:", len(data["multi"]["wind_speeds"]), "x", len(data["multi"]["yaw_angles"]))
 print("array yaw_upstream n=", len(data["array"]["yaw_upstream"]))
 print("windrose_opt n=", len(data["windrose_opt"]))
+print("array_rose n=", len(data["array_rose"]))
