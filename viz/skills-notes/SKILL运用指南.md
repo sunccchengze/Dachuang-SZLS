@@ -147,3 +147,14 @@ $$\text{PRD 功能需求} \xrightarrow{\text{Refero DESIGN.md (设计约束)}} \
 8. **08 润色**：`nature-polishing`
 9. **09 投稿/答辩**：`nature-reviewer` / `nature-response` / `nature-data`
 10. **10 汇报**：`nature-paper2ppt`
+
+---
+
+## 10. UI UX Pro Max 顶级设计智能库 (109k Stars)
+
+装载模块：`技能库&准则/ui-ux-pro-max/`
+实战指南：`技能库&准则/ui-ux-pro-max/UI_UX_PRO_MAX运用实战指南.md`
+数据底座：161 条行业设计推理规则、67 种 UI 风格、95 套色盘、56 组字体对、24 类图表规范。
+
+### 10.1 强制调用规则
+任何网页改动、CSS 优化、图表渲染、PPT 布局设计前，必须调用 `ui-ux-pro-max` 规则库进行预审，严格执行 7 项 Pre-Delivery 检查清单，从根本上杜绝“AI 网站廉价感”。
