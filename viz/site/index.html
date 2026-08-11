@@ -77,9 +77,11 @@
       align-items: center;
       justify-content: flex-start;
       gap: 10px 18px;
-      flex-wrap: wrap;
-      line-height: 1.5;
+      white-space: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
     }
+    .t-telemetry-inner::-webkit-scrollbar { display: none; }
     .status-active {
       display: inline-flex;
       align-items: center;
@@ -730,8 +732,6 @@
     <span style="color:var(--v-mute)">
       证据等级: <strong style="color:var(--v-teal)">E2 代理 / E3 物理实测</strong>
     </span>
-    <span style="color:var(--v-line-strong)">|</span>
-    <span style="color:var(--v-faint)">纯静态无后台零冷启动</span>
   </div>
 </div>
 

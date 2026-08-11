@@ -97,3 +97,4 @@
 - 彻底修复 `site/index.html` 中等宽字体中文字形宋体回滚现象：将 `"DengXian", "等线", "PingFang SC"` 注入 `--v-mono` 尾部，并在 CSS 中显式绑定全域 UI 汉字至等线无衬线版式；扩容 `.sec-desc` 宽度至 `640px` 并精炼语句，严格保障主页全部章节说明段落控制在两行以内（永不溢出至第三行），全自检通过。
 - 召集/蒸馏【老雷】(Vercel)、【老塔】(Tufte)、【老布】(D3.js)、【老艾】(Chrome UX) 与【老乔】五位世界级前端专家对主页 `site/index.html` 实施诊断与审评，产出《世界级前端设计智囊团_对主页site_index.html的深度审阅与升维建议报告.md》，落实按钮力学缩放、tabular-nums 数字对齐、声学压力涟漪阻尼、视频底黑保底及控制台流光微呼吸 5 项升维处方。
 - 响应承泽截图对“页脚不居中”的排查，将主页 `.t-footer` 布局容器改写为 `.footer-inner-centered` 垂直对齐弹性盒 (`flex-direction: column; align-items: center; justify-content: center; text-align: center`)，实现全量铭文沿水平中心绝对居中，解决散偏对仗。
+- 响应“顶部系统遥测条中文字多余且把一行挤成两行”的反查，彻底自 `.t-telemetry-inner` 中删除了冗余表述 `| 纯静态无后台零冷启动`，并约束该条为单行水平不折行 (`white-space: nowrap; overflow-x: auto`)，确保宽屏与普通屏幕全在一行。
