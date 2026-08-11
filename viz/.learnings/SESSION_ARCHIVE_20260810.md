@@ -91,3 +91,4 @@
 - 开启“一页一页渐进式重塑网页系统”计划，完成第一站主页 (`site/index.html`) 改造：消除全部 15 处 Emoji，引入 `1px` 发丝高强线、等宽数字与瑞士网格化展示，自检通过。
 - 响应承泽对设计品味与彻底重塑的最高要求，选择 `awesome-design-md/design-md/vercel/DESIGN.md` (Vercel-Inspired Design Language) 榜样结合瑞士国际主义网格系统，对 `site/index.html` 实施自底向上完整重写（保留循环背景视频，消除传统浮白卡片与软阴影，用 `1px` 黑白墨线与技术等宽字距重塑学术科研工作台）。
 - 响应承泽对“彻底照抄榜样 `turbine-blade-ai-platform` 主页”的终极命令，将 `site/index.html` 从纯白改写为钛黑工程调色盘 (`color-scheme: dark`, `--ink #0b0e0d`, `--paper #e6ebe1`, `--teal-bright #b5ded0`)，将背景重造为“鼠标跟随阻尼追踪光斑及48px CFD计算网格指尖发光引擎”，精简唯一视频至于“工科气动流场监测视口”，并在页面右侧严密实现“实时状态控制台 (`.terminal-panel`)”与 4 阶科研证据链，通篇 100% 专注交大能动风电课题，自检通过。
+- 响应承泽“只改首页、咱们只做 lightmode 就行”指令，将 `site/index.html` 彻底改塑为莫兰迪浅色模式 (`color-scheme: light`，米白 `#f8f9fa` 底与钛亮绿 `#1e675c` 高亮)，实现浅版鼠标阻尼追踪光斑及网格发光，保持唯一视频视口与右侧精密终端 100% 对齐。

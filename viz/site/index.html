@@ -10,46 +10,49 @@
   <style>
     /* 
      * 彻彻底底对标榜样：sunccchengze/turbine-blade-ai-platform (arena/019feb03)
-     * 钛黑工程纸青调 (Dark Engineering Canvas #0b0e0d) ➕ 极细发丝强线 (1px Line #151a18) ➕ 等宽字母数字字距 (DM Mono / tabular-nums)
+     * 纯正莫兰迪工科浅色调 (Light Engineering Canvas color-scheme: light)
+     * 极细发丝强线 (1px Line rgba(30,41,59,.10)) ➕ 等宽技术字距 (DM Mono / tabular-nums) ➕ 鼠标阻尼追踪光斑
      */
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
     :root {
-      --ink: #0b0e0d;
-      --ink-2: #111615;
-      --panel: #151a18;
-      --panel-2: #1b2220;
-      --line: rgba(220, 232, 222, 0.13);
-      --line-strong: rgba(220, 232, 222, 0.25);
-      --paper: #e6ebe1;
-      --muted: #8f9d93;
-      --faint: #5f6b63;
-      --teal: #86b9aa;
-      --teal-bright: #b5ded0;
-      --yellow: #e7c85b;
-      --rust: #c5684a;
-      --mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, monospace;
-      --display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC", sans-serif;
-      --body: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      color-scheme: dark;
+      --v-bg: #f8f9fa;          /* 莫兰迪米白工程纸灰绿底 */
+      --v-bg-soft: #f1f3f5;     /* 面板亚光白灰 */
+      --v-bg-subtle: #e9ecef;   /* 分隔底灰 */
+      --v-panel: #ffffff;       /* 纯白几何板点 */
+      --v-panel-2: #f4f6f8;     /* 悬浮交互浅纸绿 */
+      --v-ink: #1e293b;         /* 钛灰深碳黑墨水主字 */
+      --v-body: #334155;        /* 正文字色 */
+      --v-mute: #64748b;        /* 二级标注及注释 */
+      --v-faint: #94a3b8;       /* 辅助线文本 */
+      --v-line: rgba(30, 41, 59, 0.11);
+      --v-line-strong: rgba(30, 41, 59, 0.22);
+      --v-teal: #2d7569;
+      --v-teal-bright: #1e675c; /* 高饱和深海绿灰主高亮 */
+      --v-yellow: #a87817;      /* 暖琥珀金 */
+      --v-rust: #ad5038;        /* 铁砖红阶灰 */
+      --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, monospace;
+      --v-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC", sans-serif;
+      --v-body-font: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color-scheme: light;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: var(--ink);
-      color: var(--paper);
-      font-family: var(--body);
+      background: var(--v-bg);
+      color: var(--v-ink);
+      font-family: var(--v-body-font);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
     }
 
-    /* 顶部系统遥测条 (完全对齐 turbine-blade 左对齐 28px) */
+    /* 顶部系统遥测条 (严格对齐 turbine-blade 左对齐 28px) */
     .t-telemetry {
-      border-bottom: 1px solid var(--line);
-      background: var(--panel);
+      border-bottom: 1px solid var(--v-line);
+      background: var(--v-panel);
       font-size: 11px;
-      font-family: var(--mono);
+      font-family: var(--v-mono);
       position: relative;
       z-index: 20;
     }
@@ -67,20 +70,20 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      color: var(--teal-bright);
-      font-weight: 600;
+      color: var(--v-teal-bright);
+      font-weight: 700;
     }
     .status-dot {
       width: 7px; height: 7px;
       border-radius: 50%;
       background: #10b981;
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
     }
 
     /* 极简工科导航栏 */
     .t-nav {
-      border-bottom: 1px solid var(--line);
-      background: rgba(11, 14, 13, 0.88);
+      border-bottom: 1px solid var(--v-line);
+      background: rgba(255, 255, 255, 0.88);
       backdrop-filter: blur(12px);
       position: sticky;
       top: 0;
@@ -99,28 +102,29 @@
       align-items: center;
     }
     .t-nav-brand {
-      font-family: var(--display);
+      font-family: var(--v-display);
       font-size: 16px;
       font-weight: 700;
-      color: var(--paper);
+      color: var(--v-ink);
       letter-spacing: -0.3px;
       display: flex;
       align-items: center;
       gap: 12px;
     }
     .t-nav-badge {
-      font-family: var(--mono);
+      font-family: var(--v-mono);
       font-size: 10.5px;
-      color: var(--teal-bright);
+      color: var(--v-teal-bright);
       padding: 2px 8px;
-      border: 1px solid var(--line-strong);
+      border: 1px solid var(--v-line-strong);
       border-radius: 3px;
-      background: var(--panel);
+      background: var(--v-bg-soft);
+      font-weight: 600;
     }
     .t-nav-meta {
-      font-family: var(--mono);
+      font-family: var(--v-mono);
       font-size: 11px;
-      color: var(--muted);
+      color: var(--v-mute);
     }
 
     /* 容器布局 */
@@ -130,11 +134,12 @@
       padding: 0 28px;
     }
 
-    /* Canvas 背景与舞台层 (让全页具备鼠标跟随阻尼光斑及气动流线交互) */
+    /* Canvas 背景与舞台层 (为浅色模式定制鼠标跟随阻尼光斑及 CFD 48px 计算网格发亮) */
     .hero-wrapper {
       position: relative;
       overflow: hidden;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid var(--v-line);
+      background: var(--v-bg);
     }
     #aero-bg-canvas {
       position: absolute;
@@ -161,27 +166,27 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      color: var(--yellow);
-      font: 10px var(--mono);
+      color: var(--v-yellow);
+      font: 700 10px var(--v-mono);
       letter-spacing: 0.12em;
       margin-bottom: 20px;
     }
     .hero-title {
-      color: var(--paper);
-      font: 700 clamp(38px, 4.8vw, 62px)/1.08 var(--display);
-      letterSpacing: -0.055em;
+      color: var(--v-ink);
+      font: 800 clamp(38px, 4.8vw, 62px)/1.08 var(--v-display);
+      letter-spacing: -0.055em;
       margin-bottom: 20px;
     }
-    .hero-title span.hl { color: var(--teal-bright); }
+    .hero-title span.hl { color: var(--v-teal-bright); }
     .hero-title-sub {
       display: block;
       margin-top: 14px;
-      color: var(--paper);
-      font: 700 clamp(20px, 2.5vw, 30px)/1.25 var(--display);
+      color: var(--v-ink);
+      font: 700 clamp(20px, 2.5vw, 30px)/1.25 var(--v-display);
       letter-spacing: -0.02em;
     }
     .hero-lead {
-      color: var(--muted);
+      color: var(--v-body);
       font-size: 15px;
       line-height: 1.8;
       max-width: 580px;
@@ -192,12 +197,13 @@
       align-items: center;
       gap: 8px;
       padding: 8px 14px;
-      background: rgba(52, 211, 153, 0.06);
-      border: 1px solid rgba(52, 211, 153, 0.2);
+      background: rgba(30, 103, 92, 0.07);
+      border: 1px solid rgba(30, 103, 92, 0.22);
       border-radius: 4px;
-      color: var(--paper);
+      color: var(--v-ink);
       font-size: 11px;
-      font-family: var(--mono);
+      font-family: var(--v-mono);
+      font-weight: 500;
       margin-bottom: 18px;
       line-height: 1.6;
     }
@@ -205,8 +211,8 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      color: var(--faint);
-      font: 11px var(--mono);
+      color: var(--v-mute);
+      font: 11px var(--v-mono);
       margin-bottom: 32px;
     }
     .hero-actions {
@@ -219,129 +225,133 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: var(--teal-bright);
-      color: var(--ink);
+      background: var(--v-teal-bright);
+      color: #ffffff;
       font-size: 13px;
       font-weight: 700;
-      padding: 12px 20px;
+      padding: 12px 22px;
       border-radius: 4px;
       text-decoration: none;
       transition: all 0.15s;
     }
     .btn-primary:hover {
-      background: #fff;
+      background: var(--v-ink);
       transform: translateY(-1px);
     }
     .btn-secondary {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: var(--panel);
-      color: var(--paper);
+      background: var(--v-panel);
+      color: var(--v-ink);
       font-size: 13px;
       font-weight: 600;
       padding: 12px 20px;
-      border: 1px solid var(--line-strong);
+      border: 1px solid var(--v-line-strong);
       border-radius: 4px;
       text-decoration: none;
       transition: all 0.15s;
     }
     .btn-secondary:hover {
-      border-color: var(--teal-bright);
-      background: var(--panel-2);
+      border-color: var(--v-teal-bright);
+      background: var(--v-bg-soft);
     }
     .btn-link {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      color: var(--muted);
+      color: var(--v-mute);
       padding: 12px 16px;
       text-decoration: none;
       font-size: 12px;
-      font-family: var(--mono);
+      font-family: var(--v-mono);
+      font-weight: 600;
       transition: color 0.15s;
     }
-    .btn-link:hover { color: var(--paper); }
+    .btn-link:hover { color: var(--v-ink); }
 
-    /* Hero 右侧：精密控制台 (Linear Precision Status Terminal，对齐榜样无损网格) */
+    /* Hero 右侧：精密控制台 (Linear Precision Status Terminal - 纯正白色面板与渐变头线) */
     .terminal-panel {
-      border: 1px solid var(--line-strong);
-      background: var(--panel);
+      border: 1px solid var(--v-line-strong);
+      background: var(--v-panel);
       border-radius: 6px;
       overflow: hidden;
+      box-shadow: none;
     }
     .terminal-top-line {
       height: 2px;
-      background: linear-gradient(90deg, var(--teal-bright), var(--yellow), var(--rust));
+      background: linear-gradient(90deg, var(--v-teal-bright), var(--v-yellow), var(--v-rust));
     }
     .terminal-header {
       padding: 14px 18px;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid var(--v-line);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(0,0,0,0.15);
+      background: var(--v-bg-soft);
     }
     .terminal-title {
-      font: 11px var(--mono);
-      color: var(--paper);
-      font-weight: 600;
+      font: 11px var(--v-mono);
+      color: var(--v-ink);
+      font-weight: 700;
       display: flex;
       align-items: center;
       gap: 8px;
     }
     .terminal-badge {
-      font: 10px var(--mono);
-      color: var(--teal-bright);
+      font: 10px var(--v-mono);
+      color: var(--v-teal-bright);
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-weight: 600;
+      font-weight: 700;
     }
     .terminal-metrics {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1px;
-      background: var(--line);
-      border-bottom: 1px solid var(--line);
+      background: var(--v-line);
+      border-bottom: 1px solid var(--v-line);
     }
     .terminal-metric-item {
-      background: var(--panel);
+      background: var(--v-panel);
       padding: 14px 18px;
     }
     .m-label {
-      color: var(--faint);
-      font: 9px var(--mono);
+      color: var(--v-mute);
+      font: 9px var(--v-mono);
       letter-spacing: 0.08em;
+      font-weight: 600;
     }
     .m-val {
-      font-family: var(--mono);
+      font-family: var(--v-mono);
       font-size: 22px;
-      font-weight: 700;
-      color: var(--teal-bright);
+      font-weight: 750;
+      color: var(--v-teal-bright);
       margin-top: 4px;
       line-height: 1;
     }
     .m-val span {
       font-size: 12px;
       font-weight: 400;
-      color: var(--muted);
+      color: var(--v-mute);
     }
     .m-sub {
-      color: var(--faint);
-      font: 10px var(--mono);
+      color: var(--v-faint);
+      font: 10px var(--v-mono);
       margin-top: 2px;
     }
 
     /* 4 阶段科研证据链流水 (Evidence Flow Pipeline) */
     .pipeline-wrap { padding: 18px 20px; }
     .pipeline-header {
-      color: var(--faint);
-      font: 10px var(--mono);
+      color: var(--v-mute);
+      font: 10px var(--v-mono);
       letter-spacing: 0.12em;
       margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
+      font-weight: 700;
     }
     .pipeline-step {
       display: grid;
@@ -349,32 +359,32 @@
       gap: 12px;
       padding: 10px 0;
       align-items: center;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid var(--v-line);
     }
     .pipeline-step:last-child { border-bottom: none; }
     .step-idx {
-      font-family: var(--mono);
+      font-family: var(--v-mono);
       font-size: 11px;
-      font-weight: 600;
-      color: var(--faint);
+      font-weight: 700;
+      color: var(--v-faint);
     }
     .step-name {
-      color: var(--paper);
+      color: var(--v-ink);
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
     }
     .step-note {
-      color: var(--faint);
-      font: 10px var(--mono);
+      color: var(--v-mute);
+      font: 10px var(--v-mono);
       margin-top: 2px;
     }
     .step-tag {
-      font: 10px var(--mono);
+      font: 10px var(--v-mono);
       letter-spacing: 0.06em;
-      font-weight: 600;
+      font-weight: 700;
     }
 
-    /* Section Header (参照 SectionHead 榜样样式) */
+    /* Section Header (参照榜样 SectionHead 规范) */
     .sec-header {
       display: flex;
       justify-content: space-between;
@@ -383,30 +393,31 @@
       margin-bottom: 28px;
       flex-wrap: wrap;
       padding-bottom: 16px;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid var(--v-line);
     }
     .sec-left { display: flex; gap: 14px; align-items: flex-start; }
     .sec-num {
-      color: var(--yellow);
-      font: 700 11px var(--mono);
+      color: var(--v-yellow);
+      font: 700 11px var(--v-mono);
       padding-top: 4px;
     }
     .sec-title {
-      color: var(--paper);
-      font: 600 clamp(22px, 2.8vw, 34px)/1.15 var(--display);
+      color: var(--v-ink);
+      font: 700 clamp(22px, 2.8vw, 34px)/1.15 var(--v-display);
       letter-spacing: -0.04em;
     }
     .sec-en {
-      color: var(--faint);
-      font: 10px var(--mono);
+      color: var(--v-mute);
+      font: 10px var(--v-mono);
       margin-top: 6px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
+      font-weight: 600;
     }
     .sec-desc {
       max-width: 420px;
-      color: var(--muted);
-      font-size: 12px;
+      color: var(--v-body);
+      font-size: 12.5px;
       line-height: 1.75;
     }
 
@@ -417,8 +428,8 @@
       gap: 16px;
     }
     .metric-card {
-      background: var(--panel);
-      border: 1px solid var(--line);
+      background: var(--v-panel);
+      border: 1px solid var(--v-line);
       border-radius: 6px;
       padding: 22px 20px;
       display: flex;
@@ -437,11 +448,11 @@
       align-items: center;
     }
     .card-big-num {
-      font-family: var(--mono);
+      font-family: var(--v-mono);
       font-size: 36px;
-      font-weight: 700;
+      font-weight: 750;
       line-height: 1;
-      color: var(--teal-bright);
+      color: var(--v-teal-bright);
     }
     .card-foot-grid {
       display: grid;
@@ -449,19 +460,19 @@
       gap: 6px;
       margin-top: 14px;
       padding-top: 12px;
-      border-top: 1px solid var(--line);
+      border-top: 1px solid var(--v-line);
       font-size: 11px;
-      font-family: var(--mono);
-      color: var(--muted);
+      font-family: var(--v-mono);
+      color: var(--v-mute);
       white-space: nowrap;
     }
 
-    /* 工科气动流场监测视口 (完全按照要求：唯一放置背景视频并强化高科技仪表质感) */
+    /* 工科气动流场监测视口 (唯一放置并高标准重构的背景视频窗口) */
     .viewport-panel {
       position: relative;
       width: 100%;
       height: 420px;
-      border: 1px solid var(--line-strong);
+      border: 1px solid var(--v-line-strong);
       border-radius: 6px;
       overflow: hidden;
       background: #000;
@@ -471,12 +482,12 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      opacity: 0.78;
+      opacity: 0.85;
     }
     .viewport-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(180deg, rgba(11,14,13,0.3) 0%, rgba(11,14,13,0.85) 100%);
+      background: linear-gradient(180deg, rgba(15,23,42,0.2) 0%, rgba(15,23,42,0.78) 100%);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -487,10 +498,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-family: var(--mono);
+      font-family: var(--v-mono);
       font-size: 11px;
-      color: var(--teal-bright);
-      font-weight: 600;
+      color: #ffffff;
+      font-weight: 700;
     }
     .viewport-foot {
       display: flex;
@@ -499,16 +510,16 @@
       color: #fff;
     }
     .viewport-title {
-      font-family: var(--display);
+      font-family: var(--v-display);
       font-size: 24px;
       font-weight: 700;
       letter-spacing: -0.5px;
-      color: var(--paper);
+      color: #ffffff;
     }
     .viewport-sub {
-      font-family: var(--mono);
+      font-family: var(--v-mono);
       font-size: 12px;
-      color: var(--muted);
+      color: rgba(255, 255, 255, 0.8);
       margin-top: 4px;
     }
 
@@ -517,12 +528,12 @@
       margin-top: 48px;
     }
     .dir-group-head {
-      font-family: var(--mono);
+      font-family: var(--v-mono);
       font-size: 11px;
       font-weight: 700;
-      color: var(--faint);
+      color: var(--v-mute);
       letter-spacing: 0.14em;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid var(--v-line);
       padding-bottom: 12px;
       margin-bottom: 20px;
       display: flex;
@@ -534,8 +545,8 @@
       gap: 16px;
     }
     .dir-card {
-      background: var(--panel);
-      border: 1px solid var(--line);
+      background: var(--v-panel);
+      border: 1px solid var(--v-line);
       border-radius: 6px;
       padding: 22px 20px;
       display: flex;
@@ -546,35 +557,35 @@
       transition: all 0.18s;
     }
     .dir-card:hover {
-      border-color: var(--teal-bright);
-      background: var(--panel-2);
+      border-color: var(--v-teal-bright);
+      background: var(--v-panel-2);
       transform: translateY(-2px);
     }
     .dir-card-idx {
-      font-family: var(--mono);
+      font-family: var(--v-mono);
       font-size: 10.5px;
       font-weight: 700;
-      color: var(--faint);
+      color: var(--v-mute);
       margin-bottom: 10px;
     }
     .dir-card-title {
-      font-family: var(--display);
+      font-family: var(--v-display);
       font-size: 16px;
       font-weight: 700;
-      color: var(--paper);
+      color: var(--v-ink);
       margin-bottom: 6px;
     }
     .dir-card-desc {
       font-size: 13px;
-      color: var(--muted);
+      color: var(--v-body);
       line-height: 1.5;
       margin-bottom: 24px;
     }
     .dir-card-link {
-      font-family: var(--mono);
+      font-family: var(--v-mono);
       font-size: 11px;
       font-weight: 700;
-      color: var(--teal-bright);
+      color: var(--v-teal-bright);
       display: flex;
       align-items: center;
       gap: 4px;
@@ -582,11 +593,11 @@
 
     /* 页脚 (1px 发丝边线与纯正团队确权) */
     .t-footer {
-      border-top: 1px solid var(--line);
+      border-top: 1px solid var(--v-line);
       padding: 56px 0;
       margin-top: 80px;
       font-size: 12px;
-      color: var(--muted);
+      color: var(--v-mute);
       line-height: 1.8;
     }
     .footer-inner {
@@ -600,9 +611,9 @@
       gap: 20px;
     }
     .footer-brand {
-      color: var(--paper);
+      color: var(--v-ink);
       font-weight: 700;
-      font-family: var(--display);
+      font-family: var(--v-display);
       font-size: 14px;
     }
 
@@ -629,24 +640,24 @@
       <span class="status-dot"></span>
       本地双线性插值引擎就绪 / Local Active
     </span>
-    <span style="color:var(--line-strong)">|</span>
-    <span style="color:var(--muted)">
-      推理延迟: <strong style="color:var(--paper)">&lt; 0.5 ms</strong> (常规切片)
+    <span style="color:var(--v-line-strong)">|</span>
+    <span style="color:var(--v-mute)">
+      推理延迟: <strong style="color:var(--v-ink)">&lt; 0.5 ms</strong> (常规切片)
     </span>
-    <span style="color:var(--line-strong)">|</span>
-    <span style="color:var(--muted)">
-      验证载体: <strong style="color:var(--paper)">NREL 5MW 九机阵列</strong> (FLORIS GCH)
+    <span style="color:var(--v-line-strong)">|</span>
+    <span style="color:var(--v-mute)">
+      验证载体: <strong style="color:var(--v-ink)">NREL 5MW 九机阵列</strong> (FLORIS GCH)
     </span>
-    <span style="color:var(--line-strong)">|</span>
-    <span style="color:var(--muted)">
-      优化提速: <strong style="color:var(--yellow)">~700× / ~2700×</strong> (vs CFD/SLSQP)
+    <span style="color:var(--v-line-strong)">|</span>
+    <span style="color:var(--v-mute)">
+      优化提速: <strong style="color:var(--v-yellow)">~700× / ~2700×</strong> (vs CFD/SLSQP)
     </span>
-    <span style="color:var(--line-strong)">|</span>
-    <span style="color:var(--muted)">
-      证据等级: <strong style="color:var(--teal)">E2 代理 / E3 物理实测</strong>
+    <span style="color:var(--v-line-strong)">|</span>
+    <span style="color:var(--v-mute)">
+      证据等级: <strong style="color:var(--v-teal)">E2 代理 / E3 物理实测</strong>
     </span>
-    <span style="color:var(--line-strong)">|</span>
-    <span style="color:var(--faint)">纯静态无后台零冷启动</span>
+    <span style="color:var(--v-line-strong)">|</span>
+    <span style="color:var(--v-faint)">纯静态无后台零冷启动</span>
   </div>
 </div>
 
@@ -663,7 +674,7 @@
   </div>
 </nav>
 
-<!-- Hero 画布层 (底层集成大创专属鼠标跟随阻尼追踪光斑及气动流线交互) -->
+<!-- Hero 画布层 (底层集成浅色模式下的鼠标跟随阻尼追踪光斑及 CFD 网格接点感应发亮) -->
 <div class="hero-wrapper">
   <canvas id="aero-bg-canvas"></canvas>
 
@@ -689,19 +700,19 @@
       </div>
 
       <div class="hero-footnote">
-        <span style="color:var(--yellow)">*</span>
-        <span>FLORIS 4.6.6 物理实算 · 纯前端无后端推理 · 7,536 次全风向扫描审计</span>
+        <span style="color:var(--v-yellow)">*</span>
+        <span>FLORIS 4.6.6 物理实算 · 纯前端无后端推理 · 7,536 次全风向工况扫描审计</span>
       </div>
 
       <!-- 操作按钮组 -->
       <div class="hero-actions">
         <a href="array.html" class="btn-primary">
           <span>进入 3×3 阵列控制</span>
-          <span style="font-family:var(--mono);font-size:11px;opacity:0.85">Array</span>
+          <span style="font-family:var(--v-mono);font-size:11px;opacity:0.9">Array</span>
         </a>
         <a href="wake.html" class="btn-secondary">
           <span>探索尾流交互切片</span>
-          <span style="font-family:var(--mono);font-size:11px;opacity:0.75">Wake</span>
+          <span style="font-family:var(--v-mono);font-size:11px;opacity:0.85">Wake</span>
         </a>
         <a href="overview.html" class="btn-link">
           <span>方法论与数据证据 →</span>
@@ -709,12 +720,12 @@
       </div>
     </div>
 
-    <!-- 右侧：精密状态终端 (Linear Precision Status Terminal - 对齐榜样卡面) -->
+    <!-- 右侧：精密状态终端 (Linear Precision Status Terminal - 浅白面板对标榜样) -->
     <div class="terminal-panel">
       <div class="terminal-top-line"></div>
       <div class="terminal-header">
         <div class="terminal-title">
-          <span style="color:var(--yellow)">●</span>
+          <span style="color:var(--v-yellow)">●</span>
           <span>NREL 5MW ARRAY · REALTIME TELEMETRY</span>
         </div>
         <span class="terminal-badge">E2 / E3 ACTIVE</span>
@@ -733,12 +744,12 @@
         </div>
         <div class="terminal-metric-item">
           <div class="m-label">POD FIDELITY</div>
-          <div class="m-val" style="color:var(--yellow)">97.97 <span>%</span></div>
+          <div class="m-val" style="color:var(--v-yellow)">97.97 <span>%</span></div>
           <div class="m-sub">前 2 阶模态正交重构</div>
         </div>
         <div class="terminal-metric-item">
           <div class="m-label">PPO TRACKING MAE</div>
-          <div class="m-val" style="color:var(--rust)">0.523 <span>%</span></div>
+          <div class="m-val" style="color:var(--v-rust)">0.523 <span>%</span></div>
           <div class="m-sub">4 维物理可达域闭环</div>
         </div>
       </div>
@@ -757,7 +768,7 @@
               <div class="step-name">FLORIS 4.6.6 GCH 物理矩阵</div>
               <div class="step-note">5D 串列与 3×3 阵列 7,536 次风向风速离线算例</div>
             </div>
-            <span class="step-tag" style="color:var(--teal-bright)">VERIFIED E2</span>
+            <span class="step-tag" style="color:var(--v-teal-bright)">VERIFIED E2</span>
           </div>
           <div class="pipeline-step">
             <span class="step-idx">02</span>
@@ -765,7 +776,7 @@
               <div class="step-name">双线性网格常驻内存切片</div>
               <div class="step-note">RegularGridInterpolator 线性核 → &lt;0.5 ms 推理</div>
             </div>
-            <span class="step-tag" style="color:var(--teal-bright)">ACTIVE E2</span>
+            <span class="step-tag" style="color:var(--v-teal-bright)">ACTIVE E2</span>
           </div>
           <div class="pipeline-step">
             <span class="step-idx">03</span>
@@ -773,7 +784,7 @@
               <div class="step-name">3×3 阵列四阶梯偏航矩阵</div>
               <div class="step-note">0° / 第一排 / 前两排 / 独立贪心让利错峰验证</div>
             </div>
-            <span class="step-tag" style="color:var(--yellow)">AUDITED E2</span>
+            <span class="step-tag" style="color:var(--v-yellow)">AUDITED E2</span>
           </div>
           <div class="pipeline-step">
             <span class="step-idx">04</span>
@@ -781,7 +792,7 @@
               <div class="step-name">PPO 强化学习实时功率闭环</div>
               <div class="step-note">目标域 [0.78, 0.98] · 稳态平均调节时间 0.944s</div>
             </div>
-            <span class="step-tag" style="color:var(--rust)">CLOSED E3</span>
+            <span class="step-tag" style="color:var(--v-rust)">CLOSED E3</span>
           </div>
         </div>
       </div>
@@ -812,18 +823,18 @@
       <div class="metric-card">
         <div class="card-h-top">
           <div class="card-meta-row">
-            <span style="font:10px var(--mono);color:var(--faint)">01 / ARRAY YAW GAIN</span>
-            <span style="font:10px var(--mono);color:var(--teal-bright);font-weight:600">PRIMARY KPI</span>
+            <span style="font:10px var(--v-mono);color:var(--v-mute)">01 / ARRAY YAW GAIN</span>
+            <span style="font:10px var(--v-mono);color:var(--v-teal-bright);font-weight:700">PRIMARY KPI</span>
           </div>
-          <div style="color:var(--paper);font-size:15px;font-weight:700;margin-top:4px">3×3 九机阵列独立贪心增收</div>
+          <div style="color:var(--v-ink);font-size:15px;font-weight:700;margin-top:4px">3×3 九机阵列独立贪心增收</div>
         </div>
         <div class="card-num-box">
           <span class="card-big-num" data-count="24.04" data-suffix="%">0%</span>
         </div>
         <div class="card-foot-grid">
-          <div>Row 1: <strong style="color:var(--paper)">+30°</strong></div>
-          <div>Row 2: <strong style="color:var(--paper)">+20°</strong></div>
-          <div>全场: <strong style="color:var(--paper)">10041 kW</strong></div>
+          <div>Row 1: <strong style="color:var(--v-ink)">+30°</strong></div>
+          <div>Row 2: <strong style="color:var(--v-ink)">+20°</strong></div>
+          <div>全场: <strong style="color:var(--v-ink)">10041 kW</strong></div>
         </div>
       </div>
 
@@ -831,18 +842,18 @@
       <div class="metric-card">
         <div class="card-h-top">
           <div class="card-meta-row">
-            <span style="font:10px var(--mono);color:var(--faint)">02 / TANDEM STEERING</span>
-            <span style="font:10px var(--mono);color:var(--yellow);font-weight:600">AERO RELIEF</span>
+            <span style="font:10px var(--v-mono);color:var(--v-mute)">02 / TANDEM STEERING</span>
+            <span style="font:10px var(--v-mono);color:var(--v-yellow);font-weight:700">AERO RELIEF</span>
           </div>
-          <div style="color:var(--paper);font-size:15px;font-weight:700;margin-top:4px">两台串列 (5D) 尾流协同增量</div>
+          <div style="color:var(--v-ink);font-size:15px;font-weight:700;margin-top:4px">两台串列 (5D) 尾流协同增量</div>
         </div>
         <div class="card-num-box">
-          <span class="card-big-num" style="color:var(--yellow)" data-count="8.13" data-suffix="%">0%</span>
+          <span class="card-big-num" style="color:var(--v-yellow)" data-count="8.13" data-suffix="%">0%</span>
         </div>
         <div class="card-foot-grid">
-          <div>前机让利: <strong style="color:var(--paper)">-16.8%</strong></div>
-          <div>后速回升: <strong style="color:var(--paper)">6.38m/s</strong></div>
-          <div>后机暴涨: <strong style="color:var(--paper)">+108.4%</strong></div>
+          <div>前机让利: <strong style="color:var(--v-ink)">-16.8%</strong></div>
+          <div>后速回升: <strong style="color:var(--v-ink)">6.38m/s</strong></div>
+          <div>后机暴涨: <strong style="color:var(--v-ink)">+108.4%</strong></div>
         </div>
       </div>
 
@@ -850,18 +861,18 @@
       <div class="metric-card">
         <div class="card-h-top">
           <div class="card-meta-row">
-            <span style="font:10px var(--mono);color:var(--faint)">03 / POD FIDELITY</span>
-            <span style="font:10px var(--mono);color:var(--teal-bright);font-weight:600">DIM REDUCTION</span>
+            <span style="font:10px var(--v-mono);color:var(--v-mute)">03 / POD FIDELITY</span>
+            <span style="font:10px var(--v-mono);color:var(--v-teal-bright);font-weight:700">DIM REDUCTION</span>
           </div>
-          <div style="color:var(--paper);font-size:15px;font-weight:700;margin-top:4px">POD 前两阶模态动能捕捉率</div>
+          <div style="color:var(--v-ink);font-size:15px;font-weight:700;margin-top:4px">POD 前两阶模态动能捕捉率</div>
         </div>
         <div class="card-num-box">
           <span class="card-big-num" data-count="97.97" data-suffix="%">0%</span>
         </div>
         <div class="card-foot-grid">
-          <div>Mode 0: <strong style="color:var(--paper)">76.4%</strong></div>
-          <div>Mode 1: <strong style="color:var(--paper)">21.6%</strong></div>
-          <div>空间压缩: <strong style="color:var(--paper)">8192→2</strong></div>
+          <div>Mode 0: <strong style="color:var(--v-ink)">76.4%</strong></div>
+          <div>Mode 1: <strong style="color:var(--v-ink)">21.6%</strong></div>
+          <div>空间压缩: <strong style="color:var(--v-ink)">8192→2</strong></div>
         </div>
       </div>
 
@@ -869,18 +880,18 @@
       <div class="metric-card">
         <div class="card-h-top">
           <div class="card-meta-row">
-            <span style="font:10px var(--mono);color:var(--faint)">04 / PPO TRACKING</span>
-            <span style="font:10px var(--mono);color:var(--rust);font-weight:600">CLOSED LOOP</span>
+            <span style="font:10px var(--v-mono);color:var(--v-mute)">04 / PPO TRACKING</span>
+            <span style="font:10px var(--v-mono);color:var(--v-rust);font-weight:700">CLOSED LOOP</span>
           </div>
-          <div style="color:var(--paper);font-size:15px;font-weight:700;margin-top:4px">PPO 强化学习稳态跟踪 MAE</div>
+          <div style="color:var(--v-ink);font-size:15px;font-weight:700;margin-top:4px">PPO 强化学习稳态跟踪 MAE</div>
         </div>
         <div class="card-num-box">
-          <span class="card-big-num" style="color:var(--rust)" data-count="0.523" data-suffix="%">0%</span>
+          <span class="card-big-num" style="color:var(--v-rust)" data-count="0.523" data-suffix="%">0%</span>
         </div>
         <div class="card-foot-grid">
-          <div>测试集: <strong style="color:var(--paper)">200集</strong></div>
-          <div>调节时间: <strong style="color:var(--paper)">0.944s</strong></div>
-          <div>稳态抖动: <strong style="color:var(--paper)">0°/step</strong></div>
+          <div>测试集: <strong style="color:var(--v-ink)">200集</strong></div>
+          <div>调节时间: <strong style="color:var(--v-ink)">0.944s</strong></div>
+          <div>稳态抖动: <strong style="color:var(--v-ink)">0°/step</strong></div>
         </div>
       </div>
     </div>
@@ -915,9 +926,9 @@
             <div class="viewport-title">3×3 九机阵列阶梯偏航尾流场可视化实录</div>
             <div class="viewport-sub">YAW UPSTREAM = +30° / WAKE DEFLECTED AWAY FROM COL 1-3 DOWNSTREAM TURBINES</div>
           </div>
-          <div style="text-align:right;font-family:var(--mono);font-size:12px">
-            <span style="color:var(--muted)">ARRAY TOTAL POWER</span><br>
-            <span style="font-size:24px;font-weight:700;color:var(--teal-bright)">10041.46 kW</span>
+          <div style="text-align:right;font-family:var(--v-mono);font-size:12px">
+            <span style="color:rgba(255,255,255,0.75)">ARRAY TOTAL POWER</span><br>
+            <span style="font-size:24px;font-weight:700;color:var(--v-teal-bright)">10041.46 kW</span>
           </div>
         </div>
       </div>
@@ -1052,7 +1063,7 @@
           <div>
             <div class="dir-card-idx">11 / POD REDUCTION</div>
             <div class="dir-card-title">POD 降阶分析</div>
-            <div class="dir-card-desc">模态0 (76.4% 偶极子) + 模态1 (21.6% 恢复) = 97.97% 精度论据。</div>
+            <div class="dir-card-desc">偶极子 76.38% + 回复 21.58% = 前两阶 97.97% 精度论据。</div>
           </div>
           <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
         </a>
@@ -1114,7 +1125,7 @@
         <b>指导教师：</b>李良星 副教授 ｜ 审计自检脚本：<code>check_contract.py</code> (100% Exit Code 0 绿灯)
       </div>
     </div>
-    <div style="text-align:right;font-family:var(--mono);color:var(--faint)">
+    <div style="text-align:right;font-family:var(--v-mono);color:var(--v-mute)">
       <span>SWISS GRID · ZERO SAAS SLOP</span><br>
       <span>0% EMOJI · EDGE INFERENCE</span>
     </div>
@@ -1123,7 +1134,7 @@
 
 <script src="assets/js/nav.js"></script><script src="assets/js/bg-video.js"></script><script src="assets/js/data-source.js"></script>
 <script>
-// 1. 照抄榜样的鼠标跟随阻尼探照光斑 Canvas (Aerodynamic Spotlight Engine)
+// 1. 照抄榜样的鼠标跟随阻尼探照光斑 Canvas (浅色模式专版：深灰青光斑与计算网格感应)
 (function(){
   const canvas = document.getElementById('aero-bg-canvas');
   if (!canvas) return;
@@ -1151,7 +1162,7 @@
   // 涟漪压力波池
   const ripples = [];
   window.addEventListener('click', e => {
-    ripples.push({ x: e.clientX, y: e.clientY, r: 0, alpha: 0.65 });
+    ripples.push({ x: e.clientX, y: e.clientY, r: 0, alpha: 0.55 });
   });
 
   let stopped = false;
@@ -1164,7 +1175,7 @@
 
     // 绘制微弱 48px 计算网格 (纯正工科质感)
     const gridSize = 48;
-    ctx.strokeStyle = 'rgba(220, 232, 222, 0.035)';
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.055)';
     ctx.lineWidth = 1;
     for (let x = 0; x < w; x += gridSize) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
@@ -1179,17 +1190,17 @@
         const dx = x - mouse.x, dy = y - mouse.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 130) {
-          const alpha = (1 - dist / 130) * 0.5;
-          ctx.fillStyle = `rgba(134, 185, 170, ${alpha})`;
+          const alpha = (1 - dist / 130) * 0.45;
+          ctx.fillStyle = `rgba(30, 103, 92, ${alpha})`;
           ctx.beginPath(); ctx.arc(x, y, 2.2, 0, Math.PI * 2); ctx.fill();
         }
       }
     }
 
-    // 惯性墨绿光斑 (Damped Follower Spotlight)
+    // 惯性墨绿光斑 (Damped Follower Spotlight · Light Theme Adaptive)
     const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 280);
-    grad.addColorStop(0, 'rgba(134, 185, 170, 0.18)');
-    grad.addColorStop(1, 'rgba(11, 14, 13, 0)');
+    grad.addColorStop(0, 'rgba(30, 103, 92, 0.08)');
+    grad.addColorStop(1, 'rgba(248, 249, 250, 0)');
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.arc(mouse.x, mouse.y, 280, 0, Math.PI * 2);
@@ -1201,7 +1212,7 @@
       rp.r += 4.2;
       rp.alpha -= 0.02;
       if (rp.alpha <= 0) { ripples.splice(i, 1); continue; }
-      ctx.strokeStyle = `rgba(231, 200, 91, ${rp.alpha})`;
+      ctx.strokeStyle = `rgba(168, 120, 23, ${rp.alpha})`;
       ctx.lineWidth = 1.8;
       ctx.beginPath(); ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2); ctx.stroke();
     }
