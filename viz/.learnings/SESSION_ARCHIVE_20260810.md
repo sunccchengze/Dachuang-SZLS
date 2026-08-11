@@ -98,3 +98,4 @@
 - 召集/蒸馏【老雷】(Vercel)、【老塔】(Tufte)、【老布】(D3.js)、【老艾】(Chrome UX) 与【老乔】五位世界级前端专家对主页 `site/index.html` 实施诊断与审评，产出《世界级前端设计智囊团_对主页site_index.html的深度审阅与升维建议报告.md》，落实按钮力学缩放、tabular-nums 数字对齐、声学压力涟漪阻尼、视频底黑保底及控制台流光微呼吸 5 项升维处方。
 - 响应承泽截图对“页脚不居中”的排查，将主页 `.t-footer` 布局容器改写为 `.footer-inner-centered` 垂直对齐弹性盒 (`flex-direction: column; align-items: center; justify-content: center; text-align: center`)，实现全量铭文沿水平中心绝对居中，解决散偏对仗。
 - 响应“顶部系统遥测条中文字多余且把一行挤成两行”的反查，彻底自 `.t-telemetry-inner` 中删除了冗余表述 `| 纯静态无后台零冷启动`，并约束该条为单行水平不折行 (`white-space: nowrap; overflow-x: auto`)，确保宽屏与普通屏幕全在一行。
+- 启动网页系统改造第二站 `site/wake.html` (尾流分析页)：清除 Emoji、用一体化发丝强线数据带 (`.ledger-strip`) 取代白卡片 KPI，全面执行“中文标题宋体黑、中文正文与说明等线、数字 `tabular-nums` 等宽”的定制字族对齐，赋予组件贝塞尔微动效，自检 100% 通过。
