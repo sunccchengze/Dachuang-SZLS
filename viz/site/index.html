@@ -30,7 +30,7 @@
       --v-teal-bright: #1e675c; /* 高饱和深海钛绿高亮 */
       --v-yellow: #a87817;      /* 暖琥珀金 */
       --v-rust: #ad5038;        /* 铁砖红阶灰 */
-      --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, monospace;
+      --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", monospace;
       --v-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC Black", "Songti SC", "STSong", "STZhongsong", "SimSun", "宋体-简", serif;
       --v-body-font: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", sans-serif;
       color-scheme: light;
@@ -46,11 +46,14 @@
       overflow-x: hidden;
     }
 
-    h1, h2, h3, h4, .hero-title, .sec-title, .viewport-title, .dir-card-title, .m-title {
+    h1, h2, h3, h4, .hero-title, .sec-title, .viewport-title, .dir-card-title, .l-title {
       font-family: var(--v-display);
     }
-    body, p, li, td, th, .hero-lead, .sec-desc, .dir-card-desc {
+    body, p, li, td, th, span, div, a, button, .hero-lead, .sec-desc, .dir-card-desc, .t-telemetry, .btn-link, .hero-capsule, .hero-footnote, .terminal-title, .terminal-badge, .step-name, .step-note, .l-details, .t-footer, .dir-group-head, .card-foot-grid, .m-label, .m-sub {
       font-family: var(--v-body-font);
+    }
+    .num, .card-big-num, .m-val, .step-idx, .dir-card-idx, .l-val, .sec-num, .t-nav-badge {
+      font-family: var(--v-mono);
     }
 
     /* 
@@ -426,10 +429,10 @@
       font-weight: 700;
     }
     .sec-desc {
-      max-width: 440px;
+      max-width: 640px;
       color: var(--v-body);
       font-size: 13px;
-      line-height: 1.75;
+      line-height: 1.6;
     }
 
     /* 
@@ -955,7 +958,7 @@
         </div>
       </div>
       <div class="sec-desc">
-        呈现风力发电机（风力涡轮机）的数字化/线框结构运行示意，清晰透视轮毂（Hub）、齿轮箱（Gearbox）、主轴承与机舱（Nacelle）等数字孪生构造。
+        呈现风力发电机的数字孪生与线框结构运行示意，清晰透视轮毂、齿轮箱、主传动承轴与机舱等构造。
       </div>
     </div>
 
