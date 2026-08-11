@@ -10,7 +10,7 @@
   <style>
     /* 
      * 彻彻底底对标 Vercel + Taste-Skill 浅色学术工作台设计系统 (Light Mode)
-     * 极细发丝强线 (1px Line) ➕ 学术精简数据带 (Academic Ledger Strip) ➕ 极致等线/宋体黑分流
+     * 一体化科研主板容器 (.v-workbench-panel) ➕ 极细发丝网格 ➕ 等线/宋体黑分流 ➕ 零孤行与零横线灾难
      */
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
@@ -57,7 +57,7 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* 极简导航条 */
+    /* 极简工科导航栏 */
     .t-nav {
       position: sticky;
       top: 0;
@@ -106,9 +106,9 @@
       padding: 0 32px;
     }
 
-    /* Hero：瑞士网格去 Emoji 页眉 */
+    /* Hero：瑞士网格去 Emoji 页眉 (限宽 860px 杜绝副标题短孤行) */
     .v-pg-hero {
-      padding: 48px 0 32px;
+      padding: 44px 0 28px;
       border-bottom: none;
     }
     .v-pg-tag {
@@ -117,7 +117,7 @@
       font-weight: 700;
       color: var(--v-yellow);
       letter-spacing: 0.12em;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       text-transform: uppercase;
     }
     .v-pg-title {
@@ -130,25 +130,33 @@
     .v-pg-sub {
       font-size: 14.5px;
       color: var(--v-body);
-      max-width: 680px;
+      max-width: 860px;
       line-height: 1.6;
     }
 
-    /* 因果说明条 - 瑞士发丝网格 (严格垂直零内缩左对齐，单行禁止折行) */
+    /* 
+     * 一体化科研主板容器 (.v-workbench-panel)
+     * 把说明条 (.cause-bar)、指标数据带 (.ledger-strip) 与偏航控件 (.yaw-controls) 融合进单一边界框
+     * 整个首屏水平分割线由 6 条精简降至 2 条，信息信噪比最高！
+     */
+    .v-workbench-panel {
+      background: #ffffff;
+      border: 1px solid var(--v-line-strong);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 36px;
+    }
+
+    /* 因果说明条 (内置于容器顶部，背景哑光浅白绿，严密单行不换行) */
     .cause-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      padding: 16px 0;
-      background: #ffffff;
-      border-top: 1px solid var(--v-line-strong);
-      border-left: none;
-      border-right: none;
-      border-bottom: none;
-      border-radius: 0;
+      padding: 16px 28px;
+      background: var(--v-bg-soft);
+      border-bottom: 1px solid var(--v-line);
       flex-wrap: nowrap;
-      margin: 0;
       width: 100%;
     }
     .cb-left {
@@ -186,26 +194,21 @@
       padding: 6px 14px;
       border-radius: 2px;
       border: 1px solid var(--v-line-strong);
+      background: #ffffff;
       transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       white-space: nowrap;
       flex-shrink: 0;
     }
 
-    /* 
-     * 摒弃卡片式 KPI 设计！使用“学术指标横向精简数据带” (Academic Ledger Strip)
-     * 解决文字外溢、第三行折行及左对齐内缩痛点
-     */
+    /* 一体化横向精简数据带 (Academic Ledger Strip · 基础主色统一为钛黑色 #1e293b) */
     .ledger-strip {
-      border-bottom: 1px solid var(--v-line-strong);
-      border-left: none;
-      border-right: none;
-      background: #ffffff;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      margin: 0 0 32px 0;
+      border-bottom: 1px solid var(--v-line);
+      background: #ffffff;
     }
     .ledger-col {
-      padding: 32px 28px;
+      padding: 28px 28px;
       border-right: 1px solid var(--v-line);
       display: flex;
       flex-direction: column;
@@ -213,13 +216,12 @@
       min-width: 0;
       word-wrap: break-word;
     }
-    .ledger-col:first-child { padding-left: 0; }
     .ledger-col:last-child { border-right: none; }
     .l-meta {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       font-family: var(--v-mono);
       font-size: 10.5px;
       color: var(--v-mute);
@@ -227,10 +229,10 @@
       letter-spacing: 0.05em;
     }
     .l-title {
-      font-size: 15px;
+      font-size: 14.5px;
       font-weight: 750;
       color: var(--v-ink);
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       line-height: 1.35;
     }
     .l-val {
@@ -238,8 +240,9 @@
       font-weight: 750;
       font-size: 38px;
       line-height: 1;
-      color: var(--v-teal-bright);
-      margin-bottom: 20px;
+      color: var(--v-ink);
+      margin-bottom: 16px;
+      transition: color 0.25s;
     }
     .l-details {
       display: flex;
@@ -251,30 +254,19 @@
       color: var(--v-body);
     }
 
-    /* 控制面板与主图表 - 严格对齐 x=0 边沿 */
-    .v-control-card {
-      background: #ffffff;
-      border-top: 1px solid var(--v-line-strong);
-      border-bottom: 1px solid var(--v-line-strong);
-      border-left: none;
-      border-right: none;
-      border-radius: 0;
-      padding: 28px 0;
-      margin-bottom: 48px;
-    }
+    /* 偏航控件条 (集成在主板最下方，空间开阔舒适，下标严格规范为 γ₁) */
     .yaw-controls {
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 20px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--v-line);
-      margin-bottom: 28px;
+      gap: 24px;
+      padding: 22px 28px;
+      background: #ffffff;
     }
     .yaw-slider-wrap {
       flex: 1;
-      min-width: 240px;
+      min-width: 280px;
       display: flex;
       align-items: center;
       gap: 16px;
@@ -332,6 +324,14 @@
       border-color: var(--v-teal-bright);
     }
 
+    /* 图表视口卡 */
+    .v-plots-container {
+      background: #ffffff;
+      border: 1px solid var(--v-line-strong);
+      border-radius: 4px;
+      padding: 28px 32px;
+      margin-bottom: 48px;
+    }
     .grid-plots {
       display: grid;
       grid-template-columns: 1.5fr 1fr;
@@ -345,7 +345,7 @@
       margin-top: 10px;
     }
 
-    /* 严谨居中对称页脚 (全量行文垂直居中，杜绝不居中) */
+    /* 严谨对称居中页脚 */
     .t-footer {
       border-top: 1px solid var(--v-line-strong);
       padding: 60px 0;
@@ -382,7 +382,7 @@
     @media (max-width: 640px) {
       .ledger-strip { grid-template-columns: 1fr; }
       .t-nav-inner, .t-container { padding: 0 20px; }
-      .v-control-card { padding: 20px; }
+      .v-plots-container { padding: 20px; }
       .yaw-controls { flex-direction: column; align-items: flex-start; }
     }
   </style>
@@ -400,13 +400,13 @@
       <a href="index.html" style="color:var(--v-mute);text-decoration:none">00 / HOME</a>
       <a href="wake.html" style="color:var(--v-teal-bright);text-decoration:none;font-weight:750">01 / WAKE ANALYSIS</a>
       <a href="optimization.html" style="color:var(--v-mute);text-decoration:none">02 / OPTIMIZATION</a>
-      <a href="array.html" style="color:var(--v-mute);text-decoration:none">12 / 3X3 ARRAY</a>
+      <a href="solver.html" style="color:var(--v-mute);text-decoration:none">03 / REALTIME SOLVER</a>
       <a href="overview.html" style="color:var(--v-mute);text-decoration:none">ALL MODULES →</a>
     </div>
   </div>
 </nav>
 
-<!-- Hero 页眉 -->
+<!-- Hero 页眉 (限宽 860px，消除副标题折行短孤句) -->
 <header class="v-pg-hero t-container">
   <div class="v-pg-tag">01 / INTERACTIVE WAKE DEFLECTION MODULE · FLORIS GCH</div>
   <h1 class="v-pg-title">尾流交互分析与两机对流响应</h1>
@@ -417,99 +417,112 @@
 
 <main class="t-container">
 
-  <!-- 因果说明条 -->
-  <div class="cause-bar">
-    <div class="cb-left">
-      <span class="cb-label">物理常识</span>
-      <span class="cb-text">上游风机主动偏航把低能尾流<b>侧向推离流道</b>；上游出电<b>微降 -16.8%</b>，换取下游干净迎流风速回升与功率<b>翻倍增至 +108.4%</b>，实现全场净增。</span>
-    </div>
-    <span class="cb-pill" id="causePill" style="background:rgba(30,103,92,0.10);color:var(--v-teal-bright)">拖动滑块体验 →</span>
-  </div>
+  <!-- 
+   * 一体化瑞士网格科研控制台 (.v-workbench-panel)
+   * 将原理条、指标带与控制条聚合入唯一的 1px 外框内，彻底消除不必要的水平杂线！
+   -->
+  <div class="v-workbench-panel">
 
-  <!-- 一体化横向学术精简指标数据带 (.ledger-strip) -->
-  <div class="ledger-strip">
-    <div class="ledger-col">
-      <div>
-        <div class="l-meta"><span>01 / UPSTREAM P1</span><span style="color:var(--v-mute)">ROTOR 1</span></div>
-        <div class="l-title">上游风机 P₁ 出电 (kW)</div>
-        <div class="l-val" id="kP1">–</div>
+    <!-- 因果说明条 (严格在一行，文字 54 字，红框永不换行) -->
+    <div class="cause-bar">
+      <div class="cb-left">
+        <span class="cb-label">物理常识</span>
+        <span class="cb-text">上游主动偏航把低能尾流<b>侧向推离流道</b>；上游出电微降 <b>-16.8%</b>，换取下游干净迎流风速回升与功率<b>翻倍增至 +108.4%</b>，实现全场净增。</span>
       </div>
-      <div class="l-details">
-        <div>相对自然对风 0° 基准</div>
-        <div id="dP1" style="font-family:var(--v-mono);font-weight:700">0 kW (+0.0%)</div>
-      </div>
+      <span class="cb-pill" id="causePill">当前 0°：尾流正对下游 (-0.0%)</span>
     </div>
 
-    <div class="ledger-col">
-      <div>
-        <div class="l-meta"><span>02 / DOWNSTREAM P2</span><span style="color:var(--v-yellow)">AERO RELIEF</span></div>
-        <div class="l-title">下游风机 P₂ 出电 (kW)</div>
-        <div class="l-val" style="color:var(--v-yellow)" id="kP2">–</div>
+    <!-- 4 列学术指标横向精简带 (.ledger-strip，主数据默认采用深黑墨字 var(--v-ink)) -->
+    <div class="ledger-strip">
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>01 / UPSTREAM P1</span><span style="color:var(--v-mute)">ROTOR 1</span></div>
+          <div class="l-title">上游风机 P₁ 出电 (kW)</div>
+          <div class="l-val" id="kP1">1754</div>
+        </div>
+        <div class="l-details">
+          <div>相对自然对风 0° 基准</div>
+          <div id="dP1" style="font-family:var(--v-mono);font-weight:700;color:var(--v-mute)">0 kW (+0.0%)</div>
+        </div>
       </div>
-      <div class="l-details">
-        <div>相对自然对风 0° 基准</div>
-        <div id="dP2" style="font-family:var(--v-mono);font-weight:700">0 kW (+0.0%)</div>
+
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>02 / DOWNSTREAM P2</span><span style="color:var(--v-yellow)">AERO RELIEF</span></div>
+          <div class="l-title">下游风机 P₂ 出电 (kW)</div>
+          <div class="l-val" id="kP2">436</div>
+        </div>
+        <div class="l-details">
+          <div>相对自然对风 0° 基准</div>
+          <div id="dP2" style="font-family:var(--v-mono);font-weight:700;color:var(--v-mute)">0 kW (+0.0%)</div>
+        </div>
+      </div>
+
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>03 / TOTAL POWER</span><span style="color:var(--v-teal-bright)">SYSTEM SUM</span></div>
+          <div class="l-title">两机串列总出电 (kW)</div>
+          <div class="l-val" id="kPtot">2190</div>
+        </div>
+        <div class="l-details">
+          <div>相对自然对风 0° 基准</div>
+          <div id="dPtot" style="font-family:var(--v-mono);font-weight:700;color:var(--v-mute)">0 kW (+0.0%)</div>
+        </div>
+      </div>
+
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>04 / RELATIVE GAIN</span><span style="color:var(--v-rust)">OPTIMAL +25°</span></div>
+          <div class="l-title">相对 0° 基准增幅比</div>
+          <div class="l-val" id="kGain">0.0%</div>
+        </div>
+        <div class="l-details">
+          <div>两台最优增幅锚点</div>
+          <div id="dOpt" style="font-family:var(--v-mono);font-weight:700">最优 +25° · +8.13%</div>
+        </div>
       </div>
     </div>
 
-    <div class="ledger-col">
-      <div>
-        <div class="l-meta"><span>03 / TOTAL POWER</span><span style="color:var(--v-teal-bright)">SYSTEM SUM</span></div>
-        <div class="l-title">两机串列总出电 (kW)</div>
-        <div class="l-val" id="kPtot">–</div>
-      </div>
-      <div class="l-details">
-        <div>相对自然对风 0° 基准</div>
-        <div id="dPtot" style="font-family:var(--v-mono);font-weight:700">0 kW (+0.0%)</div>
-      </div>
-    </div>
-
-    <div class="ledger-col">
-      <div>
-        <div class="l-meta"><span>04 / RELATIVE GAIN</span><span style="color:var(--v-rust)">OPTIMAL +25°</span></div>
-        <div class="l-title">相对 0° 基准增幅比</div>
-        <div class="l-val" style="color:var(--v-rust)" id="kGain">–</div>
-      </div>
-      <div class="l-details">
-        <div>两台最优增幅锚点</div>
-        <div id="dOpt" style="font-family:var(--v-mono);font-weight:700">最优 +25° · +8.13%</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 滑块控制与流场云图区域 -->
-  <div class="v-control-card">
+    <!-- 偏航控件条 (下标精准订正为 γ₁，空间匀称舒适) -->
     <div class="yaw-controls">
       <div style="display:flex;align-items:center;gap:12px">
-        <span class="yaw-label" style="font-size:16px;font-weight:750;color:var(--v-ink)">上游风机偏航角 γ₁</span>
+        <span class="yaw-label" style="font-size:16px;font-weight:750;color:var(--v-ink)">上游风机偏航角 &gamma;<sub>1</sub></span>
         <span class="yaw-badge" id="yawBadge">0°</span>
       </div>
       <div class="yaw-slider-wrap">
         <input type="range" id="yawSlider" min="-30" max="30" value="0" step="5" style="width:100%">
       </div>
       <div class="yaw-quick">
-        <button class="v-btn" id="btnZero">0° 基准</button>
+        <button class="v-btn active" id="btnZero">0° 基准</button>
         <button class="v-btn" id="btnOpt">+25° 最优</button>
         <button class="v-btn" id="btnPlay">▶ 自动扫描</button>
       </div>
     </div>
 
+  </div>
+
+  <!-- 图表视口卡 (.v-plots-container，图例居顶安全区 y=1.18 杜绝底部文字重叠) -->
+  <div class="v-plots-container">
     <div class="grid-plots">
       <div>
         <div id="fieldPlot" style="height:420px"></div>
-        <div class="plot-note">水平尾流速度切片（FLORIS 4.6.6 GCH 模型，8 m/s 来流）。暖红金=高速清洁气流，蓝色=低能尾流亏损；偏航发生横向诱导让道。</div>
+        <div class="plot-note">
+          水平尾流速度切片（FLORIS 4.6.6 GCH 模型，8 m/s 来流）。暖红金=高速清洁来流，蓝色=低能尾流核心；拖动滑块时观察尾流轨迹线横向偏移。
+        </div>
       </div>
       <div>
         <div id="powerPlot" style="height:205px"></div>
         <div id="splitPlot" style="height:205px;margin-top:10px"></div>
-        <div class="plot-note">上图：全场总功率 vs 偏航角，金点=当前选择，绿点=最优；下图：P₁ / P₂ 功率交错分解与消长平衡关系。</div>
+        <div class="plot-note">
+          上图：全场总电量 vs 上游偏航角，金点=当前工作点，绿点=最优；下图：P₁ / P₂ 功率交错消长分解曲线。
+        </div>
       </div>
     </div>
   </div>
 
 </main>
 
-<!-- 页脚 (百分百完全居中，与主页纪律严格咬合) -->
+<!-- 页脚 (百分百居中对称，严密确权) -->
 <footer class="t-footer">
   <div class="footer-inner-centered">
     <div class="footer-brand" style="margin-bottom:6px">西安交通大学 · 能源与动力工程学院 · 大学生创新训练项目团队</div>
@@ -550,6 +563,9 @@
   function render(){
     const yaw = parseInt(slider.value);
     badge.textContent = (yaw >= 0 ? '+' : '') + yaw + '°';
+    document.getElementById('btnZero').classList.toggle('active', yaw === 0);
+    document.getElementById('btnOpt').classList.toggle('active', yaw === optYaw);
+
     const pred = S.predict_power(yaw, 8);
     const base = S.predict_power(0, 8);
     const gain = ((pred.ptot - base.ptot) / base.ptot * 100);
@@ -557,9 +573,16 @@
     document.getElementById('kP1').textContent = Math.round(pred.p1);
     document.getElementById('kP2').textContent = Math.round(pred.p2);
     document.getElementById('kPtot').textContent = Math.round(pred.ptot);
+    
     const gEl = document.getElementById('kGain');
-    gEl.textContent = (gain >= 0 ? '+' : '') + gain.toFixed(2) + '%';
-    gEl.style.color = gain > 0.5 ? 'var(--v-teal-bright)' : gain < -0.5 ? 'var(--v-rust)' : 'var(--v-mute)';
+    gEl.textContent = (gain >= 0 && yaw !== 0 ? '+' : '') + gain.toFixed(2) + '%';
+    gEl.style.color = gain > 0.5 ? 'var(--v-teal-bright)' : gain < -0.5 ? 'var(--v-rust)' : 'var(--v-ink)';
+    
+    // 基础主数视觉规范：在自然对风 0° 时统一呈现权威碳黑色；发生优化偏航时显示专色
+    document.getElementById('kP1').style.color = yaw === 0 ? 'var(--v-ink)' : 'var(--v-ink)';
+    document.getElementById('kP2').style.color = yaw === 0 ? 'var(--v-ink)' : 'var(--v-yellow)';
+    document.getElementById('kPtot').style.color = yaw === 0 ? 'var(--v-ink)' : 'var(--v-teal-bright)';
+
     setDelta(document.getElementById('dP1'), pred.p1, base.p1);
     setDelta(document.getElementById('dP2'), pred.p2, base.p2);
     setDelta(document.getElementById('dPtot'), pred.ptot, base.ptot);
@@ -568,7 +591,7 @@
     const pill = document.getElementById('causePill');
     if(yaw === 0){
       pill.textContent = '当前 0°：尾流正对下游 (-0.0%)';
-      pill.style.background = 'rgba(173, 80, 56, 0.12)'; pill.style.color = 'var(--v-rust)';
+      pill.style.background = 'rgba(30,41,59,0.06)'; pill.style.color = 'var(--v-ink)';
     } else if(yaw === optYaw){
       pill.textContent = '✓ 最优 +' + yaw + '°：增益 +' + gain.toFixed(2) + '%';
       pill.style.background = 'rgba(30, 103, 92, 0.14)'; pill.style.color = 'var(--v-teal-bright)';
@@ -580,7 +603,7 @@
       pill.style.background = 'rgba(173, 80, 56, 0.12)'; pill.style.color = 'var(--v-rust)';
     }
 
-    // 绘制水平流速云图
+    // 1. 绘制水平流速云图
     const f2d = D3 && D3.fields_2d && D3.fields_2d[String(yaw)];
     const optVal = m.ptot[i8][m.yaw_angles.indexOf(optYaw)];
     if(f2d){
@@ -606,7 +629,7 @@
       }, { responsive: true, displayModeBar: 'hover', modeBarButtonsToRemove: ['lasso2d', 'select2d'] });
     }
 
-    // 总功率曲线图
+    // 2. 总电量曲线图
     Plotly.react('powerPlot', [{
       x: m.yaw_angles, y: m.ptot[i8], mode: 'lines', name: '总功率',
       line: { color: '#1e675c', width: 2.5 }, fill: 'tozeroy', fillcolor: 'rgba(30, 103, 92, 0.08)'
@@ -618,13 +641,13 @@
       marker: { size: 13, color: '#a87817', line: { color: '#ffffff', width: 2 } },
       text: ['  ' + (yaw >= 0 ? '+' : '') + yaw + '°'], textposition: 'middle right', textfont: { size: 11, color: '#1e293b' }
     }], {
-      xaxis: { title: '上游偏航角 (°)' },
+      xaxis: { title: '上游偏航角 γ₁ (°)' },
       yaxis: { title: '总电量 (kW)' },
-      height: 220, margin: { l: 50, r: 15, t: 15, b: 42 }, showlegend: false,
+      height: 205, margin: { l: 50, r: 15, t: 15, b: 40 }, showlegend: false,
       paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
     }, { responsive: true, displayModeBar: false });
 
-    // P1 / P2 功率消长表列
+    // 3. P1 / P2 功率消长表列 (图例放置在上方安全区域 y=1.18，零文字重叠)
     Plotly.react('splitPlot', [{
       x: m.yaw_angles, y: m.p1[i8], mode: 'lines', name: '上游 P₁',
       line: { color: '#64748b', width: 2 }
@@ -635,9 +658,9 @@
       x: [yaw, yaw], y: [0, Math.max(...m.p1[i8], ...m.p2[i8]) * 1.05], mode: 'lines',
       line: { color: '#a87817', width: 1.5, dash: 'dot' }, showlegend: false, hoverinfo: 'skip'
     }], {
-      xaxis: { title: '上游偏航角 (°)' },
+      xaxis: { title: '上游偏航角 γ₁ (°)' },
       yaxis: { title: '单机 (kW)' },
-      height: 220, margin: { l: 50, r: 15, t: 32, b: 42 },
+      height: 205, margin: { l: 50, r: 15, t: 32, b: 40 },
       legend: { orientation: 'h', y: 1.18, x: 0.5, xanchor: 'center', font: { size: 11 } },
       paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
     }, { responsive: true, displayModeBar: false });
