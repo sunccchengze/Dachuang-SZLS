@@ -474,66 +474,67 @@ def create_deck():
             t9.cell(r_idx+1, c_idx).text = val
     format_nature_table(t9)
 
-    # ==================== SLIDE 10: AUDIT INTEGRITY ====================
+    # ==================== SLIDE 10: PS 300DPI & PPT SWISS GRID ====================
     s10 = prs.slides.add_slide(blank_layout)
     set_slide_background(s10)
-    add_header(s10, "09 / DATA INTEGRITY AUDIT AND CONTRACT VALIDATION", "全域零暗黑硬编码、零 Emoji 装饰、零伪冒陈旧数据，确保诚信可推演", 10)
+    add_header(s10, "09 / PS 300DPI & PPT SWISS GRID: RESEARCH VISUALIZATION STANDARDS", "暑期专攻 PS 300DPI 顶刊分层制图与 PPT 瑞士国际主义网格学术排版规范", 10)
     add_footer(s10)
 
     tx10_l = s10.shapes.add_textbox(Inches(0.8), Inches(1.8), Inches(5.8), Inches(4.5))
     tf10_l = tx10_l.text_frame
     tf10_l.word_wrap = True
     p10_0 = tf10_l.paragraphs[0]
-    p10_0.text = "A~H 项全站诚信确权自检清单："
+    p10_0.text = "PS 300DPI 顶刊级科研分层制图探索："
     p10_0.font.size = Pt(16)
     p10_0.font.bold = True
     p10_points = [
-        "• 彻底删除陈旧宣传伪词：全站清退 '7000吨 / 340万元 / 42.5%' 等未经验证的描述；",
-        "• FLORIS 原生口径咬合：5D 双机自然 2190 kW / 偏航 2368 kW (+8.13%) 逐字节吻合；",
-        "• 纠正假象数据：array.html 精确区分自然 8095、第一排 9299、前两排 9935 与贪心 10041 kW 物理梯级。"
+        "• 顶刊规范打底：严格按 Nature / IEEE 标准开展 300DPI 矢量与云图探索 (generate_figure_psd.py)；",
+        "• 分层工程化管理：掌握 5 分层组结构规范与智能对象管理，彻底消除缩放脏边与伪影；",
+        "• 印刷与大屏双适配：为下阶段学术论文投稿、大创考核报告与 A0 实物海报展板准备可出版级图源。"
     ]
     for pt_str in p10_points:
         p_item = tf10_l.add_paragraph()
         p_item.text = pt_str
         p_item.font.size = Pt(13)
         p_item.font.color.rgb = SUB_COLOR
-        p_item.space_before = Pt(12)
+        p_item.space_before = Pt(14)
 
-    box10_r = s10.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(6.9), Inches(1.8), Inches(5.6), Inches(4.2))
-    box10_r.fill.solid()
-    box10_r.fill.fore_color.rgb = TXT_COLOR
-    tf10_r = box10_r.text_frame
+    tx10_r = s10.shapes.add_textbox(Inches(6.9), Inches(1.8), Inches(5.6), Inches(4.5))
+    tf10_r = tx10_r.text_frame
     tf10_r.word_wrap = True
     p10_r0 = tf10_r.paragraphs[0]
-    p10_r0.text = "$ python3 site/check_contract.py\n" \
-                  "==========================================================\n" \
-                  "✅ 契约校验通过：data.js / data_3d.js 结构与数值一致。\n" \
-                  "==========================================================\n\n" \
-                  "$ python3 site/verify_all_pages.py\n" \
-                  "质量自检扫描完毕: 发现 0 个阻断错误, 0 个优化警告。\n" \
-                  "✅ 全站 16 个子页面全部通过校验！"
-    p10_r0.font.size = Pt(12)
+    p10_r0.text = "PPT 瑞士国际主义网格系统（Swiss Grid）成果："
+    p10_r0.font.size = Pt(16)
     p10_r0.font.bold = True
-    p10_r0.font.color.rgb = RGBColor(74, 246, 38)
-    p10_r0.font.name = "JetBrains Mono"
+    p10_r_points = [
+        "• 彻底去 AI 模板味：基于王牌PPT.pptx 确立‘零 Emoji、零浮动圆角软阴影卡片、1.3 倍行距’准则；",
+        "• 高数据墨水比：以 1px 发丝边框与 Nature 规范三线表最大化呈现流体力学与算法数据密度；",
+        "• 本汇报展示实操：本次组会演练的 16:9 宽屏文稿即为暑期在这套排版与美学规范上的现场落地检验！"
+    ]
+    for pt_str in p10_r_points:
+        p_item = tf10_r.add_paragraph()
+        p_item.text = pt_str
+        p_item.font.size = Pt(13)
+        p_item.font.color.rgb = BLUE_DEEP
+        p_item.space_before = Pt(14)
 
-    # ==================== SLIDE 11: SUMMARY ====================
+    # ==================== SLIDE 11: SUMMARY & AUDIT INTEGRITY ====================
     s11 = prs.slides.add_slide(blank_layout)
     set_slide_background(s11)
-    add_header(s11, "10 / SUMMARY OF SUMMER WORK AND NEXT STEPS", "夯实底层基础，讲透流场机理，向九月大创考核及全国大赛备战冲刺", 11)
+    add_header(s11, "10 / DATA INTEGRITY AUDIT AND SUMMER WORK SUMMARY", "全链路诚信自检绿灯通过，暑期可视化与制图规范三大阵地成果盘点", 11)
     add_footer(s11)
 
     col_w11 = Inches(3.6)
     lefts11 = [Inches(0.8), Inches(4.8), Inches(8.8)]
     titles11 = [
-        "暑期工作大盘点\nSUMMER ACHIEVEMENT",
-        "九月开学考核目标\nSEPTEMBER GOALS",
-        "长期挑战杯与论文计划\nLONG-TERM VISION"
+        "16页莫兰迪静态工作台\nWEB VISUALIZATION",
+        "PS顶刊图与PPT网格体系\nPS / PPT STANDARDS",
+        "全站诚信自检与规划\nINTEGRITY & VISION"
     ]
     descs11 = [
-        "完成 16 页莫兰迪工科纯静态科研工作台研发；首创 3×3 阵列四阶梯气动对比；完成 PPO 物理可达界限与收敛审计。",
-        "依托《大白话自学通识手册》强化组会表达底气；与流场和控制组做结题汇报演示；编排大创中期答辩核心讲演书。",
-        "按瑞士网格制作 20 页挑战杯全国赛 Deck；基于 generate_figure_psd.py 准备 300DPI 矢量排版图；实战防御评委质询。"
+        "实现纯前端 <0.5 ms 双线性切片推理；首创 3×3 九机阵列四阶梯协同偏航对比卡（增产达 24.04%）。",
+        "掌握 Nature 规格 300DPI 矢量图绘制；建立 Swiss Grid 1.3 倍行距、零 Emoji 极简学术演讲文稿体系。",
+        "通过 python3 check_contract.py 全站自检通过；清除陈旧伪数，迎接九月大创开学考核与挑战杯赛。"
     ]
     for idx in range(3):
         box = s11.shapes.add_shape(MSO_SHAPE.RECTANGLE, lefts11[idx], Inches(2.0), col_w11, Inches(4.2))
