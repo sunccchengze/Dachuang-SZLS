@@ -96,3 +96,4 @@
 - 响应承泽对 7 张大屏截图的精准反查，全面改造主页 (`site/index.html`)：①重置导航和遥测层级消除横幅重叠；②弃用独立指标卡片，改为一体化横向精简数据带 (`.ledger-strip`) 且文字零外溢；③订正视频实况口径为“风力发电机数字孪生与透明线框运行示意”；④清退非学术展示口号与 `(15 PAGES)` 页数；⑤以 `taste-skill` 指南加入对数贝塞尔微动效，自检通过。
 - 彻底修复 `site/index.html` 中等宽字体中文字形宋体回滚现象：将 `"DengXian", "等线", "PingFang SC"` 注入 `--v-mono` 尾部，并在 CSS 中显式绑定全域 UI 汉字至等线无衬线版式；扩容 `.sec-desc` 宽度至 `640px` 并精炼语句，严格保障主页全部章节说明段落控制在两行以内（永不溢出至第三行），全自检通过。
 - 召集/蒸馏【老雷】(Vercel)、【老塔】(Tufte)、【老布】(D3.js)、【老艾】(Chrome UX) 与【老乔】五位世界级前端专家对主页 `site/index.html` 实施诊断与审评，产出《世界级前端设计智囊团_对主页site_index.html的深度审阅与升维建议报告.md》，落实按钮力学缩放、tabular-nums 数字对齐、声学压力涟漪阻尼、视频底黑保底及控制台流光微呼吸 5 项升维处方。
+- 响应承泽截图对“页脚不居中”的排查，将主页 `.t-footer` 布局容器改写为 `.footer-inner-centered` 垂直对齐弹性盒 (`flex-direction: column; align-items: center; justify-content: center; text-align: center`)，实现全量铭文沿水平中心绝对居中，解决散偏对仗。

@@ -661,25 +661,27 @@
       transform: translateX(4px);
     }
 
-    /* 页脚 */
+    /* 页脚 (严密垂直居中排版，彻底解决左右不对齐和不居中问题) */
     .t-footer {
-      border-top: 1px solid var(--v-line);
+      border-top: 1px solid var(--v-line-strong);
       padding: 60px 0;
       margin-top: 96px;
       font-size: 12.5px;
-      color: var(--v-mute);
+      color: var(--v-body);
       line-height: 1.8;
       background: #ffffff;
+      text-align: center;
     }
-    .footer-inner {
-      max-width: 1240px;
+    .footer-inner-centered {
+      max-width: 960px;
       margin: 0 auto;
       padding: 0 32px;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 20px;
+      justify-content: center;
+      text-align: center;
+      gap: 8px;
     }
     .footer-brand {
       color: var(--v-ink);
@@ -1179,17 +1181,14 @@
 
 <!-- 页脚 (不再出现内部营销设计标语，纯正工程版权与确权声明) -->
 <footer class="t-footer">
-  <div class="footer-inner">
-    <div>
-      <div class="footer-brand">西安交通大学 · 能源与动力工程学院 · 大学生创新训练项目团队</div>
-      <div style="margin-top:6px">
-        <b>成员确权：</b>田铭雨（高保真CFD流场仿真）· 袁夫达（POD特征降阶与代理模型）· 厉今飞（多风速工况基线）· 洪祖名（PPO跟踪与优化求解）· 孙承泽（可视化与交互系统负责）<br>
-        <b>指导教师：</b>李良星 副教授 ｜ 审计自检脚本：<code>check_contract.py</code> (100% Exit Code 0 绿灯)
-      </div>
+  <div class="footer-inner-centered">
+    <div class="footer-brand" style="margin-bottom:6px">西安交通大学 · 能源与动力工程学院 · 大学生创新训练项目团队</div>
+    <div style="line-height:1.8;color:var(--v-body);font-size:12.5px;margin-bottom:12px">
+      <b>成员确权：</b>田铭雨（高保真CFD流场仿真）· 袁夫达（POD特征降阶与代理模型）· 厉今飞（多风速工况基线）· 洪祖名（PPO跟踪与优化求解）· 孙承泽（可视化与交互系统负责）<br>
+      <b>指导教师：</b>李良星 副教授 ｜ 审计自检脚本：<code>check_contract.py</code> (100% Exit Code 0 绿灯)
     </div>
-    <div style="text-align:right;font-family:var(--v-mono);color:var(--v-mute)">
-      <span>SWISS INTERNATIONAL TYPOGRAPHIC STYLE</span><br>
-      <span>EDGE INFERENCE · REGULAR GRID INTERPOLATOR</span>
+    <div style="font-family:var(--v-mono);font-size:11px;color:var(--v-mute);letter-spacing:0.06em">
+      <span>SWISS INTERNATIONAL TYPOGRAPHIC STYLE · EDGE INFERENCE · REGULAR GRID INTERPOLATOR</span>
     </div>
   </div>
 </footer>
