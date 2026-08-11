@@ -54,6 +54,7 @@
     }
     .num, .card-big-num, .m-val, .step-idx, .dir-card-idx, .l-val, .sec-num, .t-nav-badge {
       font-family: var(--v-mono);
+      font-variant-numeric: tabular-nums;
     }
 
     /* 
@@ -252,6 +253,8 @@
       transform: translateY(-2px);
       box-shadow: 0 6px 16px -4px rgba(30, 41, 59, 0.22);
     }
+    .btn-primary:active { transform: translateY(0) scale(0.98); }
+    .btn-primary:focus-visible { outline: 2px solid var(--v-teal-bright); outline-offset: 2px; }
     .btn-secondary {
       display: inline-flex;
       align-items: center;
@@ -271,6 +274,8 @@
       background: var(--v-bg-soft);
       transform: translateY(-2px);
     }
+    .btn-secondary:active { transform: translateY(0) scale(0.98); }
+    .btn-secondary:focus-visible { outline: 2px solid var(--v-teal-bright); outline-offset: 2px; }
     .btn-link {
       display: inline-flex;
       align-items: center;
@@ -292,9 +297,15 @@
       border-radius: 6px;
       overflow: hidden;
     }
+    @keyframes topPulse {
+      0%, 100% { opacity: 0.85; background-position: 0% 50%; }
+      50% { opacity: 1; background-position: 100% 50%; }
+    }
     .terminal-top-line {
       height: 2px;
       background: linear-gradient(90deg, var(--v-teal-bright), var(--v-yellow), var(--v-rust));
+      background-size: 200% 200%;
+      animation: topPulse 6s ease-in-out infinite;
     }
     .terminal-header {
       padding: 14px 20px;
@@ -517,7 +528,7 @@
       border: 1px solid var(--v-line-strong);
       border-radius: 4px;
       overflow: hidden;
-      background: #000;
+      background: #0d1110;
       margin-top: 16px;
     }
     .viewport-panel video {
@@ -525,6 +536,7 @@
       height: 100%;
       object-fit: cover;
       opacity: 0.88;
+      background: #0d1110;
     }
     .viewport-overlay {
       position: absolute;
@@ -1209,10 +1221,10 @@
     mouse.active = true;
   });
 
-  // 涟漪压力波池
+  // 涟漪压力波池 (含物理声学波速阻尼)
   const ripples = [];
   window.addEventListener('click', e => {
-    ripples.push({ x: e.clientX, y: e.clientY, r: 0, alpha: 0.55 });
+    ripples.push({ x: e.clientX, y: e.clientY, r: 0, speed: 7.5, alpha: 0.55 });
   });
 
   let stopped = false;
@@ -1256,12 +1268,13 @@
     ctx.arc(mouse.x, mouse.y, 280, 0, Math.PI * 2);
     ctx.fill();
 
-    // 点击动量压力涟漪
+    // 点击动量压力声学涟漪 (波速阻尼衰减方程)
     for (let i = ripples.length - 1; i >= 0; i--) {
       const rp = ripples[i];
-      rp.r += 4.2;
-      rp.alpha -= 0.02;
-      if (rp.alpha <= 0) { ripples.splice(i, 1); continue; }
+      rp.r += rp.speed;
+      rp.speed *= 0.96;
+      rp.alpha -= 0.018;
+      if (rp.alpha <= 0 || rp.speed < 0.2) { ripples.splice(i, 1); continue; }
       ctx.strokeStyle = `rgba(168, 120, 23, ${rp.alpha})`;
       ctx.lineWidth = 1.8;
       ctx.beginPath(); ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2); ctx.stroke();
