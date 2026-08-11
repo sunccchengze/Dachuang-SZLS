@@ -3,32 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>风电场偏航优化可视化 · 科研工作台系统</title>
+  <title>风电场偏航优化平台 · 科研工作台系统</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/media.css">
   <link rel="stylesheet" href="css/home.css">
   <style>
     /* 
-     * 彻彻底底对标榜样：sunccchengze/turbine-blade-ai-platform (arena/019feb03)
-     * 纯正莫兰迪工科浅色调 (Light Engineering Canvas color-scheme: light)
-     * 极细发丝强线 (1px Line rgba(30,41,59,.10)) ➕ 等宽技术字距 (DM Mono / tabular-nums) ➕ 鼠标阻尼追踪光斑
+     * 彻彻底底对标 Vercel + Taste-Skill 浅色学术工作台设计系统
+     * 纯正莫兰迪工科浅色调 (color-scheme: light) ➕ 极细黑白墨线 ➕ Cubic-Bezier 丝滑微动效 ➕ 严禁卡片堆砌与边界溢出
      */
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
     :root {
-      --v-bg: #f8f9fa;          /* 莫兰迪米白工程纸灰绿底 */
-      --v-bg-soft: #f1f3f5;     /* 面板亚光白灰 */
-      --v-bg-subtle: #e9ecef;   /* 分隔底灰 */
+      --v-bg: #f8f9fa;          /* 莫兰迪米白工程纸灰灰底 */
+      --v-bg-soft: #f1f3f5;     /* 亚光白灰面板 */
+      --v-bg-subtle: #e9ecef;   /* 分隔底线 */
       --v-panel: #ffffff;       /* 纯白几何板点 */
-      --v-panel-2: #f4f6f8;     /* 悬浮交互浅纸绿 */
-      --v-ink: #1e293b;         /* 钛灰深碳黑墨水主字 */
+      --v-panel-hover: #fcfdfe; /* 丝滑悬浮反光白 */
+      --v-ink: #1e293b;         /* 钛灰深黑墨水主字 */
       --v-body: #334155;        /* 正文字色 */
-      --v-mute: #64748b;        /* 二级标注及注释 */
-      --v-faint: #94a3b8;       /* 辅助线文本 */
+      --v-mute: #64748b;        /* 二级文字与注释 */
+      --v-faint: #94a3b8;       /* 辅助线及底标文本 */
       --v-line: rgba(30, 41, 59, 0.11);
       --v-line-strong: rgba(30, 41, 59, 0.22);
       --v-teal: #2d7569;
-      --v-teal-bright: #1e675c; /* 高饱和深海绿灰主高亮 */
+      --v-teal-bright: #1e675c; /* 高饱和深海钛绿高亮 */
       --v-yellow: #a87817;      /* 暖琥珀金 */
       --v-rust: #ad5038;        /* 铁砖红阶灰 */
       --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, monospace;
@@ -47,24 +46,35 @@
       overflow-x: hidden;
     }
 
-    /* 顶部系统遥测条 (严格对齐 turbine-blade 左对齐 28px) */
+    h1, h2, h3, h4, .hero-title, .sec-title, .viewport-title, .dir-card-title, .m-title {
+      font-family: var(--v-display);
+    }
+    body, p, li, td, th, .hero-lead, .sec-desc, .dir-card-desc {
+      font-family: var(--v-body-font);
+    }
+
+    /* 
+     * 1. 顶部系统遥测条与导航条 (严密流式布局，彻底杜绝顶部横幅重叠！)
+     */
     .t-telemetry {
+      background: #ffffff;
       border-bottom: 1px solid var(--v-line);
-      background: var(--v-panel);
       font-size: 11px;
       font-family: var(--v-mono);
       position: relative;
-      z-index: 20;
+      z-index: 40;
+      padding: 8px 0;
     }
     .t-telemetry-inner {
       max-width: 1240px;
       margin: 0 auto;
-      padding: 9px 28px;
+      padding: 0 32px;
       display: flex;
       align-items: center;
       justify-content: flex-start;
       gap: 10px 18px;
       flex-wrap: wrap;
+      line-height: 1.5;
     }
     .status-active {
       display: inline-flex;
@@ -80,15 +90,14 @@
       box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
     }
 
-    /* 极简工科导航栏 */
     .t-nav {
-      border-bottom: 1px solid var(--v-line);
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(12px);
       position: sticky;
       top: 0;
-      z-index: 50;
-      height: 56px;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--v-line);
+      height: 60px;
       display: flex;
       align-items: center;
     }
@@ -96,7 +105,7 @@
       max-width: 1240px;
       width: 100%;
       margin: 0 auto;
-      padding: 0 28px;
+      padding: 0 32px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -115,7 +124,7 @@
       font-family: var(--v-mono);
       font-size: 10.5px;
       color: var(--v-teal-bright);
-      padding: 2px 8px;
+      padding: 3px 8px;
       border: 1px solid var(--v-line-strong);
       border-radius: 3px;
       background: var(--v-bg-soft);
@@ -127,14 +136,16 @@
       color: var(--v-mute);
     }
 
-    /* 容器布局 */
+    /* 容器控制 */
     .t-container {
       max-width: 1240px;
       margin: 0 auto;
-      padding: 0 28px;
+      padding: 0 32px;
     }
 
-    /* Canvas 背景与舞台层 (为浅色模式定制鼠标跟随阻尼光斑及 CFD 48px 计算网格发亮) */
+    /* 
+     * 2. Hero 区域与背景光斑层
+     */
     .hero-wrapper {
       position: relative;
       overflow: hidden;
@@ -152,7 +163,7 @@
     .hero-content {
       position: relative;
       z-index: 2;
-      padding: 72px 28px 64px;
+      padding: 72px 32px 64px;
       max-width: 1240px;
       margin: 0 auto;
       display: grid;
@@ -160,14 +171,12 @@
       gap: 48px;
       align-items: start;
     }
-
-    /* Hero 左侧专区 */
     .hero-tag {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       color: var(--v-yellow);
-      font: 700 10px var(--v-mono);
+      font: 700 10.5px var(--v-mono);
       letter-spacing: 0.12em;
       margin-bottom: 20px;
     }
@@ -182,7 +191,7 @@
       display: block;
       margin-top: 14px;
       color: var(--v-ink);
-      font: 700 clamp(20px, 2.5vw, 30px)/1.25 var(--v-display);
+      font: 750 clamp(22px, 2.6vw, 32px)/1.25 var(--v-display);
       letter-spacing: -0.02em;
     }
     .hero-lead {
@@ -201,7 +210,7 @@
       border: 1px solid rgba(30, 103, 92, 0.22);
       border-radius: 4px;
       color: var(--v-ink);
-      font-size: 11px;
+      font-size: 11.5px;
       font-family: var(--v-mono);
       font-weight: 500;
       margin-bottom: 18px;
@@ -229,14 +238,16 @@
       color: #ffffff;
       font-size: 13px;
       font-weight: 700;
-      padding: 12px 22px;
+      padding: 12px 24px;
       border-radius: 4px;
       text-decoration: none;
-      transition: all 0.15s;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 2px 8px -2px rgba(30, 103, 92, 0.25);
     }
     .btn-primary:hover {
       background: var(--v-ink);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px -4px rgba(30, 41, 59, 0.22);
     }
     .btn-secondary {
       display: inline-flex;
@@ -250,11 +261,12 @@
       border: 1px solid var(--v-line-strong);
       border-radius: 4px;
       text-decoration: none;
-      transition: all 0.15s;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .btn-secondary:hover {
       border-color: var(--v-teal-bright);
       background: var(--v-bg-soft);
+      transform: translateY(-2px);
     }
     .btn-link {
       display: inline-flex;
@@ -270,20 +282,19 @@
     }
     .btn-link:hover { color: var(--v-ink); }
 
-    /* Hero 右侧：精密控制台 (Linear Precision Status Terminal - 纯正白色面板与渐变头线) */
+    /* Hero 右侧：精密终端 (白版发丝强线面板) */
     .terminal-panel {
       border: 1px solid var(--v-line-strong);
       background: var(--v-panel);
       border-radius: 6px;
       overflow: hidden;
-      box-shadow: none;
     }
     .terminal-top-line {
       height: 2px;
       background: linear-gradient(90deg, var(--v-teal-bright), var(--v-yellow), var(--v-rust));
     }
     .terminal-header {
-      padding: 14px 18px;
+      padding: 14px 20px;
       border-bottom: 1px solid var(--v-line);
       display: flex;
       justify-content: space-between;
@@ -315,21 +326,21 @@
     }
     .terminal-metric-item {
       background: var(--v-panel);
-      padding: 14px 18px;
+      padding: 16px 20px;
     }
     .m-label {
       color: var(--v-mute);
-      font: 9px var(--v-mono);
+      font: 9.5px var(--v-mono);
       letter-spacing: 0.08em;
-      font-weight: 600;
+      font-weight: 700;
     }
     .m-val {
       font-family: var(--v-mono);
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 750;
       color: var(--v-teal-bright);
       margin-top: 4px;
-      line-height: 1;
+      line-height: 1.1;
     }
     .m-val span {
       font-size: 12px;
@@ -338,11 +349,11 @@
     }
     .m-sub {
       color: var(--v-faint);
-      font: 10px var(--v-mono);
-      margin-top: 2px;
+      font: 10.5px var(--v-mono);
+      margin-top: 4px;
     }
 
-    /* 4 阶段科研证据链流水 (Evidence Flow Pipeline) */
+    /* 科研证据链表 */
     .pipeline-wrap { padding: 18px 20px; }
     .pipeline-header {
       color: var(--v-mute);
@@ -370,12 +381,12 @@
     }
     .step-name {
       color: var(--v-ink);
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 700;
     }
     .step-note {
       color: var(--v-mute);
-      font: 10px var(--v-mono);
+      font: 10.5px var(--v-mono);
       margin-top: 2px;
     }
     .step-tag {
@@ -384,114 +395,142 @@
       font-weight: 700;
     }
 
-    /* Section Header (参照榜样 SectionHead 规范) */
+    /* Section Header */
     .sec-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
       gap: 24px;
-      margin-bottom: 28px;
+      margin-bottom: 32px;
       flex-wrap: wrap;
       padding-bottom: 16px;
-      border-bottom: 1px solid var(--v-line);
+      border-bottom: 1px solid var(--v-line-strong);
     }
     .sec-left { display: flex; gap: 14px; align-items: flex-start; }
     .sec-num {
       color: var(--v-yellow);
-      font: 700 11px var(--v-mono);
+      font: 700 12px var(--v-mono);
       padding-top: 4px;
     }
     .sec-title {
       color: var(--v-ink);
-      font: 700 clamp(22px, 2.8vw, 34px)/1.15 var(--v-display);
+      font: 750 clamp(22px, 2.8vw, 34px)/1.15 var(--v-display);
       letter-spacing: -0.04em;
     }
     .sec-en {
       color: var(--v-mute);
-      font: 10px var(--v-mono);
+      font: 10.5px var(--v-mono);
       margin-top: 6px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      font-weight: 600;
+      font-weight: 700;
     }
     .sec-desc {
-      max-width: 420px;
+      max-width: 440px;
       color: var(--v-body);
-      font-size: 12.5px;
+      font-size: 13px;
       line-height: 1.75;
     }
 
-    /* 四项指标卡 (完全按 Held-Out Test Set 榜样 4 列等高结构) */
-    .metrics-grid {
+    /* 
+     * 3. 彻底整改：不用卡片式设计！使用“学术指标横向精简数据带” (Academic Ledger Strip)
+     *    完全解决：文字溢出边界、局促折行问题，提供极充裕的文字与表格展示宽度！
+     */
+    .ledger-strip {
+      border-top: 1px solid var(--v-line-strong);
+      border-bottom: 1px solid var(--v-line-strong);
+      background: #ffffff;
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(4, 1fr);
+      margin: 0;
     }
-    .metric-card {
-      background: var(--v-panel);
-      border: 1px solid var(--v-line);
-      border-radius: 6px;
-      padding: 22px 20px;
+    .ledger-col {
+      padding: 36px 32px;
+      border-right: 1px solid var(--v-line);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      min-width: 0; /* 防止子元素造成任意水平外溢 */
+      word-wrap: break-word;
     }
-    .card-h-top { height: 44px; margin-bottom: 12px; }
-    .card-meta-row {
+    .ledger-col:last-child { border-right: none; }
+    .l-meta {
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
-    .card-num-box {
-      height: 48px;
-      display: flex;
-      align-items: center;
-    }
-    .card-big-num {
+      margin-bottom: 12px;
       font-family: var(--v-mono);
-      font-size: 36px;
+      font-size: 10.5px;
+      color: var(--v-mute);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .l-title {
+      font-size: 15px;
       font-weight: 750;
+      color: var(--v-ink);
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+    .l-val {
+      font-family: var(--v-mono);
+      font-weight: 750;
+      font-size: 42px;
       line-height: 1;
       color: var(--v-teal-bright);
+      margin-bottom: 24px;
     }
-    .card-foot-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin-top: 14px;
-      padding-top: 12px;
+    /* 指标细目竖单结构，彻底保证充裕空间与绝对不溢出界外 */
+    .l-details {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 16px;
       border-top: 1px solid var(--v-line);
-      font-size: 11px;
+      font-family: var(--v-body-font);
+      font-size: 12.5px;
+      color: var(--v-body);
+    }
+    .l-details-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .l-details-row span.num {
       font-family: var(--v-mono);
-      color: var(--v-mute);
-      white-space: nowrap;
+      font-weight: 700;
+      color: var(--v-ink);
     }
 
-    /* 工科气动流场监测视口 (唯一放置并高标准重构的背景视频窗口) */
+    /* 
+     * 4. 彻底修正：风力发电机“数字孪生”线框结构运行监测视口 (Digital Twin Rotor Viewport)
+     *    100% 忠于 bg.mp4 视频事实：展示风力涡轮机轮毂、齿轮箱、机舱线框与透明数字孪生！
+     */
     .viewport-panel {
       position: relative;
       width: 100%;
-      height: 420px;
+      height: 440px;
       border: 1px solid var(--v-line-strong);
-      border-radius: 6px;
+      border-radius: 4px;
       overflow: hidden;
       background: #000;
-      margin-top: 24px;
+      margin-top: 16px;
     }
     .viewport-panel video {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      opacity: 0.85;
+      opacity: 0.88;
     }
     .viewport-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(180deg, rgba(15,23,42,0.2) 0%, rgba(15,23,42,0.78) 100%);
+      background: linear-gradient(180deg, rgba(15,23,42,0.3) 0%, rgba(15,23,42,0.85) 100%);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 28px 32px;
+      padding: 30px 36px;
       pointer-events: none;
     }
     .viewport-head {
@@ -499,9 +538,10 @@
       justify-content: space-between;
       align-items: center;
       font-family: var(--v-mono);
-      font-size: 11px;
+      font-size: 11.5px;
       color: #ffffff;
       font-weight: 700;
+      letter-spacing: 0.05em;
     }
     .viewport-foot {
       display: flex;
@@ -511,25 +551,26 @@
     }
     .viewport-title {
       font-family: var(--v-display);
-      font-size: 24px;
-      font-weight: 700;
+      font-size: 26px;
+      font-weight: 800;
       letter-spacing: -0.5px;
       color: #ffffff;
     }
     .viewport-sub {
       font-family: var(--v-mono);
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.8);
-      margin-top: 4px;
+      color: rgba(255, 255, 255, 0.82);
+      margin-top: 6px;
     }
 
-    /* 15 页面导航矩阵 (完全去 Emoji，按榜样科研模块表列) */
-    .dir-group {
-      margin-top: 48px;
-    }
+    /* 
+     * 5. Taste-Skill 升级：15 页面导航卡片极细发丝网格与极其丝滑细腻的动画 (Smooth Cubic-Bezier)
+     *    不标明 (15 PAGES)，不加内部标语
+     */
+    .dir-group { margin-top: 48px; }
     .dir-group-head {
       font-family: var(--v-mono);
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 700;
       color: var(--v-mute);
       letter-spacing: 0.14em;
@@ -547,39 +588,47 @@
     .dir-card {
       background: var(--v-panel);
       border: 1px solid var(--v-line);
-      border-radius: 6px;
-      padding: 22px 20px;
+      border-radius: 4px;
+      padding: 24px 22px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       text-decoration: none;
       color: inherit;
-      transition: all 0.18s;
+      /* Taste-Skill: 极其丝滑细腻的对数贝塞尔缓动，呈现光质反光悬浮 */
+      transition: 
+        transform 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+        background-color 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.38s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .dir-card:hover {
-      border-color: var(--v-teal-bright);
-      background: var(--v-panel-2);
-      transform: translateY(-2px);
+      border-color: rgba(30, 103, 92, 0.6);
+      background: #ffffff;
+      transform: translateY(-4px);
+      box-shadow: 
+        0 14px 32px -10px rgba(30, 103, 92, 0.09),
+        0 4px 12px -4px rgba(30, 41, 59, 0.06);
     }
     .dir-card-idx {
       font-family: var(--v-mono);
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: 700;
-      color: var(--v-mute);
-      margin-bottom: 10px;
+      color: var(--v-faint);
+      margin-bottom: 12px;
+      letter-spacing: 0.05em;
     }
     .dir-card-title {
-      font-family: var(--v-display);
-      font-size: 16px;
-      font-weight: 700;
+      font-size: 17px;
+      font-weight: 750;
       color: var(--v-ink);
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .dir-card-desc {
-      font-size: 13px;
+      font-size: 13.5px;
       color: var(--v-body);
-      line-height: 1.5;
-      margin-bottom: 24px;
+      line-height: 1.6;
+      margin-bottom: 26px;
     }
     .dir-card-link {
       font-family: var(--v-mono);
@@ -588,22 +637,29 @@
       color: var(--v-teal-bright);
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
+    }
+    .dir-card-arrow {
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .dir-card:hover .dir-card-arrow {
+      transform: translateX(4px);
     }
 
-    /* 页脚 (1px 发丝边线与纯正团队确权) */
+    /* 页脚 */
     .t-footer {
       border-top: 1px solid var(--v-line);
-      padding: 56px 0;
-      margin-top: 80px;
-      font-size: 12px;
+      padding: 60px 0;
+      margin-top: 96px;
+      font-size: 12.5px;
       color: var(--v-mute);
       line-height: 1.8;
+      background: #ffffff;
     }
     .footer-inner {
       max-width: 1240px;
       margin: 0 auto;
-      padding: 0 28px;
+      padding: 0 32px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -612,28 +668,29 @@
     }
     .footer-brand {
       color: var(--v-ink);
-      font-weight: 700;
+      font-weight: 750;
       font-family: var(--v-display);
-      font-size: 14px;
+      font-size: 15px;
     }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 1080px) {
       .hero-content { grid-template-columns: 1fr; }
-      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+      .ledger-strip { grid-template-columns: repeat(2, 1fr); }
+      .ledger-col { border-bottom: 1px solid var(--v-line); }
       .dir-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 640px) {
-      .metrics-grid { grid-template-columns: 1fr; }
+      .ledger-strip { grid-template-columns: 1fr; }
       .dir-grid { grid-template-columns: 1fr; }
-      .t-nav-inner { padding: 0 16px; }
-      .t-container { padding: 0 16px; }
-      .hero-content { padding: 48px 16px 40px; }
+      .t-nav-inner, .t-container, .t-telemetry-inner { padding: 0 18px; }
+      .hero-content { padding: 48px 18px 40px; }
+      .viewport-overlay { padding: 20px; }
     }
   </style>
 </head>
 <body>
 
-<!-- 顶部系统遥测条 (完全照抄榜样左对齐 28px 规范) -->
+<!-- 顶部系统遥测条 -->
 <div class="t-telemetry">
   <div class="t-telemetry-inner">
     <span class="status-active">
@@ -661,7 +718,7 @@
   </div>
 </div>
 
-<!-- 极简导航栏 -->
+<!-- 极简工科导航栏 -->
 <nav class="t-nav">
   <div class="t-nav-inner">
     <div class="t-nav-brand">
@@ -674,7 +731,7 @@
   </div>
 </nav>
 
-<!-- Hero 画布层 (底层集成浅色模式下的鼠标跟随阻尼追踪光斑及 CFD 网格接点感应发亮) -->
+<!-- Hero 画布层 (浅白底色叠加鼠标阻尼追踪光斑及 CFD 网格十字节点发亮) -->
 <div class="hero-wrapper">
   <canvas id="aero-bg-canvas"></canvas>
 
@@ -720,7 +777,7 @@
       </div>
     </div>
 
-    <!-- 右侧：精密状态终端 (Linear Precision Status Terminal - 浅白面板对标榜样) -->
+    <!-- 右侧：精密终端 (白白面板对齐榜样卡面结构) -->
     <div class="terminal-panel">
       <div class="terminal-top-line"></div>
       <div class="terminal-header">
@@ -800,10 +857,11 @@
   </div>
 </div>
 
-<!-- 主内容：各项核心科研指标与监测窗口 -->
+<!-- 主区域 -->
 <main class="t-container">
 
-  <!-- Section 01: 核心物理与智能优化考核指标 (严格按照榜样 4 列等高结构) -->
+  <!-- Section 01: 核心物理与智能优化考核指标 -->
+  <!-- 彻底整改：弃用卡片式设计！使用“学术指标横向精简数据带” (Academic Ledger Strip) 解决边界外溢 -->
   <section style="padding:64px 0 24px">
     <div class="sec-header">
       <div class="sec-left">
@@ -814,101 +872,90 @@
         </div>
       </div>
       <div class="sec-desc">
-        全站实算增益、POD 能量捕获与 PPO 误差均由真实 FLORIS 4.6.6 仿真与独立测试集确权（AUDIT 2026-08-10），所有图表数据全系可见、可溯、可交互。
+        全网数据增益、POD 模态重构与 PPO 跟踪精度皆由真实 FLORIS 4.6.6 与独立测试集审计确权，提供足量横向表列与分行指标解析。
       </div>
     </div>
 
-    <div class="metrics-grid">
-      <!-- Card 1: 九机阵列最优增益 -->
-      <div class="metric-card">
-        <div class="card-h-top">
-          <div class="card-meta-row">
-            <span style="font:10px var(--v-mono);color:var(--v-mute)">01 / ARRAY YAW GAIN</span>
-            <span style="font:10px var(--v-mono);color:var(--v-teal-bright);font-weight:700">PRIMARY KPI</span>
+    <!-- 4 列学术指标横向精简带 (纯黑白发丝边界，无外框阴影卡片) -->
+    <div class="ledger-strip">
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta">
+            <span>01 / ARRAY YAW GAIN</span>
+            <span style="color:var(--v-teal-bright)">PRIMARY KPI</span>
           </div>
-          <div style="color:var(--v-ink);font-size:15px;font-weight:700;margin-top:4px">3×3 九机阵列独立贪心增收</div>
+          <div class="l-title">3×3 九机阵列独立贪心增收</div>
+          <div class="l-val" data-count="24.04" data-suffix="%">0%</div>
         </div>
-        <div class="card-num-box">
-          <span class="card-big-num" data-count="24.04" data-suffix="%">0%</span>
-        </div>
-        <div class="card-foot-grid">
-          <div>Row 1: <strong style="color:var(--v-ink)">+30°</strong></div>
-          <div>Row 2: <strong style="color:var(--v-ink)">+20°</strong></div>
-          <div>全场: <strong style="color:var(--v-ink)">10041 kW</strong></div>
+        <div class="l-details">
+          <div class="l-details-row"><span>Row 1 (迎风第一排)</span><span class="num">+30°</span></div>
+          <div class="l-details-row"><span>Row 2 (二次错峰)</span><span class="num">+20°</span></div>
+          <div class="l-details-row"><span>全场总功率优化</span><span class="num">10041 kW</span></div>
         </div>
       </div>
 
-      <!-- Card 2: 串列 5D 避让增长 -->
-      <div class="metric-card">
-        <div class="card-h-top">
-          <div class="card-meta-row">
-            <span style="font:10px var(--v-mono);color:var(--v-mute)">02 / TANDEM STEERING</span>
-            <span style="font:10px var(--v-mono);color:var(--v-yellow);font-weight:700">AERO RELIEF</span>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta">
+            <span>02 / TANDEM STEERING</span>
+            <span style="color:var(--v-yellow)">AERO RELIEF</span>
           </div>
-          <div style="color:var(--v-ink);font-size:15px;font-weight:700;margin-top:4px">两台串列 (5D) 尾流协同增量</div>
+          <div class="l-title">两台串列 (5D) 尾流协同增量</div>
+          <div class="l-val" style="color:var(--v-yellow)" data-count="8.13" data-suffix="%">0%</div>
         </div>
-        <div class="card-num-box">
-          <span class="card-big-num" style="color:var(--v-yellow)" data-count="8.13" data-suffix="%">0%</span>
-        </div>
-        <div class="card-foot-grid">
-          <div>前机让利: <strong style="color:var(--v-ink)">-16.8%</strong></div>
-          <div>后速回升: <strong style="color:var(--v-ink)">6.38m/s</strong></div>
-          <div>后机暴涨: <strong style="color:var(--v-ink)">+108.4%</strong></div>
+        <div class="l-details">
+          <div class="l-details-row"><span>前机主导让利比</span><span class="num">-16.8%</span></div>
+          <div class="l-details-row"><span>后机流速自然回温</span><span class="num">6.38 m/s</span></div>
+          <div class="l-details-row"><span>下游单机发量飙升</span><span class="num">+108.4%</span></div>
         </div>
       </div>
 
-      <!-- Card 3: POD 正交分解捕获率 -->
-      <div class="metric-card">
-        <div class="card-h-top">
-          <div class="card-meta-row">
-            <span style="font:10px var(--v-mono);color:var(--v-mute)">03 / POD FIDELITY</span>
-            <span style="font:10px var(--v-mono);color:var(--v-teal-bright);font-weight:700">DIM REDUCTION</span>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta">
+            <span>03 / POD FIDELITY</span>
+            <span style="color:var(--v-teal-bright)">DIM REDUCTION</span>
           </div>
-          <div style="color:var(--v-ink);font-size:15px;font-weight:700;margin-top:4px">POD 前两阶模态动能捕捉率</div>
+          <div class="l-title">POD 前两阶模态动能捕捉率</div>
+          <div class="l-val" data-count="97.97" data-suffix="%">0%</div>
         </div>
-        <div class="card-num-box">
-          <span class="card-big-num" data-count="97.97" data-suffix="%">0%</span>
-        </div>
-        <div class="card-foot-grid">
-          <div>Mode 0: <strong style="color:var(--v-ink)">76.4%</strong></div>
-          <div>Mode 1: <strong style="color:var(--v-ink)">21.6%</strong></div>
-          <div>空间压缩: <strong style="color:var(--v-ink)">8192→2</strong></div>
+        <div class="l-details">
+          <div class="l-details-row"><span>Mode 0 (反向偶极子)</span><span class="num">76.4%</span></div>
+          <div class="l-details-row"><span>Mode 1 (中心自恢复)</span><span class="num">21.6%</span></div>
+          <div class="l-details-row"><span>有限空间维度压缩</span><span class="num">8192→2</span></div>
         </div>
       </div>
 
-      <!-- Card 4: PPO 功率闭环跟踪 -->
-      <div class="metric-card">
-        <div class="card-h-top">
-          <div class="card-meta-row">
-            <span style="font:10px var(--v-mono);color:var(--v-mute)">04 / PPO TRACKING</span>
-            <span style="font:10px var(--v-mono);color:var(--v-rust);font-weight:700">CLOSED LOOP</span>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta">
+            <span>04 / PPO TRACKING</span>
+            <span style="color:var(--v-rust)">CLOSED LOOP</span>
           </div>
-          <div style="color:var(--v-ink);font-size:15px;font-weight:700;margin-top:4px">PPO 强化学习稳态跟踪 MAE</div>
+          <div class="l-title">PPO 强化学习稳态跟踪 MAE</div>
+          <div class="l-val" style="color:var(--v-rust)" data-count="0.523" data-suffix="%">0%</div>
         </div>
-        <div class="card-num-box">
-          <span class="card-big-num" style="color:var(--v-rust)" data-count="0.523" data-suffix="%">0%</span>
-        </div>
-        <div class="card-foot-grid">
-          <div>测试集: <strong style="color:var(--v-ink)">200集</strong></div>
-          <div>调节时间: <strong style="color:var(--v-ink)">0.944s</strong></div>
-          <div>稳态抖动: <strong style="color:var(--v-ink)">0°/step</strong></div>
+        <div class="l-details">
+          <div class="l-details-row"><span>测试集样本分布</span><span class="num">200 集</span></div>
+          <div class="l-details-row"><span>平衡态调节时间</span><span class="num">0.944 s</span></div>
+          <div class="l-details-row"><span>进稳态偏航抖动</span><span class="num">0°/step</span></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Section 02: 工科气动流场监测视口 (唯一放置并高标准重构的背景视频窗口) -->
+  <!-- Section 02: 彻底更正！风力发电机“数字孪生”与线框结构运行监测视口 -->
   <section style="padding:48px 0 32px">
     <div class="sec-header">
       <div class="sec-left">
         <span class="sec-num">02</span>
         <div>
-          <h2 class="sec-title">工科气动流场监测视口</h2>
-          <div class="sec-en">AERODYNAMIC ROTOR VIEWPORT / CFD WAKE EVOLUTION IN 3×3 ARRAY</div>
+          <h2 class="sec-title">风力涡轮机数字孪生与线框结构运行监测视口</h2>
+          <div class="sec-en">DIGITAL TWIN ROTOR VIEWPORT / WIREFRAME STRUCTURAL DYNAMICS</div>
         </div>
       </div>
       <div class="sec-desc">
-        呈现上游叶轮偏向 +30° 后低动能尾流气团向横向 -y 侧倾斜放行、下游转子层风速自然恢复至 5.31 m/s 的高保真气动实录视频。
+        呈现风力发电机（风力涡轮机）的数字化/线框结构运行示意，清晰透视轮毂（Hub）、齿轮箱（Gearbox）、主轴承与机舱（Nacelle）等数字孪生构造。
       </div>
     </div>
 
@@ -918,35 +965,35 @@
       </video>
       <div class="viewport-overlay">
         <div class="viewport-head">
-          <span>● AERODYNAMIC ROTOR SIMULATION VIEWPORT</span>
-          <span>FLORIS 4.6.6 GCH · INFLOW RECOVERY TO 5.31 M/S</span>
+          <span>● DIGITAL TWIN ROTOR STRUCTURAL MONITORING</span>
+          <span>NACELLE, GEARBOX & MAIN SHAFT WIREFRAME VIEW</span>
         </div>
         <div class="viewport-foot">
           <div>
-            <div class="viewport-title">3×3 九机阵列阶梯偏航尾流场可视化实录</div>
-            <div class="viewport-sub">YAW UPSTREAM = +30° / WAKE DEFLECTED AWAY FROM COL 1-3 DOWNSTREAM TURBINES</div>
+            <div class="viewport-title">风力发电机（风力涡轮机）数字孪生与透明线框结构运行示意</div>
+            <div class="viewport-sub">DIGITAL TWIN · NACELLE & ROTOR WIREFRAME VISUALIZATION · NREL 5MW REFERENCE TURBINE</div>
           </div>
           <div style="text-align:right;font-family:var(--v-mono);font-size:12px">
-            <span style="color:rgba(255,255,255,0.75)">ARRAY TOTAL POWER</span><br>
-            <span style="font-size:24px;font-weight:700;color:var(--v-teal-bright)">10041.46 kW</span>
+            <span style="color:rgba(255,255,255,0.75)">REFERENCE ROTOR</span><br>
+            <span style="font-size:24px;font-weight:700;color:var(--v-teal-bright)">126.0 METERS</span>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Section 03: 全景工科 15 子网页导航矩阵 (去 Emoji，对齐榜样卡面) -->
+  <!-- Section 03: 全景工科子网页导览矩阵 (去 Emoji、不标明15页、Taste-Skill 极其丝滑细腻动画) -->
   <section style="padding:48px 0 24px">
     <div class="sec-header">
       <div class="sec-left">
         <span class="sec-num">03</span>
         <div>
-          <h2 class="sec-title">全景工科子网页导览矩阵 (15 PAGES)</h2>
+          <h2 class="sec-title">全景工科子网页导览矩阵</h2>
           <div class="sec-en">WORKSPACE DIRECTORY / INTERACTIVE RESEARCH MODULES</div>
         </div>
       </div>
       <div class="sec-desc">
-        全站所有子页面皆遵循瑞士国际主义网格系统与发丝高强线规范，不依赖后台服务器，支持本地毫秒级推演与断网离线组会演示。
+        全向所列子页面皆遵循瑞士国际主义网格系统与发丝边界规范，纯浏览器端极速响应，支持离线会议室高精度报告。
       </div>
     </div>
 
@@ -963,7 +1010,7 @@
             <div class="dir-card-title">尾流交互分析</div>
             <div class="dir-card-desc">拖动偏航角滑块，流场速度等势图与上下游两机功率实时联动计算。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
         <a href="optimization.html" class="dir-card">
           <div>
@@ -971,7 +1018,7 @@
             <div class="dir-card-title">偏航优化结果</div>
             <div class="dir-card-desc">0° 自然迎风 vs +25° 最优偏航切片对标与 -16.8%/+108.4% 账本。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
         <a href="solver.html" class="dir-card">
           <div>
@@ -979,7 +1026,7 @@
             <div class="dir-card-title">实时优化求解器</div>
             <div class="dir-card-desc">输入任意风速，现场秒解双线性插值 vs SLSQP / DE 的性能对比。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
         <a href="dashboard.html" class="dir-card">
           <div>
@@ -987,7 +1034,7 @@
             <div class="dir-card-title">Dashboard 总台</div>
             <div class="dir-card-desc">打通仿真数据-流场物理-实时优化的一屏综合管控仪表主板。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
       </div>
     </div>
@@ -1005,7 +1052,7 @@
             <div class="dir-card-title">3D 九机风电场</div>
             <div class="dir-card-desc">九台风机偏航让道实景几何拓扑，真实转子转动与对角偏转视角。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
         <a href="3d_surface.html" class="dir-card">
           <div>
@@ -1013,7 +1060,7 @@
             <div class="dir-card-title">3D 尾流曲面</div>
             <div class="dir-card-desc">各高度层流速分布的三维速度表面投影，支持鼠标自动全向环绕。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
         <a href="3d_volume.html" class="dir-card">
           <div>
@@ -1021,7 +1068,7 @@
             <div class="dir-card-title">3D 体渲染</div>
             <div class="dir-card-desc">三维空间低能风速泡整体包络，带切片深度扫描交互动画功能。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
         <a href="heatmap.html" class="dir-card">
           <div>
@@ -1029,7 +1076,7 @@
             <div class="dir-card-title">功率热力矩阵</div>
             <div class="dir-card-desc">多偏航角 × 多风速工况下的系统总功率增益分布热力方格矩阵。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
       </div>
       <div class="dir-grid" style="margin-top:16px;grid-template-columns:repeat(4, 1fr)">
@@ -1039,7 +1086,7 @@
             <div class="dir-card-title">风玫瑰与 AEP</div>
             <div class="dir-card-desc">7,536 次扫描实算八扇区分布，双机与阵列切换及年度发量 ΔAEP。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
       </div>
     </div>
@@ -1057,7 +1104,7 @@
             <div class="dir-card-title">实算数据总览</div>
             <div class="dir-card-desc">全风序仿真算例统计总表，展示双机与多机各物理特征对准关系。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
         <a href="pod.html" class="dir-card">
           <div>
@@ -1065,7 +1112,7 @@
             <div class="dir-card-title">POD 降阶分析</div>
             <div class="dir-card-desc">偶极子 76.38% + 回复 21.58% = 前两阶 97.97% 精度论据。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
         <a href="array.html" class="dir-card">
           <div>
@@ -1073,7 +1120,7 @@
             <div class="dir-card-title">3×3 阵列控制</div>
             <div class="dir-card-desc"><b>王牌页</b>：自然/第一排/前两排/贪心 四阶梯因果矩阵卡 (+24.04%)。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
         <a href="power_tracking.html" class="dir-card">
           <div>
@@ -1081,7 +1128,7 @@
             <div class="dir-card-title">目标功率跟踪</div>
             <div class="dir-card-desc">面向调度目标下达期望总功率，逆向极速搜索可达偏航组合指令。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
       </div>
     </div>
@@ -1099,7 +1146,7 @@
             <div class="dir-card-title">代理模型精度</div>
             <div class="dir-card-desc">散点严格聚拢在 y = x 核心标定对角线上，全风速工况零系统偏差。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
         <a href="interface.html" class="dir-card">
           <div>
@@ -1107,7 +1154,7 @@
             <div class="dir-card-title">协作契约接口</div>
             <div class="dir-card-desc">明示 CFD仿真 / 降阶代理 / PPO强化学习 / 网页交互 统一数据契约表。</div>
           </div>
-          <div class="dir-card-link"><span>LAUNCH MODULE</span><span>→</span></div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
       </div>
     </div>
@@ -1115,7 +1162,7 @@
 
 </main>
 
-<!-- 页脚 (照抄榜样 1px 细线与全链确权) -->
+<!-- 页脚 (不再出现内部营销设计标语，纯正工程版权与确权声明) -->
 <footer class="t-footer">
   <div class="footer-inner">
     <div>
@@ -1126,8 +1173,8 @@
       </div>
     </div>
     <div style="text-align:right;font-family:var(--v-mono);color:var(--v-mute)">
-      <span>SWISS GRID · ZERO SAAS SLOP</span><br>
-      <span>0% EMOJI · EDGE INFERENCE</span>
+      <span>SWISS INTERNATIONAL TYPOGRAPHIC STYLE</span><br>
+      <span>EDGE INFERENCE · REGULAR GRID INTERPOLATOR</span>
     </div>
   </div>
 </footer>
@@ -1230,7 +1277,7 @@
 
 // 2. 数字进入视口滚动动画
 (function(){
-  const nums = document.querySelectorAll('.card-big-num[data-count]');
+  const nums = document.querySelectorAll('.card-big-num[data-count], .l-val[data-count]');
   if (!('IntersectionObserver' in window) || !nums.length) {
     nums.forEach(n => n.textContent = n.dataset.count + (n.dataset.suffix || ''));
     return;
