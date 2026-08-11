@@ -99,3 +99,4 @@
 - 响应承泽截图对“页脚不居中”的排查，将主页 `.t-footer` 布局容器改写为 `.footer-inner-centered` 垂直对齐弹性盒 (`flex-direction: column; align-items: center; justify-content: center; text-align: center`)，实现全量铭文沿水平中心绝对居中，解决散偏对仗。
 - 响应“顶部系统遥测条中文字多余且把一行挤成两行”的反查，彻底自 `.t-telemetry-inner` 中删除了冗余表述 `| 纯静态无后台零冷启动`，并约束该条为单行水平不折行 (`white-space: nowrap; overflow-x: auto`)，确保宽屏与普通屏幕全在一行。
 - 启动网页系统改造第二站 `site/wake.html` (尾流分析页)：清除 Emoji、用一体化发丝强线数据带 (`.ledger-strip`) 取代白卡片 KPI，全面执行“中文标题宋体黑、中文正文与说明等线、数字 `tabular-nums` 等宽”的定制字族对齐，赋予组件贝塞尔微动效，自检 100% 通过。
+- 响应承泽对 `site/wake.html` 中标牌色差与多重分线反馈：订正 `物理常识` 为白字绿灰底高反差标牌；删除页眉底部线与容器圆角，使描述条内边距及左边线与下方数据带边沿精确对准，呈现 100% 左对齐的笔直瑞士网格边界。

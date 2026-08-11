@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>尾流交互分析 · 风电场偏航优化科研平台</title>
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/wake.css">
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script src="assets/js/plotly-theme.js"></script>
   <style>
@@ -110,7 +109,7 @@
     /* Hero：瑞士网格去 Emoji 页眉 */
     .v-pg-hero {
       padding: 48px 0 32px;
-      border-bottom: 1px solid var(--v-line-strong);
+      border-bottom: none;
     }
     .v-pg-tag {
       font-family: var(--v-mono);
@@ -135,18 +134,22 @@
       line-height: 1.6;
     }
 
-    /* 因果说明条 - 瑞士发丝网格 */
+    /* 因果说明条 - 瑞士发丝网格 (严格左对齐，去除顶部多余线与颜色错误) */
     .cause-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 20px;
-      padding: 16px 24px;
+      padding: 18px 32px;
       background: #ffffff;
+      border-top: 1px solid var(--v-line-strong);
       border-left: 1px solid var(--v-line-strong);
       border-right: 1px solid var(--v-line-strong);
-      border-bottom: 1px solid var(--v-line-strong);
+      border-bottom: none;
+      border-radius: 0;
       flex-wrap: wrap;
+      margin: 0;
+      width: 100%;
     }
     .cb-left {
       display: flex;
@@ -154,14 +157,15 @@
       gap: 14px;
     }
     .cb-label {
-      font-family: var(--v-mono);
-      font-size: 11px;
-      font-weight: 700;
-      color: #fff;
-      background: var(--v-teal-bright);
-      padding: 4px 10px;
-      border-radius: 2px;
-      letter-spacing: 0.08em;
+      font-family: var(--v-display) !important;
+      font-size: 11.5px !important;
+      font-weight: 750 !important;
+      color: #ffffff !important;
+      background: var(--v-teal-bright) !important;
+      padding: 5px 12px !important;
+      border-radius: 2px !important;
+      letter-spacing: 0.08em !important;
+      display: inline-block;
     }
     .cb-text {
       font-size: 13px;
