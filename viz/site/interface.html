@@ -3,80 +3,303 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>数据接口契约 · 风电场偏航优化</title>
+  <title>数据接口契约 · 风电场偏航优化科研平台</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
-    pre.code-block { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11.5px; line-height: 1.55; overflow-x: auto; max-width: 100%; color: var(--txt); }
-    .kw { color: #8e88a6; font-weight: 700; }
-    .fn { color: var(--blue-deep); font-weight: 700; }
-    .cm { color: var(--sub-soft); font-style: italic; }
-    .str { color: var(--sage-deep); }
-    .num { color: #b08968; }
-    .team-step { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+    :root {
+      --v-bg: #f8f9fa;
+      --v-bg-soft: #f1f3f5;
+      --v-bg-subtle: #e9ecef;
+      --v-panel: #ffffff;
+      --v-ink: #1e293b;
+      --v-body: #334155;
+      --v-mute: #64748b;
+      --v-faint: #94a3b8;
+      --v-line: rgba(30, 41, 59, 0.11);
+      --v-line-strong: rgba(30, 41, 59, 0.22);
+      --v-teal: #2d7569;
+      --v-teal-bright: #1e675c;
+      --v-yellow: #a87817;
+      --v-rust: #ad5038;
+      --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", monospace;
+      --v-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC Black", "Songti SC", "STSong", "STZhongsong", "SimSun", "宋体-简", serif;
+      --v-body-font: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--v-bg); color: var(--v-ink);
+      font-family: var(--v-body-font); line-height: 1.6;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    h1, h2, h3, h4, .l-title, .cb-label, .step-title { font-family: var(--v-display); }
+    .l-val, .t-nav-badge, .plot-tick, .step-idx { font-family: var(--v-mono); font-variant-numeric: tabular-nums; }
+
+    .t-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--v-line); height: 60px; display: flex; align-items: center;
+    }
+    .t-nav-inner {
+      max-width: 1240px; width: 100%; margin: 0 auto; padding: 0 32px;
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    }
+    .t-nav-brand {
+      font-family: var(--v-display); font-size: 16px; font-weight: 700; color: var(--v-ink);
+      letter-spacing: -0.3px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .t-nav-badge {
+      font-size: 10.5px; color: var(--v-teal-bright); padding: 3px 8px;
+      border: 1px solid var(--v-line-strong); border-radius: 3px; background: var(--v-bg-soft); font-weight: 700;
+    }
+    .t-container { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+
+    .v-pg-hero { padding: 44px 0 28px; }
+    .v-pg-tag {
+      font-family: var(--v-mono); font-size: 11px; font-weight: 700; color: var(--v-yellow);
+      letter-spacing: 0.12em; margin-bottom: 10px; text-transform: uppercase;
+    }
+    .v-pg-title { font-size: clamp(28px, 3.8vw, 40px); font-weight: 800; letter-spacing: -0.8px; color: var(--v-ink); margin-bottom: 8px; }
+    .v-pg-sub { font-size: 14.5px; color: var(--v-body); max-width: 860px; line-height: 1.6; }
+
+    .v-workbench-panel {
+      background: #ffffff; border: 1px solid var(--v-line-strong);
+      border-radius: 4px; overflow: hidden; margin-bottom: 36px;
+    }
+    .cause-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 16px 28px; background: var(--v-bg-soft);
+      border-bottom: 1px solid var(--v-line); flex-wrap: nowrap; width: 100%;
+    }
+    .cb-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+    .cb-label {
+      font-family: var(--v-display) !important; font-size: 11.5px !important; font-weight: 750 !important;
+      color: #ffffff !important; background: var(--v-teal-bright) !important;
+      padding: 5px 12px !important; border-radius: 2px !important; letter-spacing: 0.08em !important;
+      display: inline-block; flex-shrink: 0; white-space: nowrap;
+    }
+    .cb-text { font-size: 13px; color: var(--v-body); line-height: 1.5; flex: 1; min-width: 0; }
+    .cb-pill {
+      font-family: var(--v-mono); font-size: 12px; font-weight: 700;
+      padding: 6px 14px; border-radius: 2px; border: 1px solid var(--v-line-strong);
+      background: #ffffff; white-space: nowrap; flex-shrink: 0; color: var(--v-ink);
+    }
+
+    .ledger-strip { display: grid; grid-template-columns: repeat(4, 1fr); background: #ffffff; }
+    .ledger-col {
+      padding: 24px 28px; border-right: 1px solid var(--v-line);
+      display: flex; flex-direction: column; justify-content: space-between; min-width: 0; word-wrap: break-word;
+    }
+    .ledger-col:last-child { border-right: none; }
+    .l-meta {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+      font-family: var(--v-mono); font-size: 10.5px; color: var(--v-mute); font-weight: 700; letter-spacing: 0.05em;
+    }
+    .l-title { font-size: 13.5px; font-weight: 750; color: var(--v-ink); margin-bottom: 12px; line-height: 1.4; }
+    .l-val { font-weight: 750; font-size: 30px; line-height: 1; color: var(--v-ink); margin-bottom: 12px; }
+    .l-details {
+      display: flex; flex-direction: column; gap: 6px;
+      padding-top: 12px; border-top: 1px solid var(--v-line); font-size: 12px; color: var(--v-body);
+    }
+
+    .team-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .team-step {
+      padding: 22px 26px; border-right: 1px solid var(--v-line);
+      display: flex; flex-direction: column; gap: 8px; min-width: 0;
+    }
+    .team-step:last-child { border-right: none; }
+    .team-step.terminal { background: rgba(30, 103, 92, 0.05); }
+    .step-idx { font-size: 11px; font-weight: 700; color: var(--v-yellow); letter-spacing: 0.1em; }
+    .team-step.terminal .step-idx { color: var(--v-teal-bright); }
+    .step-title { font-size: 14.5px; font-weight: 750; color: var(--v-ink); line-height: 1.4; }
+    .step-desc { font-size: 12px; color: var(--v-mute); line-height: 1.6; }
+    .step-extra {
+      font-size: 11px; color: var(--v-mute); line-height: 1.6;
+      border-top: 1px solid var(--v-line); padding-top: 8px; margin-top: 2px;
+    }
+
+    .v-plots-container {
+      background: #ffffff; border: 1px solid var(--v-line-strong);
+      border-radius: 4px; padding: 28px 32px; margin-bottom: 36px;
+    }
+    .grid-plots { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+    .plot-head {
+      font-family: var(--v-display); font-size: 14.5px; font-weight: 750; color: var(--v-ink);
+      margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
+    }
+    .plot-tick { font-size: 10px; font-weight: 700; color: var(--v-yellow); letter-spacing: 0.1em; }
+    pre.code-block {
+      background: var(--v-bg); border: 1px solid var(--v-line);
+      border-radius: 3px; padding: 16px 18px;
+      font-family: var(--v-mono); font-size: 11.5px; line-height: 1.6;
+      overflow-x: auto; max-width: 100%; color: var(--v-body);
+    }
+    .kw { color: #64748b; font-weight: 700; }
+    .fn { color: #1e675c; font-weight: 700; }
+    .cm { color: #94a3b8; font-style: italic; }
+    .str { color: #a87817; }
+    .numtok { color: #ad5038; }
+
+    .v-table-wrap {
+      background: #ffffff; border: 1px solid var(--v-line-strong); border-radius: 4px;
+      overflow: hidden; margin-bottom: 36px;
+    }
+    .v-table-head {
+      padding: 18px 28px 14px; border-bottom: 1px solid var(--v-line);
+      display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    .v-table-scroll { overflow-x: auto; }
+    table.v-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; }
+    table.v-table thead th {
+      background: var(--v-bg-soft); border-bottom: 1px solid var(--v-line-strong);
+      color: var(--v-ink); font-family: var(--v-display); font-weight: 750; padding: 12px 10px; font-size: 12.5px;
+    }
+    table.v-table tbody td { padding: 12px 10px; border-bottom: 1px solid var(--v-line); color: var(--v-body); }
+    table.v-table tbody tr:last-child td { border-bottom: none; }
+    .pill {
+      font-family: var(--v-mono); font-size: 10.5px; font-weight: 700;
+      padding: 3px 9px; border-radius: 2px; border: 1px solid var(--v-line-strong);
+      background: var(--v-bg-soft); color: var(--v-mute); white-space: nowrap;
+    }
+    .pill.ok { color: var(--v-teal-bright); border-color: rgba(30, 103, 92, 0.35); background: rgba(30, 103, 92, 0.07); }
+
+    .t-footer {
+      border-top: 1px solid var(--v-line-strong); padding: 60px 0; margin-top: 80px;
+      font-size: 12.5px; color: var(--v-body); line-height: 1.8; background: #ffffff; text-align: center;
+    }
+    .footer-inner-centered {
+      max-width: 960px; margin: 0 auto; padding: 0 32px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px;
+    }
+    .footer-brand { color: var(--v-ink); font-weight: 750; font-family: var(--v-display); font-size: 15px; }
+
+    @media (max-width: 1024px) {
+      .ledger-strip { grid-template-columns: repeat(2, 1fr); }
+      .ledger-col { border-bottom: 1px solid var(--v-line); }
+      .team-grid { grid-template-columns: repeat(2, 1fr); }
+      .team-step { border-bottom: 1px solid var(--v-line); }
+      .grid-plots { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .ledger-strip { grid-template-columns: 1fr; }
+      .team-grid { grid-template-columns: 1fr; }
+      .t-nav-inner, .t-container { padding: 0 20px; }
+      .v-plots-container { padding: 20px; }
+    }
   </style>
 </head>
 <body>
-<nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div><div class="nav-links"></div></div></nav>
 
-<section class="wrap pg-hero">
-  <h1>🔌 团队协作统一数据接口规范</h1>
-  <p>各模块接口契约与数据交付标准（预先固化协议，杜绝联调格式错配）</p>
-</section>
+<nav class="t-nav">
+  <div class="t-nav-inner">
+    <div class="t-nav-brand">
+      <span>风电场偏航优化平台</span>
+      <span class="t-nav-badge">SUN CHENGZE · VISUALIZATION</span>
+    </div>
+    <div style="display:flex;gap:18px;font-size:13px;font-weight:600;flex-wrap:wrap">
+      <a href="index.html" style="color:var(--v-mute);text-decoration:none">00 / HOME</a>
+      <a href="model.html" style="color:var(--v-mute);text-decoration:none">09 / VALIDATION</a>
+      <a href="interface.html" style="color:var(--v-teal-bright);text-decoration:none;font-weight:750">14 / CONTRACT</a>
+      <a href="overview.html" style="color:var(--v-mute);text-decoration:none">ALL MODULES →</a>
+    </div>
+  </div>
+</nav>
 
-<main class="wrap">
-  <!-- 4 大接口契约状态卡 -->
-  <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
-    <div class="stat-card">
-      <p class="stat-number">4 个模块</p>
-      <p class="stat-label">协作研发全链路</p>
-      <p class="kpi-delta flat">CFD → NN → 求解 → 可视化</p>
+<header class="v-pg-hero t-container">
+  <div class="v-pg-tag">14 / TEAM DATA CONTRACT · INTERFACE SPECIFICATION</div>
+  <h1 class="v-pg-title">团队协作统一数据接口规范</h1>
+  <p class="v-pg-sub">
+    各模块接口契约与数据交付标准：预先固化协议，杜绝联调格式错配；前端纯静态推理，零后端依赖。
+  </p>
+</header>
+
+<main class="t-container">
+
+  <div class="v-workbench-panel">
+    <div class="cause-bar">
+      <div class="cb-left">
+        <span class="cb-label">契约总账</span>
+        <span class="cb-text">四模块全链路、标准化交换协议、毫秒级静态推理与契约校验通过率，构成联调质量的四道闸门。</span>
+      </div>
+      <span class="cb-pill">CONTRACT LEDGER</span>
     </div>
-    <div class="stat-card">
-      <p class="stat-number">JSON / CSV</p>
-      <p class="stat-label">标准化数据交换协议</p>
-      <p class="kpi-delta up">带边界校验与越界保护</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-number">&lt; 1 ms</p>
-      <p class="stat-label">前端纯静态推理延迟</p>
-      <p class="kpi-delta up">零后端依赖</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-number">100%</p>
-      <p class="stat-label">数据契约校验通过率</p>
-      <p class="kpi-delta up">check_contract.py 绿灯</p>
+    <div class="ledger-strip">
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>01 / PIPELINE</span><span style="color:var(--v-teal-bright)">4 MODULES</span></div>
+          <div class="l-title">协作研发全链路</div>
+          <div class="l-val">4 个模块</div>
+        </div>
+        <div class="l-details"><div style="font-family:var(--v-mono);font-weight:700;color:var(--v-mute)">CFD → NN → 求解 → 可视化</div></div>
+      </div>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>02 / PROTOCOL</span><span style="color:var(--v-yellow)">EXCHANGE</span></div>
+          <div class="l-title">标准化数据交换协议</div>
+          <div class="l-val">JSON / CSV</div>
+        </div>
+        <div class="l-details"><div style="font-family:var(--v-mono);font-weight:700;color:var(--v-teal-bright)">带边界校验与越界保护</div></div>
+      </div>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>03 / LATENCY</span><span style="color:var(--v-teal-bright)">EDGE</span></div>
+          <div class="l-title">前端纯静态推理延迟</div>
+          <div class="l-val">&lt; 1 ms</div>
+        </div>
+        <div class="l-details"><div style="font-family:var(--v-mono);font-weight:700;color:var(--v-teal-bright)">零后端依赖</div></div>
+      </div>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>04 / VALIDATION</span><span style="color:var(--v-teal-bright)">GREEN</span></div>
+          <div class="l-title">数据契约校验通过率</div>
+          <div class="l-val">100%</div>
+        </div>
+        <div class="l-details"><div style="font-family:var(--v-mono);font-weight:700;color:var(--v-teal-bright)">check_contract.py 绿灯</div></div>
+      </div>
     </div>
   </div>
 
-  <!-- 团队协作交付链路 -->
-  <div class="card" style="margin-bottom:18px">
-    <h3 style="margin:0 0 12px;font-size:15px;color:var(--txt)">👥 大创项目团队协作交付全链路</h3>
-    <div class="grid4">
+  <div class="v-workbench-panel">
+    <div class="cause-bar">
+      <div class="cb-left">
+        <span class="cb-label">交付链路</span>
+        <span class="cb-text">大创项目团队协作交付全链路：四段接力，接口先行。</span>
+      </div>
+      <span class="cb-pill">DELIVERY CHAIN</span>
+    </div>
+    <div class="team-grid">
       <div class="team-step">
-        <div style="font-weight:700;color:var(--txt);margin-bottom:4px">1. 田铭雨（流场仿真）</div>
-        <div style="font-size:12px;color:var(--sub);line-height:1.5">负责 OpenFOAM / SOWFA 高保真 CFD 尾流模拟，生成高精度流场快照与 `fields_3d/*.npz`。</div>
+        <span class="step-idx">ROLE 1 / CFD</span>
+        <span class="step-title">田铭雨（流场仿真）</span>
+        <span class="step-desc">负责 OpenFOAM / SOWFA 高保真 CFD 尾流模拟，生成高精度流场快照与 <code style="font-family:var(--v-mono);font-size:11px">fields_3d/*.npz</code>。</span>
       </div>
       <div class="team-step">
-        <div style="font-weight:700;color:var(--txt);margin-bottom:4px">2. 袁夫达（降阶模型）</div>
-        <div style="font-size:12px;color:var(--sub);line-height:1.5">负责 POD 特征正交分解与神经网络代理模型训练，输出模态基与超快推理权重。</div>
+        <span class="step-idx">ROLE 2 / ROM</span>
+        <span class="step-title">袁夫达（降阶模型）</span>
+        <span class="step-desc">负责 POD 特征正交分解与神经网络代理模型训练，输出模态基与超快推理权重。</span>
       </div>
       <div class="team-step">
-        <div style="font-weight:700;color:var(--txt);margin-bottom:4px">3. 洪祖名（优化算法）</div>
-        <div style="font-size:12px;color:var(--sub);line-height:1.5">负责 PPO / 强化学习与 SLSQP 协同偏航求解，输出 `optimizer_result.json`。</div>
-        <div style="font-size:11px;color:var(--sub);margin-top:4px;opacity:.9">交付状态：PPO 4维强化学习策略权重已完成审计实证重建（<code style="font-size:10px">model/ppo_tracking_v3_seed42.pt</code> 55 KB，正常收敛权重）；实测 200 独立测试集稳态 MAE = <strong>0.523%</strong> (&lt; 1.2%)，平均调节时间 = <strong>0.944 s</strong> (约 0.8 s 级)，稳态零抖动。</div>
+        <span class="step-idx">ROLE 3 / RL-OPT</span>
+        <span class="step-title">洪祖名（优化算法）</span>
+        <span class="step-desc">负责 PPO / 强化学习与 SLSQP 协同偏航求解，输出 <code style="font-family:var(--v-mono);font-size:11px">optimizer_result.json</code>。</span>
+        <span class="step-extra">交付状态：PPO 4 维强化学习策略权重已完成审计实证重建（<code style="font-family:var(--v-mono);font-size:10px">model/ppo_tracking_v3_seed42.pt</code> 55 KB，正常收敛权重）；实测 200 独立测试集稳态 MAE = <b>0.523%</b> (&lt; 1.2%)，平均调节时间 = <b>0.944 s</b> (约 0.8 s 级)，稳态零抖动。</span>
       </div>
-      <div class="team-step" style="border-color:var(--blue);background:rgba(107,140,174,0.06)">
-        <div style="font-weight:700;color:var(--blue-deep);margin-bottom:4px">4. 孙承泽（可视化系统）</div>
-        <div style="font-size:12px;color:var(--sub);line-height:1.5">负责本交互式可视化平台，打通数据呈现、3D 模拟与答辩交互闭环。</div>
+      <div class="team-step terminal">
+        <span class="step-idx">ROLE 4 / VIZ</span>
+        <span class="step-title">孙承泽（可视化系统）</span>
+        <span class="step-desc">负责本交互式可视化平台，打通数据呈现、3D 模拟与答辩交互闭环。</span>
       </div>
     </div>
   </div>
 
-  <!-- API 代码契约定义 -->
-  <div class="grid2">
-    <div class="card">
-      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">🐍 Python 算法与代理模型标准契约</h3>
-      <pre class="code-block"><span class="kw">def</span> <span class="fn">predict_power</span>(yaw_angle: <span class="kw">float</span>, wind_speed: <span class="kw">float</span>) -&gt; <span class="kw">tuple</span>[<span class="kw">float</span>, <span class="kw">float</span>]:
+  <div class="v-plots-container">
+    <div class="grid-plots">
+      <div>
+        <div class="plot-head"><span class="plot-tick">SPEC A</span>Python 算法与代理模型标准契约</div>
+        <pre class="code-block"><span class="kw">def</span> <span class="fn">predict_power</span>(yaw_angle: <span class="kw">float</span>, wind_speed: <span class="kw">float</span>) -&gt; <span class="kw">tuple</span>[<span class="kw">float</span>, <span class="kw">float</span>]:
     <span class="cm">"""
     前向代理模型功率预测接口
     输入:
@@ -97,11 +320,10 @@
       {'best_yaw': float, 'actual_power': float, 'error_pct': float}
     """</span>
     <span class="kw">return</span> result_dict</pre>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">🌐 JavaScript 前端调用与容错契约</h3>
-      <pre class="code-block"><span class="cm">// 1. 前向功率预测</span>
+      </div>
+      <div>
+        <div class="plot-head"><span class="plot-tick">SPEC B</span>JavaScript 前端调用与容错契约</div>
+        <pre class="code-block"><span class="cm">// 1. 前向功率预测</span>
 <span class="kw">const</span> { p1, p2, ptot, outOfRange } = window.SURROGATE.<span class="fn">predict_power</span>(yaw, u);
 <span class="kw">if</span> (outOfRange) {
   console.warn(<span class="str">'输入参数超出有效标定区间'</span>);
@@ -113,54 +335,70 @@
   <span class="cm">// 触发前端越界保护与警告横幅</span>
   showWarningNotification(<span class="str">'请求功率超出物理极值'</span>);
 }</pre>
+      </div>
     </div>
   </div>
 
-  <!-- 待替换数据文件规范 -->
-  <div class="card" style="margin-top:18px">
-    <h3 style="margin:0 0 12px;font-size:15px;color:var(--txt)">📁 数据文件交付与热替换指引</h3>
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:center">
+  <div class="v-table-wrap" style="margin-bottom:0">
+    <div class="v-table-head">
+      <div>
+        <div class="plot-head" style="margin-bottom:2px"><span class="plot-tick">LEDGER</span>数据文件交付与热替换指引</div>
+        <div style="font-size:12px;color:var(--v-mute)">真实数据到位时仅需热替换对应文件，契约校验脚本即时把关。</div>
+      </div>
+      <span class="cb-pill">HOT-SWAP READY</span>
+    </div>
+    <div class="v-table-scroll">
+      <table class="v-table">
         <thead>
-          <tr style="background:var(--bg2);border-bottom:1px solid var(--line);color:var(--txt)">
-            <th style="padding:10px;text-align:left">数据文件路径</th>
-            <th style="padding:10px">当前状态</th>
-            <th style="padding:10px">交付责任人</th>
-            <th style="padding:10px">预期替换格式</th>
-            <th style="padding:10px">校验脚本</th>
+          <tr>
+            <th style="text-align:left;padding-left:28px">数据文件路径</th>
+            <th>当前状态</th>
+            <th>交付责任人</th>
+            <th>预期替换格式</th>
+            <th style="text-align:left;padding-right:28px">校验脚本</th>
           </tr>
         </thead>
-        <tbody style="color:var(--txt)">
-          <tr style="border-bottom:1px solid var(--line)">
-            <td style="padding:10px;text-align:left;font-family:monospace">site/assets/data.js</td>
-            <td style="padding:10px"><span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(107,140,174,0.15);color:var(--blue-deep)">FLORIS 占位基线</span></td>
-            <td style="padding:10px">田铭雨 / 孙承泽</td>
-            <td style="padding:10px">多风速/多偏航功率表格</td>
-            <td style="padding:10px;font-family:monospace">python site/check_contract.py</td>
+        <tbody>
+          <tr>
+            <td style="text-align:left;padding-left:28px;font-family:var(--v-mono);font-size:12px">site/assets/data.js</td>
+            <td><span class="pill">FLORIS 占位基线</span></td>
+            <td>田铭雨 / 孙承泽</td>
+            <td>多风速/多偏航功率表格</td>
+            <td style="text-align:left;padding-right:28px;font-family:var(--v-mono);font-size:12px">python site/check_contract.py</td>
           </tr>
-          <tr style="border-bottom:1px solid var(--line)">
-            <td style="padding:10px;text-align:left;font-family:monospace">site/assets/data_3d.js</td>
-            <td style="padding:10px"><span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(107,140,174,0.15);color:var(--blue-deep)">3D 速度场切片</span></td>
-            <td style="padding:10px">田铭雨 / 袁夫达</td>
-            <td style="padding:10px">三维网格 u(x,y,z) 矩阵</td>
-            <td style="padding:10px;font-family:monospace">python site/build_3d_data.py</td>
+          <tr>
+            <td style="text-align:left;padding-left:28px;font-family:var(--v-mono);font-size:12px">site/assets/data_3d.js</td>
+            <td><span class="pill">3D 速度场切片</span></td>
+            <td>田铭雨 / 袁夫达</td>
+            <td>三维网格 u(x,y,z) 矩阵</td>
+            <td style="text-align:left;padding-right:28px;font-family:var(--v-mono);font-size:12px">python site/build_3d_data.py</td>
           </tr>
-          <tr style="border-bottom:1px solid var(--line)">
-            <td style="padding:10px;text-align:left;font-family:monospace">optimizer_result.json</td>
-            <td style="padding:10px"><span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(111,135,97,0.15);color:var(--sage-deep)">优化求解结果</span></td>
-            <td style="padding:10px">洪祖名</td>
-            <td style="padding:10px">最优偏航角序列与增益</td>
-            <td style="padding:10px;font-family:monospace">自动接入 Dashboard</td>
+          <tr>
+            <td style="text-align:left;padding-left:28px;font-family:var(--v-mono);font-size:12px">optimizer_result.json</td>
+            <td><span class="pill ok">优化求解结果</span></td>
+            <td>洪祖名</td>
+            <td>最优偏航角序列与增益</td>
+            <td style="text-align:left;padding-right:28px;font-family:var(--v-mono);font-size:12px">自动接入 Dashboard</td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
+
 </main>
 
-<footer class="wrap">孙承泽 · 可视化模块 · 西安交通大学</footer>
-<script src="assets/js/nav.js"></script>
-<script src="assets/js/bg-video.js"></script>
-<script src="assets/js/data-source.js"></script>
+<footer class="t-footer">
+  <div class="footer-inner-centered">
+    <div class="footer-brand" style="margin-bottom:6px">西安交通大学 · 能源与动力工程学院 · 大学生创新训练项目团队</div>
+    <div style="line-height:1.8;color:var(--v-body);font-size:12.5px;margin-bottom:12px">
+      <b>成员确权：</b>田铭雨（高保真CFD流场仿真）· 袁夫达（POD特征降阶与代理模型）· 厉今飞（多风速工况基线）· 洪祖名（PPO跟踪与优化求解）· 孙承泽（可视化与交互系统负责）<br>
+      <b>指导教师：</b>李良星 副教授 ｜ 审计自检脚本：<code>check_contract.py</code> (100% Exit Code 0 绿灯)
+    </div>
+    <div style="font-family:var(--v-mono);font-size:11px;color:var(--v-mute);letter-spacing:0.06em">
+      <span>SWISS INTERNATIONAL TYPOGRAPHIC STYLE · EDGE INFERENCE · REGULAR GRID INTERPOLATOR</span>
+    </div>
+  </div>
+</footer>
+
 </body>
 </html>
