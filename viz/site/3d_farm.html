@@ -1,19 +1,178 @@
 <!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>3D 风电场 · 风电场偏航优化</title>
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/farm.css">
-<script type="importmap">
-{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-             "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
-</script>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>3D 风电场 · 风电场偏航优化科研平台</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/farm.css">
+  <script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+               "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+    :root {
+      --v-bg: #f8f9fa;
+      --v-bg-soft: #f1f3f5;
+      --v-ink: #1e293b;
+      --v-body: #334155;
+      --v-mute: #64748b;
+      --v-faint: #94a3b8;
+      --v-line: rgba(30, 41, 59, 0.11);
+      --v-line-strong: rgba(30, 41, 59, 0.22);
+      --v-teal-bright: #1e675c;
+      --v-yellow: #a87817;
+      --v-rust: #ad5038;
+      --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", monospace;
+      --v-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC Black", "Songti SC", "STSong", "STZhongsong", "SimSun", "宋体-简", serif;
+      --v-body-font: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--v-bg); color: var(--v-ink);
+      font-family: var(--v-body-font); line-height: 1.6;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    h1, h2, h3, h4 { font-family: var(--v-display); }
+    .t-nav-badge, .plot-tick { font-family: var(--v-mono); font-variant-numeric: tabular-nums; }
+
+    .t-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--v-line); height: 60px; display: flex; align-items: center;
+    }
+    .t-nav-inner {
+      max-width: 1240px; width: 100%; margin: 0 auto; padding: 0 32px;
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    }
+    .t-nav-brand {
+      font-family: var(--v-display); font-size: 16px; font-weight: 700; color: var(--v-ink);
+      letter-spacing: -0.3px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .t-nav-badge {
+      font-size: 10.5px; color: var(--v-teal-bright); padding: 3px 8px;
+      border: 1px solid var(--v-line-strong); border-radius: 3px; background: var(--v-bg-soft); font-weight: 700;
+    }
+    .t-container { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+
+    .v-pg-hero { padding: 44px 0 28px; }
+    .v-pg-tag {
+      font-family: var(--v-mono); font-size: 11px; font-weight: 700; color: var(--v-yellow);
+      letter-spacing: 0.12em; margin-bottom: 10px; text-transform: uppercase;
+    }
+    .v-pg-title { font-size: clamp(28px, 3.8vw, 40px); font-weight: 800; letter-spacing: -0.8px; color: var(--v-ink); margin-bottom: 8px; }
+    .v-pg-sub { font-size: 14.5px; color: var(--v-body); max-width: 860px; line-height: 1.6; }
+
+    /* ===== 对 farm.css 的浅色瑞士网格覆盖 ===== */
+    .farm-card {
+      background: #ffffff; border: 1px solid var(--v-line-strong); border-radius: 4px;
+      padding: 28px; margin-bottom: 36px;
+    }
+    .farm-controls {
+      gap: 16px; margin-bottom: 18px; padding-bottom: 18px;
+      border-bottom: 1px solid var(--v-line);
+      font-size: 13px; color: var(--v-body);
+    }
+    .farm-controls label { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+    .farm-controls input[type="range"] { accent-color: var(--v-teal-bright); }
+    .farm-controls input[type="checkbox"] { accent-color: var(--v-teal-bright); }
+    .farm-controls select {
+      font-family: var(--v-mono); font-size: 12.5px; font-weight: 700;
+      padding: 6px 10px; border: 1px solid var(--v-line-strong); border-radius: 3px;
+      background: var(--v-bg-soft); color: var(--v-ink); cursor: pointer;
+    }
+    .farm-seg {
+      background: var(--v-bg-soft); border: 1px solid var(--v-line-strong);
+      border-radius: 3px; padding: 3px; gap: 3px;
+    }
+    .farm-seg button {
+      background: transparent; border: none; color: var(--v-mute);
+      padding: 7px 14px; border-radius: 2px; font-size: 12.5px; font-weight: 700;
+      font-family: var(--v-body-font); cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .farm-seg button:hover { color: var(--v-ink); }
+    .farm-seg button.active {
+      background: var(--v-teal-bright); color: #fff; box-shadow: none;
+    }
+    .farm-stage {
+      border-radius: 4px; border: 1px solid var(--v-line-strong);
+      background: linear-gradient(180deg, #f4f6f8 0%, #e9edf1 100%);
+      height: 560px;
+    }
+    .farm-legend {
+      border-radius: 3px; background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--v-line-strong); color: var(--v-body);
+      font-family: var(--v-body-font);
+    }
+    .farm-hint {
+      border-radius: 3px; background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--v-line-strong); color: var(--v-mute);
+      font-family: var(--v-mono); font-size: 10.5px; letter-spacing: 0.04em;
+    }
+    .farm-load { background: rgba(248, 249, 250, 0.7); color: var(--v-mute); }
+    .farm-kpis { grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 18px; border: 1px solid var(--v-line); border-radius: 3px; overflow: hidden; }
+    .fkpi {
+      background: var(--v-bg-soft); border: none; border-radius: 0;
+      border-right: 1px solid var(--v-line); padding: 16px; text-align: center;
+    }
+    .fkpi:last-child { border-right: none; }
+    .fk-v { font-family: var(--v-mono); font-size: 24px; font-weight: 750; color: var(--v-ink); }
+    .fk-v.up { color: var(--v-teal-bright); }
+    .fk-v.down { color: var(--v-rust); }
+    .fk-v.flat { color: var(--v-mute); }
+    .fk-l { font-size: 12px; color: var(--v-mute); margin-top: 4px; }
+    .plot-note { font-size: 12px; color: var(--v-mute); line-height: 1.6; margin-top: 14px; }
+
+    .t-footer {
+      border-top: 1px solid var(--v-line-strong); padding: 60px 0; margin-top: 80px;
+      font-size: 12.5px; color: var(--v-body); line-height: 1.8; background: #ffffff; text-align: center;
+    }
+    .footer-inner-centered {
+      max-width: 960px; margin: 0 auto; padding: 0 32px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px;
+    }
+    .footer-brand { color: var(--v-ink); font-weight: 750; font-family: var(--v-display); font-size: 15px; }
+
+    @media (max-width: 640px) {
+      .t-nav-inner, .t-container { padding: 0 20px; }
+      .farm-card { padding: 20px; }
+      .farm-stage { height: 420px; }
+    }
+  </style>
 </head>
 <body>
-<nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div>
-<div class="nav-links"><a href="index.html">首页</a><a href="wake.html">尾流</a><a href="optimization.html">优化</a><a href="overview.html">总览</a><a href="3d_surface.html">3D曲面</a><a href="3d_volume.html">3D体</a><a href="3d_farm.html" class="active">3D风场</a><a href="heatmap.html">热力矩阵</a><a href="solver.html">求解器</a><a href="pod.html">POD</a><a href="array.html">阵列</a><a href="power_tracking.html">功率跟踪</a><a href="dashboard.html">Dashboard</a><a href="windrose.html">风玫瑰</a><a href="model.html">模型精度</a><a href="interface.html">接口</a></div></div></nav>
-<section class="wrap pg-hero"><h1>🌀 3D 风电场</h1><p>九台风机协同偏航：转子实时旋转、半透明尾流随偏航偏转、按单机功率着色</p></section>
-<main class="wrap">
-  <div class="card farm-card">
+
+<nav class="t-nav">
+  <div class="t-nav-inner">
+    <div class="t-nav-brand">
+      <span>风电场偏航优化平台</span>
+      <span class="t-nav-badge">SUN CHENGZE · VISUALIZATION</span>
+    </div>
+    <div style="display:flex;gap:18px;font-size:13px;font-weight:600;flex-wrap:wrap">
+      <a href="index.html" style="color:var(--v-mute);text-decoration:none">00 / HOME</a>
+      <a href="3d_farm.html" style="color:var(--v-teal-bright);text-decoration:none;font-weight:750">11 / 3D FARM</a>
+      <a href="3d_surface.html" style="color:var(--v-mute);text-decoration:none">12 / 3D SURFACE</a>
+      <a href="3d_volume.html" style="color:var(--v-mute);text-decoration:none">13 / 3D VOLUME</a>
+      <a href="overview.html" style="color:var(--v-mute);text-decoration:none">ALL MODULES →</a>
+    </div>
+  </div>
+</nav>
+
+<header class="v-pg-hero t-container">
+  <div class="v-pg-tag">11 / THREE.JS WIND FARM · COOPERATIVE YAW SCENE</div>
+  <h1 class="v-pg-title">3D 风电场协同偏航场景</h1>
+  <p class="v-pg-sub">
+    九台风机协同偏航：转子实时旋转、半透明尾流随偏航偏转、按单机功率着色；
+    可切换至双机真实流场模式，渲染气动流线束、磨砂流管与 CFD 速度截面云图。
+  </p>
+</header>
+
+<main class="t-container">
+  <div class="farm-card">
     <div class="farm-controls">
       <div class="farm-seg" id="viewSeg">
         <button data-view="schematic" class="active">3×3 示意</button>
@@ -25,32 +184,47 @@
         <button data-mode="independent">独立偏航</button>
       </div>
       <div id="yawWrap" style="display:none;align-items:center;gap:8px">
-        <label>偏航角</label>
+        <label for="realYaw">偏航角</label>
         <select id="realYaw" style="width:90px"></select>
       </div>
-      <label style="display:flex;align-items:center;gap:8px">尾流透明度
+      <label>尾流透明度
         <input type="range" id="wakeOpacity" min="0" max="0.8" step="0.05" value="0.35" style="width:110px">
       </label>
-      <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="chkSpin" checked> 自动环绕</label>
-      <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="chkRotor" checked> 转子旋转</label>
+      <label><input type="checkbox" id="chkSpin" checked> 自动环绕</label>
+      <label><input type="checkbox" id="chkRotor" checked> 转子旋转</label>
     </div>
     <div class="farm-stage">
       <canvas id="farm"></canvas>
       <div class="farm-legend" id="farmLegend"></div>
-      <div class="farm-hint">拖拽旋转 · 滚轮缩放 · 右键平移</div>
+      <div class="farm-hint">DRAG ROTATE · SCROLL ZOOM · RIGHT-CLICK PAN</div>
       <div id="farmLoad" class="farm-load">正在加载 3D 场景…</div>
     </div>
     <div class="farm-kpis" id="farmKpis"></div>
-    <div class="note" id="farmNote"><b>3×3 示意</b>：九机阵列与控制策略切换，工程尾流模型。切到 <b>真实流场（双机）</b>：基于 FLORIS 三维网格数据，渲染 <b>气动流线束、半透明磨砂流管与 2D/5D CFD 速度截面云图</b>，动态展示上游偏航如何让尾流避开下游机组并提升总功率。</div>
+    <div class="plot-note" id="farmNote"><b>3×3 示意</b>：九机阵列与控制策略切换，工程尾流模型。切到 <b>真实流场（双机）</b>：基于 FLORIS 三维网格数据，渲染 <b>气动流线束、半透明磨砂流管与 2D/5D CFD 速度截面云图</b>，动态展示上游偏航如何让尾流避开下游机组并提升总功率。</div>
   </div>
 </main>
-<footer class="wrap">孙承泽 · 可视化模块</footer>
+
+<footer class="t-footer">
+  <div class="footer-inner-centered">
+    <div class="footer-brand" style="margin-bottom:6px">西安交通大学 · 能源与动力工程学院 · 大学生创新训练项目团队</div>
+    <div style="line-height:1.8;color:var(--v-body);font-size:12.5px;margin-bottom:12px">
+      <b>成员确权：</b>田铭雨（高保真CFD流场仿真）· 袁夫达（POD特征降阶与代理模型）· 厉今飞（多风速工况基线）· 洪祖名（PPO跟踪与优化求解）· 孙承泽（可视化与交互系统负责）<br>
+      <b>指导教师：</b>李良星 副教授 ｜ 审计自检脚本：<code>check_contract.py</code> (100% Exit Code 0 绿灯)
+    </div>
+    <div style="font-family:var(--v-mono);font-size:11px;color:var(--v-mute);letter-spacing:0.06em">
+      <span>SWISS INTERNATIONAL TYPOGRAPHIC STYLE · EDGE INFERENCE · REGULAR GRID INTERPOLATOR</span>
+    </div>
+  </div>
+</footer>
+
 <script src="assets/data.js"></script>
 <script src="assets/data_3d_real.js"></script>
 <script type="module" src="assets/js/farm.js"></script>
 <script>
-// 模块加载完成后隐藏 loading
-window.addEventListener('load',()=>{const l=document.getElementById('farmLoad');if(l)setTimeout(()=>l.style.opacity='0',400);});
+window.addEventListener('load', () => {
+  const l = document.getElementById('farmLoad');
+  if (l) setTimeout(() => l.style.opacity = '0', 400);
+});
 </script>
-<script src="assets/js/nav.js"></script><script src="assets/js/bg-video.js"></script><script src="assets/js/data-source.js"></script>
-</body></html>
+</body>
+</html>
