@@ -5,26 +5,32 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>8.23 组会汇报 · 风电场偏航优化可视化暑期进展 · 孙承泽</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
     :root {
       --bg: #f8f9fa;
       --bg-sub: #f1f3f5;
-      --txt: #1d2024;
-      --sub: #495057;
-      --muted: #868e96;
-      --line: #dee2e6;
-      --line-dark: #2b2f33;
-      --blue: #6B8CAE;
-      --blue-deep: #4d6884;
-      --sage: #6f8761;
-      --sage-deep: #516447;
-      --rose: #b98484;
-      --rose-deep: #8c5d5d;
+      --txt: #1e293b;
+      --sub: #334155;
+      --muted: #64748b;
+      --line: rgba(30, 41, 59, 0.11);
+      --line-dark: rgba(30, 41, 59, 0.6);
+      --blue: #2d7569;
+      --blue-deep: #1e675c;
+      --sage: #2d7569;
+      --sage-deep: #1e675c;
+      --rose: #ad5038;
+      --rose-deep: #ad5038;
+      --gold: #a87817;
+      --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", monospace;
+      --v-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC Black", "Songti SC", "STSong", "STZhongsong", "SimSun", "宋体-简", serif;
+      --v-body-font: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background: var(--bg);
       color: var(--txt);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC", "Noto Serif CJK SC", serif;
+      font-family: var(--v-body-font);
       line-height: 1.35;
       overflow: hidden;
       height: 100vh;
@@ -116,15 +122,18 @@
       align-items: flex-end;
     }
     .slide-title {
+      font-family: var(--v-display);
       font-size: 22px;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: 0.3px;
       color: var(--txt);
     }
     .slide-subtitle {
-      font-size: 13px;
-      color: var(--blue-deep);
-      font-weight: 600;
+      font-family: var(--v-mono);
+      font-size: 12px;
+      color: var(--gold);
+      font-weight: 700;
+      letter-spacing: 0.04em;
     }
     .grid-2 {
       display: grid;
@@ -180,7 +189,7 @@
     .kpi-val {
       font-size: 20px;
       font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--v-mono);
       color: var(--blue-deep);
     }
     .kpi-label {
@@ -215,7 +224,7 @@
     }
 
     /* 数据展示样式 */
-    .num { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+    .num { font-family: var(--v-mono); font-weight: 700; }
     .hl-blue { color: var(--blue-deep); font-weight: 700; }
     .hl-sage { color: var(--sage-deep); font-weight: 700; }
     .hl-rose { color: var(--rose-deep); font-weight: 700; }
@@ -309,12 +318,12 @@
       <div class="box" style="justify-content:center;background:var(--bg-sub)">
         <h2 style="font-size:24px;margin-bottom:14px;color:var(--txt)">让不可见的物理气动可视化<br>让抽象的控制方程交互化</h2>
         <p class="text-sm" style="margin-bottom:20px;font-size:13px">
-          在今年暑期研发中，我们突破性构建了**“纯静态零后端科研工作台”**，集成现役 16 个莫兰迪工科子网页，实现多机协同与 PPO 控制的极速推理闭环。
+          在今年暑期研发中，我们构建了<b>“纯静态零后端科研工作台”</b>，集成现役 16 个浅色瑞士网格工科子网页，实现多机协同与 PPO 控制的极速推理闭环。
         </p>
         <div class="kpi-row">
           <div class="kpi-card">
-            <div class="kpi-val">16 Pages</div>
-            <div class="kpi-label">莫兰迪静态工作台</div>
+            <div class="kpi-val">0 后端</div>
+            <div class="kpi-label">浅色瑞士网格静态工作台</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-val">&lt; 0.5 ms</div>
@@ -332,7 +341,7 @@
           <img src="assets/img/hero/wind_farm_control.jpg" alt="主页预览图">
         </div>
         <div class="text-sm" style="margin-top:10px">
-          锁定米白底色、旋转风机动态背景视频 (`bg.mp4`)、宋体-简与发丝线，杜绝任何 SaaS 浮动软卡片感。
+          浅色工程纸底、风机数字孪生线框视口 (`bg.mp4`)、宋体标题与等线正文、1px 发丝线网格对齐。
         </div>
       </div>
     </div>
@@ -341,7 +350,7 @@
   <!-- Slide 02: BACKGROUND & TEAM COLLABORATION -->
   <section class="slide" id="slide-2">
     <div class="slide-header">
-      <div class="slide-title">01 / RESEARCH BACKGROUND AND TEAM COLLABORATION</div>
+      <div class="slide-title">02 / RESEARCH BACKGROUND AND TEAM COLLABORATION</div>
       <div class="slide-subtitle">打破离线黑盒，建立四方数据交接与可视化协同体系</div>
     </div>
     <div class="grid-2">
@@ -385,7 +394,7 @@
           <li><b>田铭雨（高保真流场网格仿真）</b>：负责 OpenFOAM/SOWFA 三维尾流仿真，交付 <code>fields_3d/*.npz</code> 真值流场切片；</li>
           <li><b>袁夫达（本征正交降阶模型）</b>：负责 POD 模态提取与神经网络训练，生成重构特征矩阵；</li>
           <li><b>洪祖名（强化学习优化闭环）</b>：负责 PPO 连续功率跟踪与 SLSQP 多机求解，输出控制策略；</li>
-          <li><b>孙承泽（本汇报人 · 可视化系统）</b>：<b>统筹全站 16 个纯静态莫兰迪页面研发</b>，开发 <code>interp.js</code> 内存插值引擎与 3D 可视化，承载科研总主板。</li>
+          <li><b>孙承泽（本汇报人 · 可视化系统）</b>：<b>统筹全站 16 个纯静态浅色瑞士网格页面研发</b>，开发 <code>interp.js</code> 内存插值引擎与 3D 可视化，承载科研总主板。</li>
         </ul>
       </div>
     </div>
@@ -394,7 +403,7 @@
   <!-- Slide 03: ZERO-BACKEND STATIC INFERENCE ARCHITECTURE -->
   <section class="slide" id="slide-3">
     <div class="slide-header">
-      <div class="slide-title">02 / ZERO-BACKEND STATIC INFERENCE ARCHITECTURE</div>
+      <div class="slide-title">03 / ZERO-BACKEND STATIC INFERENCE ARCHITECTURE</div>
       <div class="slide-subtitle">首创前端双线性插值推理引擎，实现 &lt; 0.5 ms 零延时数据流</div>
     </div>
     <div class="grid-3">
@@ -434,7 +443,7 @@
   <!-- Slide 04: TWO-TURBINE TANDEM WAKE STEERING -->
   <section class="slide" id="slide-4">
     <div class="slide-header">
-      <div class="slide-title">03 / TWO-TURBINE TANDEM WAKE STEERING MECHANISM</div>
+      <div class="slide-title">04 / TWO-TURBINE TANDEM WAKE STEERING MECHANISM</div>
       <div class="slide-subtitle">最前方局部让利 -16.8%，换取下游 +108.4% 回归与全场 +8.13% 增益</div>
     </div>
     <div class="grid-2">
@@ -499,7 +508,7 @@
   <!-- Slide 05: 3x3 ARRAY 4-TIER STRATEGY MATRIX (SUMMER MASTERPIECE) -->
   <section class="slide" id="slide-5">
     <div class="slide-header">
-      <div class="slide-title">04 / 3×3 ARRAY COORDINATED CONTROL: FOUR-TIER STRATEGY MATRIX</div>
+      <div class="slide-title">05 / 3×3 ARRAY COORDINATED CONTROL: FOUR-TIER STRATEGY MATRIX</div>
       <div class="slide-subtitle">暑期首创“四阶梯多级让利对比矩阵”：全场电量净增 24.04% 突破千千瓦关口</div>
     </div>
     <div class="grid-4">
@@ -541,7 +550,7 @@
   <!-- Slide 06: AERODYNAMIC PHYSICS DEEP DIVE -->
   <section class="slide" id="slide-6">
     <div class="slide-header">
-      <div class="slide-title">05 / AERODYNAMIC PHYSICS DEEP DIVE: WHY [30°, 20°, 0°] WIN?</div>
+      <div class="slide-title">06 / AERODYNAMIC PHYSICS DEEP DIVE: WHY [30°, 20°, 0°] WIN?</div>
       <div class="slide-subtitle">解析第二排 20° 胜 30° 余弦博弈与第三排 5.31 m/s 大气恢复真实物理常识</div>
     </div>
     <div class="grid-2">
@@ -589,7 +598,7 @@
   <!-- Slide 07: WINDROSE SCAN & AEP BENEFIT -->
   <section class="slide" id="slide-7">
     <div class="slide-header">
-      <div class="slide-title">06 / FULL-WINDROSE SCAN AND ANNUAL ENERGY PRODUCTION (AEP)</div>
+      <div class="slide-title">07 / FULL-WINDROSE SCAN AND ANNUAL ENERGY PRODUCTION (AEP)</div>
       <div class="slide-subtitle">7,536 次迭代实测阵列“八扇区非零增益”分布，年度等权 ΔAEP = +8.86%</div>
     </div>
     <div class="grid-2">
@@ -636,7 +645,7 @@
           </tbody>
         </table>
         <p class="text-sm" style="margin-top:10px">
-          在一个 45 MW (5MW×9) 规模电场中，这一增幅每年可创造上千万元真金白银的清洁发电收益。
+          在 45 MW (5MW×9) 规模电场口径下，等权假设年增发电量 +1,430.4 万 kWh；金额与碳减排折算需接入场址电价与排放因子，本页不外推。
         </p>
       </div>
     </div>
@@ -645,7 +654,7 @@
   <!-- Slide 08: POD REDUCED-ORDER MODELING -->
   <section class="slide" id="slide-8">
     <div class="slide-header">
-      <div class="slide-title">07 / PROPER ORTHOGONAL DECOMPOSITION (POD) RECONSTRUCTION</div>
+      <div class="slide-title">08 / PROPER ORTHOGONAL DECOMPOSITION (POD) RECONSTRUCTION</div>
       <div class="slide-subtitle">前 2 阶正交模态捕捉 97.97% 流场能量，支撑无后台网页极速渲染</div>
     </div>
     <div class="grid-2">
@@ -701,7 +710,7 @@
   <!-- Slide 09: PPO REACHABLE DOMAIN -->
   <section class="slide" id="slide-9">
     <div class="slide-header">
-      <div class="slide-title">08 / PPO REINFORCEMENT LEARNING: TARGET TRACKING IN REACHABLE DOMAIN</div>
+      <div class="slide-title">09 / PPO REINFORCEMENT LEARNING: TARGET TRACKING IN REACHABLE DOMAIN</div>
       <div class="slide-subtitle">发现单机偏航物理可达下界 (76.31%)，闭环实测 0.523% MAE 与 0.944 s 稳态控制</div>
     </div>
     <div class="grid-2">
@@ -709,7 +718,7 @@
         <div class="box-title"><span>PPO 4 维状态观测规范与可达域定律</span><span>LRN-20260810-07</span></div>
         <ul class="bullet-list" style="margin-top:8px">
           <li><b>4 维契约状态</b>：<code>[u_inf, yaw, power_current, target]</code>；</li>
-          <li><b>物理可达域定律</b>：在 $\cos^{1.88}(\gamma)$ 衰减且机械转角限位 $\pm 30^\circ$ 下，单机下界功率比不可低于 $\cos^{1.88}(30^\circ) = 76.31\%$；</li>
+          <li><b>物理可达域定律</b>：在 cos<sup>1.88</sup>(γ) 衰减且机械转角限位 ±30° 下，单机下界功率比不可低于 cos<sup>1.88</sup>(30°) = 76.31%；</li>
           <li><b>训练收缩修正</b>：修正原有不可达的 35% 下设值，将目标区间固化至可达域 <code>[0.78, 0.98] * p_base</code>。</li>
         </ul>
       </div>
@@ -732,7 +741,7 @@
               <td><span class="hl-sage">提升一倍有余</span></td>
             </tr>
             <tr>
-              <td><b>平均调节时间 ($T_s$)</b></td>
+              <td><b>平均调节时间 (T<sub>s</sub>)</b></td>
               <td><b>0.944 s</b></td>
               <td><code>&lt; 0.8 s 级</code></td>
               <td><span class="hl-blue">实证高度吻合</span></td>
@@ -752,7 +761,7 @@
   <!-- Slide 10: PS & PPT STANDARDS -->
   <section class="slide" id="slide-10">
     <div class="slide-header">
-      <div class="slide-title">09 / PS 300DPI & PPT SWISS GRID: RESEARCH VISUALIZATION STANDARDS</div>
+      <div class="slide-title">10 / PS 300DPI & PPT SWISS GRID: RESEARCH VISUALIZATION STANDARDS</div>
       <div class="slide-subtitle">暑期专攻 PS 300DPI 顶刊分层制图与 PPT 瑞士国际主义网格学术排版规范</div>
     </div>
     <div class="grid-2">
@@ -767,7 +776,7 @@
       <div class="box">
         <div class="box-title"><span>PPT 瑞士国际主义网格系统（Swiss Grid）成果</span><span>王牌PPT.pptx</span></div>
         <ul class="bullet-list" style="margin-top:6px">
-          <li><b>彻底去 AI 模板味</b>：确立了课题组“零 Emoji、零圆角悬浮阴影卡片、1.3 倍行距”准则；</li>
+          <li><b>克制符号与信息密度优先</b>：确立了课题组“无装饰符号、发丝边线、1.3 倍行距”的排版准则；</li>
           <li><b>高数据墨水比</b>：以 1px 发丝边线与 Nature 规范三线表最大化呈现流场与算法数据密度；</li>
           <li><b>汇报展示检验</b>：本次组会演练的 16:9 宽屏 Deck 即为暑期在该排版与美学规范上的实作落地！</li>
         </ul>
@@ -778,12 +787,12 @@
   <!-- Slide 11: AUDIT INTEGRITY & SUMMARY -->
   <section class="slide" id="slide-11">
     <div class="slide-header">
-      <div class="slide-title">10 / DATA INTEGRITY AUDIT AND SUMMER WORK SUMMARY</div>
+      <div class="slide-title">11 / DATA INTEGRITY AUDIT AND SUMMER WORK SUMMARY</div>
       <div class="slide-subtitle">全链路诚信自检绿灯通过，暑期可视化与制图规范三大阵地成果大盘点</div>
     </div>
     <div class="grid-3">
       <div class="box">
-        <div class="box-title"><span>16页莫兰迪静态工作台</span><span>WEB VISUALIZATION</span></div>
+        <div class="box-title"><span>16页浅色静态工作台</span><span>WEB VISUALIZATION</span></div>
         <ul class="bullet-list">
           <li>纯前端 &lt;0.5 ms 切片推理；</li>
           <li>首创 3×3 九机阵列四阶梯偏航矩阵（增量 24.04%）；</li>
@@ -820,9 +829,9 @@
       <p class="text-sm" style="font-size:14px;max-width:640px;margin:0 auto 24px">
         本可视化与交互平台已部署为 16 页独立工程系统。诚请导师<b>李良星 副教授</b>以及全体同组师兄师姐，针对本系统气动流场、策略矩阵与代码实现提出宝贵的指导意见！
       </p>
-      <div class="kpi-card" style="max-width:320px;margin:0 auto">
-        <div class="kpi-val" style="font-size:14px">arena/019feb53-wind-farm-viz</div>
-        <div class="kpi-label">当前会话诚信分支确权标识</div>
+      <div class="kpi-card" style="max-width:360px;margin:0 auto">
+        <div class="kpi-val" style="font-size:14px">sunccchengze/wind_farm_viz</div>
+        <div class="kpi-label">仓内源码与数据契约确权</div>
       </div>
     </div>
   </section>
