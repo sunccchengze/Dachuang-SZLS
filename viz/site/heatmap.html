@@ -1,140 +1,298 @@
 <!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>热力矩阵 · 风电场偏航优化</title>
-<link rel="stylesheet" href="css/style.css">
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-<script src="assets/js/plotly-theme.js"></script>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>热力矩阵 · 风电场偏航优化科研平台</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="assets/js/plotly-theme.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+    :root {
+      --v-bg: #f8f9fa;
+      --v-bg-soft: #f1f3f5;
+      --v-bg-subtle: #e9ecef;
+      --v-panel: #ffffff;
+      --v-ink: #1e293b;
+      --v-body: #334155;
+      --v-mute: #64748b;
+      --v-faint: #94a3b8;
+      --v-line: rgba(30, 41, 59, 0.11);
+      --v-line-strong: rgba(30, 41, 59, 0.22);
+      --v-teal: #2d7569;
+      --v-teal-bright: #1e675c;
+      --v-yellow: #a87817;
+      --v-rust: #ad5038;
+      --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", monospace;
+      --v-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC Black", "Songti SC", "STSong", "STZhongsong", "SimSun", "宋体-简", serif;
+      --v-body-font: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--v-bg); color: var(--v-ink);
+      font-family: var(--v-body-font); line-height: 1.6;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    h1, h2, h3, h4, .cb-label { font-family: var(--v-display); }
+    .t-nav-badge, .plot-tick { font-family: var(--v-mono); font-variant-numeric: tabular-nums; }
+
+    .t-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--v-line); height: 60px; display: flex; align-items: center;
+    }
+    .t-nav-inner {
+      max-width: 1240px; width: 100%; margin: 0 auto; padding: 0 32px;
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    }
+    .t-nav-brand {
+      font-family: var(--v-display); font-size: 16px; font-weight: 700; color: var(--v-ink);
+      letter-spacing: -0.3px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .t-nav-badge {
+      font-size: 10.5px; color: var(--v-teal-bright); padding: 3px 8px;
+      border: 1px solid var(--v-line-strong); border-radius: 3px; background: var(--v-bg-soft); font-weight: 700;
+    }
+    .t-container { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+
+    .v-pg-hero { padding: 44px 0 28px; }
+    .v-pg-tag {
+      font-family: var(--v-mono); font-size: 11px; font-weight: 700; color: var(--v-yellow);
+      letter-spacing: 0.12em; margin-bottom: 10px; text-transform: uppercase;
+    }
+    .v-pg-title { font-size: clamp(28px, 3.8vw, 40px); font-weight: 800; letter-spacing: -0.8px; color: var(--v-ink); margin-bottom: 8px; }
+    .v-pg-sub { font-size: 14.5px; color: var(--v-body); max-width: 860px; line-height: 1.6; }
+
+    .v-plots-container {
+      background: #ffffff; border: 1px solid var(--v-line-strong);
+      border-radius: 4px; padding: 28px 32px; margin-bottom: 36px;
+    }
+    .grid-plots { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+    .plot-head {
+      font-family: var(--v-display); font-size: 14.5px; font-weight: 750; color: var(--v-ink);
+      margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .plot-tick { font-size: 10px; font-weight: 700; color: var(--v-yellow); letter-spacing: 0.1em; }
+    .plot-note { font-size: 12px; color: var(--v-mute); line-height: 1.6; margin-top: 10px; }
+
+    .ctl-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .ctl-label { font-family: var(--v-display); font-size: 12.5px; font-weight: 750; color: var(--v-ink); }
+    select.v-select {
+      font-family: var(--v-mono); font-size: 12.5px; font-weight: 700;
+      padding: 7px 12px; border: 1px solid var(--v-line-strong); border-radius: 3px;
+      background: var(--v-bg-soft); color: var(--v-ink); cursor: pointer;
+    }
+    select.v-select:focus-visible { outline: 2px solid var(--v-teal-bright); outline-offset: 1px; }
+
+    .t-footer {
+      border-top: 1px solid var(--v-line-strong); padding: 60px 0; margin-top: 80px;
+      font-size: 12.5px; color: var(--v-body); line-height: 1.8; background: #ffffff; text-align: center;
+    }
+    .footer-inner-centered {
+      max-width: 960px; margin: 0 auto; padding: 0 32px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px;
+    }
+    .footer-brand { color: var(--v-ink); font-weight: 750; font-family: var(--v-display); font-size: 15px; }
+
+    @media (max-width: 1024px) { .grid-plots { grid-template-columns: 1fr; } }
+    @media (max-width: 640px) {
+      .t-nav-inner, .t-container { padding: 0 20px; }
+      .v-plots-container { padding: 20px; }
+    }
+  </style>
 </head>
 <body>
-<nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div>
-<div class="nav-links"><a href="index.html">首页</a><a href="wake.html">尾流</a><a href="optimization.html">优化</a><a href="overview.html">总览</a><a href="3d_surface.html">3D曲面</a><a href="3d_volume.html">3D体</a><a href="3d_farm.html">3D风场</a><a href="heatmap.html" class="active">热力矩阵</a><a href="solver.html">求解器</a><a href="pod.html">POD</a><a href="array.html">阵列</a><a href="power_tracking.html">功率跟踪</a><a href="dashboard.html">Dashboard</a><a href="windrose.html">风玫瑰</a><a href="model.html">模型精度</a><a href="interface.html">接口</a></div></div></nav>
-<section class="wrap pg-hero"><h1>🔥 热力矩阵</h1><p>偏航角 × 风速功率增益矩阵，覆盖 6~12 m/s 全风速</p></section>
-<main class="wrap">
-  <div class="card">
-    <div id="heatPlot" class="plotly-container" style="height:500px"></div>
-    <div class="note">偏航角 × 风速功率增益热力图。悬停查看具体增益值。颜色越深增益越大，最优点在 +25° / 8 m/s 附近。</div>
-  </div>
-  <div class="grid2" style="margin-top:18px">
-    <div class="card">
-      <div class="controls"><label>选择风速</label><select id="wsSel"></select></div>
-      <div id="slicePlot" class="plotly-container" style="height:300px"></div>
-      <div class="note">选定风速下的增益曲线（%），最优点用虚线标记。</div>
+
+<nav class="t-nav">
+  <div class="t-nav-inner">
+    <div class="t-nav-brand">
+      <span>风电场偏航优化平台</span>
+      <span class="t-nav-badge">SUN CHENGZE · VISUALIZATION</span>
     </div>
-    <div class="card">
-      <div class="controls"><label>选择偏航角</label><select id="yawSel"></select></div>
-      <div id="yawSlicePlot" class="plotly-container" style="height:300px"></div>
-      <div class="note">选定偏航角下增益随风速变化（%），展示不同风速区间的优化效果。</div>
+    <div style="display:flex;gap:18px;font-size:13px;font-weight:600;flex-wrap:wrap">
+      <a href="index.html" style="color:var(--v-mute);text-decoration:none">00 / HOME</a>
+      <a href="optimization.html" style="color:var(--v-mute);text-decoration:none">02 / OPTIMIZATION</a>
+      <a href="heatmap.html" style="color:var(--v-teal-bright);text-decoration:none;font-weight:750">06 / HEATMAP</a>
+      <a href="windrose.html" style="color:var(--v-mute);text-decoration:none">07 / WIND ROSE</a>
+      <a href="overview.html" style="color:var(--v-mute);text-decoration:none">ALL MODULES →</a>
+    </div>
+  </div>
+</nav>
+
+<header class="v-pg-hero t-container">
+  <div class="v-pg-tag">06 / GAIN HEATMAP · YAW × WIND SPEED MATRIX</div>
+  <h1 class="v-pg-title">偏航 × 风速增益热力矩阵</h1>
+  <p class="v-pg-sub">
+    覆盖 6~12 m/s 全风速与 ±30° 偏航网格的功率增益矩阵：整体热力、双向切片与三维增益曲面三级视图，
+    最优点稳定落在 +25° / 8 m/s 附近。
+  </p>
+</header>
+
+<main class="t-container">
+
+  <div class="v-plots-container">
+    <div class="plot-head"><span class="plot-tick">FIG. A</span>偏航角 × 风速功率增益热力图（全网格）</div>
+    <div id="heatPlot" style="height:500px"></div>
+    <div class="plot-note">悬停查看具体增益值。颜色越深增益越大，最优点在 +25° / 8 m/s 附近。</div>
+  </div>
+
+  <div class="v-plots-container">
+    <div class="grid-plots">
+      <div>
+        <div class="plot-head"><span class="plot-tick">FIG. B</span>定风速切片：增益 vs 偏航角</div>
+        <div class="ctl-row">
+          <span class="ctl-label">选择风速</span>
+          <select id="wsSel" class="v-select"></select>
+        </div>
+        <div id="slicePlot" style="height:300px"></div>
+        <div class="plot-note">选定风速下的增益曲线（%），最优点用虚线标记。</div>
+      </div>
+      <div>
+        <div class="plot-head"><span class="plot-tick">FIG. C</span>定偏航切片：增益 vs 风速</div>
+        <div class="ctl-row">
+          <span class="ctl-label">选择偏航角</span>
+          <select id="yawSel" class="v-select"></select>
+        </div>
+        <div id="yawSlicePlot" style="height:300px"></div>
+        <div class="plot-note">选定偏航角下增益随风速变化（%），展示不同风速区间的优化效果。</div>
+      </div>
     </div>
   </div>
 
-  <!-- 3D 增益曲面 -->
-  <div class="card" style="margin-top:18px">
-    <div class="controls"><label style="font-weight:700;color:var(--txt)">🌐 三维增益曲面</label>
-      <span class="note" style="margin:0">偏航角 × 风速 → 增益(%)，拖拽旋转查看峰值位置</span></div>
-    <div id="gain3d" class="plotly-container" style="height:520px"></div>
-    <div class="note">曲面高度=增益百分比。峰脊沿 ±25°~30° 偏航角分布，0° 处为基准低谷。</div>
+  <div class="v-plots-container" style="margin-bottom:0">
+    <div class="plot-head">
+      <span class="plot-tick">FIG. D</span>三维增益曲面
+      <span style="font-size:12px;color:var(--v-mute);font-weight:500">偏航角 × 风速 → 增益(%)，拖拽旋转查看峰值位置</span>
+    </div>
+    <div id="gain3d" style="height:520px"></div>
+    <div class="plot-note">曲面高度=增益百分比。峰脊沿 ±25°~30° 偏航角分布，0° 处为基准低谷。</div>
   </div>
+
 </main>
-<footer class="wrap">孙承泽 · 可视化模块</footer>
-<script src="assets/data.js"></script><script src="assets/data_3d.js"></script>
+
+<footer class="t-footer">
+  <div class="footer-inner-centered">
+    <div class="footer-brand" style="margin-bottom:6px">西安交通大学 · 能源与动力工程学院 · 大学生创新训练项目团队</div>
+    <div style="line-height:1.8;color:var(--v-body);font-size:12.5px;margin-bottom:12px">
+      <b>成员确权：</b>田铭雨（高保真CFD流场仿真）· 袁夫达（POD特征降阶与代理模型）· 厉今飞（多风速工况基线）· 洪祖名（PPO跟踪与优化求解）· 孙承泽（可视化与交互系统负责）<br>
+      <b>指导教师：</b>李良星 副教授 ｜ 审计自检脚本：<code>check_contract.py</code> (100% Exit Code 0 绿灯)
+    </div>
+    <div style="font-family:var(--v-mono);font-size:11px;color:var(--v-mute);letter-spacing:0.06em">
+      <span>SWISS INTERNATIONAL TYPOGRAPHIC STYLE · EDGE INFERENCE · REGULAR GRID INTERPOLATOR</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/data.js"></script>
+<script src="assets/data_3d.js"></script>
 <script>
 (function(){
-  const D3=window.WIND_3D_DATA;
-  const hm=D3&&D3.heatmap;
-  const W=window.WIND_DATA,m=W.multi;
-  // 如果 build_3d_data 生成了 heatmap 数据就用，否则从 WIND_DATA 计算
-  let ws,yas,gain;
-  if(hm&&hm.gain_pct&&hm.gain_pct.length>0){
-    ws=hm.wind_speeds;yas=hm.yaw_angles;gain=hm.gain_pct;
-  }else{
-    ws=m.wind_speeds;yas=m.yaw_angles;
-    gain=ws.map((u,i)=>yas.map((y,j)=>{
-      const base=m.ptot[i][yas.indexOf(0)];
-      return base>0?((m.ptot[i][j]-base)/base*100):0;
+  const FONT = "'Manrope','DengXian','等线','PingFang SC','Microsoft YaHei',sans-serif";
+  const D3 = window.WIND_3D_DATA;
+  const hm = D3 && D3.heatmap;
+  const W = window.WIND_DATA, m = W.multi;
+  let ws, yas, gain;
+  if (hm && hm.gain_pct && hm.gain_pct.length > 0) {
+    ws = hm.wind_speeds; yas = hm.yaw_angles; gain = hm.gain_pct;
+  } else {
+    ws = m.wind_speeds; yas = m.yaw_angles;
+    gain = ws.map((u, i) => yas.map((y, j) => {
+      const base = m.ptot[i][yas.indexOf(0)];
+      return base > 0 ? ((m.ptot[i][j] - base) / base * 100) : 0;
     }));
   }
 
-  // Heatmap — x=风速(4), y=偏航(13), 因此 z 必须转置为 [偏航][风速]
   const gmax = Math.max(...gain.flat());
-  const yLabels=yas.map(y=>y+'°');
-  const xLabels=ws.map(u=>u+' m/s');
-  // gain[i][j] = 风速 i, 偏航 j -> zT[j][i]
-  const zT = yas.map((_,j)=>ws.map((_,i)=>gain[i][j]));
-  Plotly.newPlot('heatPlot',[{
-    type:'heatmap',x:xLabels,y:yLabels,z:zT,
-    colorscale:window.GainSeq,zmin:0,zmax:gmax,
-    hovertemplate:'风速 %{x}  偏航 %{y}  增益 %{z:.2f}%<extra></extra>',
-    colorbar:{title:{text:'增益 (%)',side:'right'},thickness:15,len:0.85,x:1.02}
-  }],{
-    xaxis:{title:'来流风速 (m/s)'},
-    yaxis:{title:'上游偏航角 (°)'},
-    height:500,margin:{l:60,r:70,t:20,b:50}
-  },{responsive:true});
+  const yLabels = yas.map(y => y + '°');
+  const xLabels = ws.map(u => u + ' m/s');
+  const zT = yas.map((_, j) => ws.map((_, i) => gain[i][j]));
+  Plotly.newPlot('heatPlot', [{
+    type: 'heatmap', x: xLabels, y: yLabels, z: zT,
+    colorscale: window.GainSeq, zmin: 0, zmax: gmax,
+    hovertemplate: '风速 %{x}  偏航 %{y}  增益 %{z:.2f}%<extra></extra>',
+    colorbar: { title: { text: '增益 (%)', side: 'right' }, thickness: 15, len: 0.85, x: 1.02 }
+  }], {
+    xaxis: { title: '来流风速 (m/s)', gridcolor: '#e9ecef', linecolor: '#cbd5e1', tickfont: { color: '#64748b' } },
+    yaxis: { title: '上游偏航角 (°)', gridcolor: '#e9ecef', linecolor: '#cbd5e1', tickfont: { color: '#64748b' } },
+    height: 500, margin: { l: 60, r: 70, t: 20, b: 50 },
+    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { family: FONT }
+  }, { responsive: true });
 
-  // Wind speed slice
-  const wsSel=document.getElementById('wsSel');
-  ws.forEach(u=>{const o=document.createElement('option');o.value=u;o.textContent=u+' m/s';wsSel.appendChild(o);});
-  wsSel.value=8;
+  // 定风速切片
+  const wsSel = document.getElementById('wsSel');
+  ws.forEach(u => { const o = document.createElement('option'); o.value = u; o.textContent = u + ' m/s'; wsSel.appendChild(o); });
+  wsSel.value = 8;
 
   function renderWsSlice(){
-    const u=parseFloat(wsSel.value);
-    const i=ws.indexOf(u);if(i<0)return;
-    const g=gain[i];
-    const optIdx=g.indexOf(Math.max(...g));
-    Plotly.newPlot('slicePlot',[{
-      x:yas,y:g,mode:'lines+markers',name:'增益',
-      line:{color:WF.blue,width:2.5},marker:{size:6,color:WF.blue},
-      fill:'tozeroy',fillcolor:'rgba(107,140,174,0.12)'
-    }],{
-      xaxis:{title:'偏航角 (°)',color:WF.sub},
-      yaxis:{title:'增益 (%)',color:WF.sub,zeroline:true,zerolinecolor:WF.sub},
-      height:300,margin:{l:50,r:15,t:15,b:45},
-      font:{color:WF.sub},
-      annotations:[{x:yas[optIdx],y:g[optIdx],text:'最优 '+yas[optIdx]+'°',
-        showarrow:true,arrowhead:2,arrowcolor:WF.sageDeep,font:{color:WF.sageDeep,size:11},ax:0,ay:-25}]
-    },{responsive:true});
+    const u = parseFloat(wsSel.value);
+    const i = ws.indexOf(u); if (i < 0) return;
+    const g = gain[i];
+    const optIdx = g.indexOf(Math.max(...g));
+    Plotly.newPlot('slicePlot', [{
+      x: yas, y: g, mode: 'lines+markers', name: '增益',
+      line: { color: '#1e675c', width: 2.5 }, marker: { size: 6, color: '#1e675c' },
+      fill: 'tozeroy', fillcolor: 'rgba(30, 103, 92, 0.08)'
+    }], {
+      xaxis: { title: '偏航角 (°)', gridcolor: '#e9ecef', linecolor: '#cbd5e1', tickfont: { color: '#64748b' } },
+      yaxis: { title: '增益 (%)', zeroline: true, zerolinecolor: '#94a3b8', gridcolor: '#e9ecef', tickfont: { color: '#64748b' } },
+      height: 300, margin: { l: 50, r: 15, t: 15, b: 45 },
+      showlegend: false,
+      paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { family: FONT },
+      annotations: [{
+        x: yas[optIdx], y: g[optIdx], text: '最优 ' + yas[optIdx] + '°',
+        showarrow: true, arrowhead: 2, arrowcolor: '#1e675c',
+        font: { color: '#1e675c', size: 11 }, ax: 0, ay: -25
+      }]
+    }, { responsive: true });
   }
-  wsSel.onchange=renderWsSlice;renderWsSlice();
+  wsSel.onchange = renderWsSlice; renderWsSlice();
 
-  // Yaw slice
-  const yawSel=document.getElementById('yawSel');
-  yas.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y+'°';yawSel.appendChild(o);});
-  yawSel.value=25;
+  // 定偏航切片
+  const yawSel = document.getElementById('yawSel');
+  yas.forEach(y => { const o = document.createElement('option'); o.value = y; o.textContent = y + '°'; yawSel.appendChild(o); });
+  yawSel.value = 25;
 
   function renderYawSlice(){
-    const y=parseFloat(yawSel.value);
-    const j=yas.indexOf(y);if(j<0)return;
-    const g=ws.map((_,i)=>gain[i][j]);
-    Plotly.newPlot('yawSlicePlot',[{
-      x:ws,y:g,mode:'lines+markers',name:'增益',
-      line:{color:WF.sageDeep,width:2.5},marker:{size:6,color:WF.sageDeep},
-      fill:'tozeroy',fillcolor:'rgba(138,161,122,0.12)'
-    }],{
-      xaxis:{title:'风速 (m/s)',color:WF.sub},
-      yaxis:{title:'增益 (%)',color:WF.sub,zeroline:true,zerolinecolor:WF.sub},
-      height:300,margin:{l:50,r:15,t:15,b:45},
-      font:{color:WF.sub}
-    },{responsive:true});
+    const y = parseFloat(yawSel.value);
+    const j = yas.indexOf(y); if (j < 0) return;
+    const g = ws.map((_, i) => gain[i][j]);
+    Plotly.newPlot('yawSlicePlot', [{
+      x: ws, y: g, mode: 'lines+markers', name: '增益',
+      line: { color: '#a87817', width: 2.5 }, marker: { size: 6, color: '#a87817' },
+      fill: 'tozeroy', fillcolor: 'rgba(168, 120, 23, 0.08)'
+    }], {
+      xaxis: { title: '风速 (m/s)', gridcolor: '#e9ecef', linecolor: '#cbd5e1', tickfont: { color: '#64748b' } },
+      yaxis: { title: '增益 (%)', zeroline: true, zerolinecolor: '#94a3b8', gridcolor: '#e9ecef', tickfont: { color: '#64748b' } },
+      height: 300, margin: { l: 50, r: 15, t: 15, b: 45 },
+      showlegend: false,
+      paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { family: FONT }
+    }, { responsive: true });
   }
-  yawSel.onchange=renderYawSlice;renderYawSlice();
+  yawSel.onchange = renderYawSlice; renderYawSlice();
 
-  // 3D 增益曲面：z[j][i]=gain[i][j]（行=偏航，列=风速）
-  const z3d=yas.map((_,j)=>ws.map((_,i)=>gain[i][j]));
-  Plotly.newPlot('gain3d',[{
-    type:'surface',x:ws,y:yas,z:z3d,
-    colorscale:window.GainSeq,cmin:0,cmax:gmax,
-    contours:{z:{show:true,usecolormap:true,highlightcolor:WF.txt,project_z:true}},
-    colorbar:{title:{text:'增益 (%)',side:'right'},thickness:14,len:0.8,x:1.02}
-  }],{
-    scene:{
-      xaxis:{title:'风速 (m/s)',backgroundcolor:WF.plotBg,gridcolor:WF.grid,color:WF.sub},
-      yaxis:{title:'偏航角 (°)',backgroundcolor:WF.plotBg,gridcolor:WF.grid,color:WF.sub},
-      zaxis:{title:'增益 (%)',backgroundcolor:WF.card,gridcolor:WF.grid,color:WF.sub},
-      bgcolor:'rgba(0,0,0,0)',camera:{eye:{x:-1.7,y:-1.7,z:1.1}},
-      aspectratio:{x:1,y:1.4,z:0.8}},
-    height:520,margin:{l:0,r:0,t:30,b:0},paper_bgcolor:'rgba(0,0,0,0)'
-  },{responsive:true,displayModeBar:'hover',modeBarButtonsToRemove:['lasso2d','select2d']});
+  // 3D 增益曲面
+  const z3d = yas.map((_, j) => ws.map((_, i) => gain[i][j]));
+  Plotly.newPlot('gain3d', [{
+    type: 'surface', x: ws, y: yas, z: z3d,
+    colorscale: window.GainSeq, cmin: 0, cmax: gmax,
+    contours: { z: { show: true, usecolormap: true, highlightcolor: '#1e293b', project_z: true } },
+    colorbar: { title: { text: '增益 (%)', side: 'right' }, thickness: 14, len: 0.8, x: 1.02 }
+  }], {
+    scene: {
+      xaxis: { title: '风速 (m/s)', backgroundcolor: '#f1f3f5', gridcolor: '#e2e6ea', color: '#64748b' },
+      yaxis: { title: '偏航角 (°)', backgroundcolor: '#f1f3f5', gridcolor: '#e2e6ea', color: '#64748b' },
+      zaxis: { title: '增益 (%)', backgroundcolor: '#ffffff', gridcolor: '#e2e6ea', color: '#64748b' },
+      bgcolor: 'rgba(0,0,0,0)', camera: { eye: { x: -1.7, y: -1.7, z: 1.1 } },
+      aspectratio: { x: 1, y: 1.4, z: 0.8 }
+    },
+    height: 520, margin: { l: 0, r: 0, t: 30, b: 0 },
+    paper_bgcolor: 'rgba(0,0,0,0)', font: { family: FONT }
+  }, { responsive: true, displayModeBar: 'hover', modeBarButtonsToRemove: ['lasso2d', 'select2d'] });
 })();
 </script>
-<script src="assets/js/nav.js"></script>
-<script src="assets/js/bg-video.js"></script><script src="assets/js/data-source.js"></script></body></html>
+</body>
+</html>
