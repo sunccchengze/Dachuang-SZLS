@@ -3,127 +3,324 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>3×3 阵列协同优化 · 风电场偏航优化</title>
+  <title>3×3 阵列协同优化 · 风电场偏航优化科研平台</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script src="assets/js/plotly-theme.js"></script>
   <style>
-    .strategy-seg { display: inline-flex; background: var(--bg2); border-radius: 8px; padding: 4px; gap: 4px; border: 1px solid var(--line); }
-    .strategy-seg button { border: none; background: transparent; padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--sub); cursor: pointer; transition: all .2s; }
-    .strategy-seg button.active { background: var(--card); color: var(--txt); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-    .row-card { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 14px; text-align: center; }
-    .row-card .rt { font-size: 12px; color: var(--sub); margin-bottom: 4px; }
-    .row-card .rv { font-size: 20px; font-weight: 800; color: var(--txt); }
-    .row-card .rs { font-size: 11px; margin-top: 4px; }
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+    :root {
+      --v-bg: #f8f9fa;
+      --v-bg-soft: #f1f3f5;
+      --v-bg-subtle: #e9ecef;
+      --v-panel: #ffffff;
+      --v-ink: #1e293b;
+      --v-body: #334155;
+      --v-mute: #64748b;
+      --v-faint: #94a3b8;
+      --v-line: rgba(30, 41, 59, 0.11);
+      --v-line-strong: rgba(30, 41, 59, 0.22);
+      --v-teal: #2d7569;
+      --v-teal-bright: #1e675c;
+      --v-yellow: #a87817;
+      --v-rust: #ad5038;
+      --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", monospace;
+      --v-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC Black", "Songti SC", "STSong", "STZhongsong", "SimSun", "宋体-简", serif;
+      --v-body-font: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--v-bg); color: var(--v-ink);
+      font-family: var(--v-body-font); line-height: 1.6;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    h1, h2, h3, h4, .l-title, .cb-label { font-family: var(--v-display); }
+    .l-val, .t-nav-badge, .plot-tick, .cb-pill { font-family: var(--v-mono); font-variant-numeric: tabular-nums; }
+
+    .t-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--v-line); height: 60px; display: flex; align-items: center;
+    }
+    .t-nav-inner {
+      max-width: 1240px; width: 100%; margin: 0 auto; padding: 0 32px;
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    }
+    .t-nav-brand {
+      font-family: var(--v-display); font-size: 16px; font-weight: 700; color: var(--v-ink);
+      letter-spacing: -0.3px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .t-nav-badge {
+      font-size: 10.5px; color: var(--v-teal-bright); padding: 3px 8px;
+      border: 1px solid var(--v-line-strong); border-radius: 3px; background: var(--v-bg-soft); font-weight: 700;
+    }
+    .t-container { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+
+    .v-pg-hero { padding: 44px 0 28px; }
+    .v-pg-tag {
+      font-family: var(--v-mono); font-size: 11px; font-weight: 700; color: var(--v-yellow);
+      letter-spacing: 0.12em; margin-bottom: 10px; text-transform: uppercase;
+    }
+    .v-pg-title { font-size: clamp(28px, 3.8vw, 40px); font-weight: 800; letter-spacing: -0.8px; color: var(--v-ink); margin-bottom: 8px; }
+    .v-pg-sub { font-size: 14.5px; color: var(--v-body); max-width: 860px; line-height: 1.6; }
+
+    .v-workbench-panel {
+      background: #ffffff; border: 1px solid var(--v-line-strong);
+      border-radius: 4px; overflow: hidden; margin-bottom: 36px;
+    }
+    .cause-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 16px 28px; background: var(--v-bg-soft);
+      border-bottom: 1px solid var(--v-line); flex-wrap: nowrap; width: 100%;
+    }
+    .cb-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+    .cb-label {
+      font-family: var(--v-display) !important; font-size: 11.5px !important; font-weight: 750 !important;
+      color: #ffffff !important; background: var(--v-teal-bright) !important;
+      padding: 5px 12px !important; border-radius: 2px !important; letter-spacing: 0.08em !important;
+      display: inline-block; flex-shrink: 0; white-space: nowrap;
+    }
+    .cb-text { font-size: 13px; color: var(--v-body); line-height: 1.5; flex: 1; min-width: 0; }
+    .cb-pill {
+      font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 2px;
+      border: 1px solid var(--v-line-strong); background: #ffffff;
+      white-space: nowrap; flex-shrink: 0; color: var(--v-ink);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .strat-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      flex-wrap: wrap; padding: 20px 28px; border-bottom: 1px solid var(--v-line); background: #ffffff;
+    }
+    .strat-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .strat-label { font-family: var(--v-display); font-size: 14px; font-weight: 750; color: var(--v-ink); }
+    .v-btn {
+      font-family: var(--v-body-font); font-size: 12.5px; font-weight: 700;
+      padding: 8px 16px; background: var(--v-bg-soft);
+      border: 1px solid var(--v-line-strong); border-radius: 3px; color: var(--v-ink); cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); white-space: nowrap;
+    }
+    .v-btn:hover { background: var(--v-ink); color: #fff; border-color: var(--v-ink); transform: translateY(-2px); }
+    .v-btn:active { transform: translateY(0) scale(0.98); }
+    .v-btn.active { background: var(--v-teal-bright); color: #fff; border-color: var(--v-teal-bright); }
+    .strat-desc {
+      padding: 16px 28px; font-size: 13px; color: var(--v-body); line-height: 1.65;
+      border-bottom: 1px solid var(--v-line); background: #ffffff;
+    }
+
+    .ledger-strip { display: grid; grid-template-columns: repeat(4, 1fr); background: #ffffff; }
+    .ledger-col {
+      padding: 24px 28px; border-right: 1px solid var(--v-line);
+      display: flex; flex-direction: column; justify-content: space-between; min-width: 0; word-wrap: break-word;
+    }
+    .ledger-col:last-child { border-right: none; }
+    .l-meta {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+      font-family: var(--v-mono); font-size: 10.5px; color: var(--v-mute); font-weight: 700; letter-spacing: 0.05em;
+    }
+    .l-title { font-size: 14px; font-weight: 750; color: var(--v-ink); margin-bottom: 12px; line-height: 1.35; }
+    .l-val { font-weight: 750; font-size: 32px; line-height: 1; color: var(--v-ink); margin-bottom: 12px; }
+    .kpi-delta { display: block; font-size: 12px; font-weight: 700; font-family: var(--v-mono); }
+    .kpi-delta.up { color: var(--v-teal-bright); }
+    .kpi-delta.down { color: var(--v-rust); }
+    .kpi-delta.flat { color: var(--v-mute); }
+
+    .v-plots-container {
+      background: #ffffff; border: 1px solid var(--v-line-strong);
+      border-radius: 4px; padding: 28px 32px; margin-bottom: 36px;
+    }
+    .grid-plots { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+    .plot-head {
+      font-family: var(--v-display); font-size: 14.5px; font-weight: 750; color: var(--v-ink);
+      margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .plot-tick { font-size: 10px; font-weight: 700; color: var(--v-yellow); letter-spacing: 0.1em; }
+    .plot-note { font-size: 12px; color: var(--v-mute); line-height: 1.6; margin-top: 10px; }
+
+    table.v-table { width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: center; }
+    table.v-table thead th {
+      background: var(--v-bg-soft); border-bottom: 1px solid var(--v-line-strong);
+      color: var(--v-ink); font-family: var(--v-display); font-weight: 750; padding: 10px 8px; font-size: 12px;
+    }
+    table.v-table tbody td { padding: 8px; border-bottom: 1px solid var(--v-line); color: var(--v-body); }
+    table.v-table tbody tr:last-child td { border-bottom: none; }
+
+    .t-footer {
+      border-top: 1px solid var(--v-line-strong); padding: 60px 0; margin-top: 80px;
+      font-size: 12.5px; color: var(--v-body); line-height: 1.8; background: #ffffff; text-align: center;
+    }
+    .footer-inner-centered {
+      max-width: 960px; margin: 0 auto; padding: 0 32px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px;
+    }
+    .footer-brand { color: var(--v-ink); font-weight: 750; font-family: var(--v-display); font-size: 15px; }
+
+    @media (max-width: 1024px) {
+      .ledger-strip { grid-template-columns: repeat(2, 1fr); }
+      .ledger-col { border-bottom: 1px solid var(--v-line); }
+      .grid-plots { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .ledger-strip { grid-template-columns: 1fr; }
+      .t-nav-inner, .t-container { padding: 0 20px; }
+      .v-plots-container { padding: 20px; }
+    }
   </style>
 </head>
 <body>
-<nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div><div class="nav-links"></div></div></nav>
 
-<section class="wrap pg-hero">
-  <h1>⚡ 3×3 阵列协同偏航优化</h1>
-  <p>九台风机多机协同：基准 8095 kW → 第一排偏航 9299 kW (+14.9%) → 前两排偏航 9935 kW (+22.7%) → 独立贪心 10041 kW (+24.0%)</p>
-</section>
+<nav class="t-nav">
+  <div class="t-nav-inner">
+    <div class="t-nav-brand">
+      <span>风电场偏航优化平台</span>
+      <span class="t-nav-badge">SUN CHENGZE · VISUALIZATION</span>
+    </div>
+    <div style="display:flex;gap:18px;font-size:13px;font-weight:600;flex-wrap:wrap">
+      <a href="index.html" style="color:var(--v-mute);text-decoration:none">00 / HOME</a>
+      <a href="optimization.html" style="color:var(--v-mute);text-decoration:none">02 / OPTIMIZATION</a>
+      <a href="array.html" style="color:var(--v-teal-bright);text-decoration:none;font-weight:750">05 / 3×3 ARRAY</a>
+      <a href="windrose.html" style="color:var(--v-mute);text-decoration:none">07 / WIND ROSE</a>
+      <a href="overview.html" style="color:var(--v-mute);text-decoration:none">ALL MODULES →</a>
+    </div>
+  </div>
+</nav>
 
-<main class="wrap">
-  <!-- 策略选择与因果说明 -->
-  <div class="card" style="margin-bottom:16px">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-weight:700;color:var(--txt)">控制策略切换：</span>
-        <div class="strategy-seg" id="stratSeg">
-          <button data-strat="none">基准 0° (无协同)</button>
-          <button data-strat="unified">第一排偏航 (+30°)</button>
-          <button data-strat="row2_30">前两排偏航 (+30°)</button>
-          <button data-strat="independent" class="active">独立贪心偏航 (推荐)</button>
+<header class="v-pg-hero t-container">
+  <div class="v-pg-tag">05 / 3×3 ARRAY COOPERATIVE YAW CONTROL</div>
+  <h1 class="v-pg-title">3×3 阵列协同偏航优化</h1>
+  <p class="v-pg-sub">
+    九台风机多机协同：基准 8095 kW → 第一排偏航 9299 kW (+14.9%) → 前两排偏航 9935 kW (+22.7%)
+    → 独立贪心 10041 kW (+24.0%)，四档策略同屏切换对比。
+  </p>
+</header>
+
+<main class="t-container">
+
+  <div class="v-workbench-panel">
+    <div class="cause-bar">
+      <div class="cb-left">
+        <span class="cb-label">协同策略</span>
+        <span class="cb-text">上游梯级偏转尾流、下游满发收割：切换四档控制策略，观察逐排功率的再分配过程。</span>
+      </div>
+      <span class="cb-pill" id="stratBadge">贪心协同策略 · 增益 +24.04%</span>
+    </div>
+
+    <div class="strat-bar">
+      <div class="strat-group">
+        <span class="strat-label">控制策略切换</span>
+        <button class="v-btn" data-strat="none" id="stratNone">基准 0° (无协同)</button>
+        <button class="v-btn" data-strat="unified" id="stratUnified">第一排偏航 (+30°)</button>
+        <button class="v-btn" data-strat="row2_30" id="stratRow2">前两排偏航 (+30°)</button>
+        <button class="v-btn active" data-strat="independent" id="stratIndep">独立贪心偏航 (推荐)</button>
+      </div>
+    </div>
+
+    <div class="strat-desc" id="stratDesc"></div>
+
+    <div class="ledger-strip">
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>01 / FARM TOTAL</span><span style="color:var(--v-teal-bright)">9 UNITS</span></div>
+          <div class="l-title">全场总功率</div>
+          <div class="l-val" id="kTotPwr">—</div>
+        </div>
+        <span class="kpi-delta flat" id="dTotPwr">—</span>
+      </div>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>02 / ROW 1</span><span style="color:var(--v-rust)">UPSTREAM</span></div>
+          <div class="l-title">第 1 排总功率（上游 3 台）</div>
+          <div class="l-val" id="kRow1">—</div>
+        </div>
+        <span class="kpi-delta flat" id="dRow1">—</span>
+      </div>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>03 / ROW 2</span><span style="color:var(--v-yellow)">MIDSTREAM</span></div>
+          <div class="l-title">第 2 排总功率（中游 3 台）</div>
+          <div class="l-val" id="kRow2">—</div>
+        </div>
+        <span class="kpi-delta flat" id="dRow2">—</span>
+      </div>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>04 / ROW 3</span><span style="color:var(--v-teal-bright)">DOWNSTREAM</span></div>
+          <div class="l-title">第 3 排总功率（下游 3 台）</div>
+          <div class="l-val" id="kRow3">—</div>
+        </div>
+        <span class="kpi-delta flat" id="dRow3">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="v-plots-container">
+    <div class="grid-plots">
+      <div>
+        <div class="plot-head"><span class="plot-tick">FIG. A</span>3×3 风电场单机偏航角与功率分布 (Top-Down)</div>
+        <div id="arrLayout" style="height:360px"></div>
+        <div class="plot-note">圆点颜色=单机功率（绿高、金中、砖红低）；黑线箭头=机头实际偏航朝向；来流自左向右。</div>
+      </div>
+      <div>
+        <div class="plot-head"><span class="plot-tick">FIG. B</span>三大控制策略全场及逐排功率对比</div>
+        <div id="arrBar" style="height:360px"></div>
+        <div class="plot-note">对比证明：独立协同偏航相比统一偏航，使中下游机组功率获得更优释放。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="v-plots-container">
+    <div class="grid-plots">
+      <div>
+        <div class="plot-head"><span class="plot-tick">FIG. C</span>3×3 单机功率热力矩阵 (kW)</div>
+        <div id="arrHeat" style="height:300px"></div>
+        <div class="plot-note">Row 1 为迎风最前排，Row 3 为顺风最后排；Col 1~3 为横向机位。</div>
+      </div>
+      <div>
+        <div class="plot-head"><span class="plot-tick">LEDGER</span>九台风电机组详细运行参数表</div>
+        <div style="overflow-x:auto;border:1px solid var(--v-line);border-radius:3px">
+          <table class="v-table">
+            <thead>
+              <tr>
+                <th>机位编号</th>
+                <th>所在排/列</th>
+                <th>推荐偏航角</th>
+                <th>基准功率 (0°)</th>
+                <th>当前功率</th>
+                <th>单机相对增益</th>
+              </tr>
+            </thead>
+            <tbody id="turbineTableBody"></tbody>
+          </table>
         </div>
       </div>
-      <div id="stratBadge" style="font-size:12px;padding:4px 12px;border-radius:12px;background:rgba(111,135,97,0.15);color:var(--sage-deep);font-weight:700">
-        贪心协同策略 · 增益 +24.04%
-      </div>
-    </div>
-    <div id="stratDesc" style="margin-top:12px;font-size:13px;color:var(--sub);line-height:1.6;padding-top:10px;border-top:1px solid var(--line)">
-      • <b>独立贪心偏航（推荐）</b>：Row 1 偏航 +30°、Row 2 偏航 +20°、Row 3 偏航 0°。上游与中游梯级偏转尾流，下游 Row 3 无需让利全力发电，全场总功率达 <b>10041 kW (+24.04%)</b>（贪心为局部搜索下限，真实上限或更高）。
     </div>
   </div>
 
-  <!-- 3 大核心 KPI -->
-  <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
-    <div class="stat-card">
-      <p class="stat-number" id="kTotPwr">—</p>
-      <p class="stat-label">全场总功率</p>
-      <p class="kpi-delta flat" id="dTotPwr">—</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-number" id="kRow1">—</p>
-      <p class="stat-label">第 1 排总功率 (上游 3 台)</p>
-      <p class="kpi-delta flat" id="dRow1">—</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-number" id="kRow2">—</p>
-      <p class="stat-label">第 2 排总功率 (中游 3 台)</p>
-      <p class="kpi-delta flat" id="dRow2">—</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-number" id="kRow3">—</p>
-      <p class="stat-label">第 3 排总功率 (下游 3 台)</p>
-      <p class="kpi-delta flat" id="dRow3">—</p>
-    </div>
-  </div>
-
-  <!-- 九机平面布局与逐排柱状对比 -->
-  <div class="grid2">
-    <div class="card">
-      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">🗺️ 3×3 风电场单机偏航角与功率分布 (Top-Down)</h3>
-      <div id="arrLayout" class="plotly-container" style="height:360px"></div>
-      <div class="note">圆点颜色=单机功率（鼠尾草高、雾蓝中、陶土低）；黑线箭头=机头实际偏航朝向；来流自左向右。</div>
-    </div>
-    <div class="card">
-      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">📊 三大控制策略全场及逐排功率对比</h3>
-      <div id="arrBar" class="plotly-container" style="height:360px"></div>
-      <div class="note">对比证明：独立协同偏航相比统一偏航，使中下游机组功率获得更优释放。</div>
-    </div>
-  </div>
-
-  <!-- 3x3 单机功率矩阵热力图与数据表 -->
-  <div class="grid2" style="margin-top:18px">
-    <div class="card">
-      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">🔥 3×3 单机功率热力矩阵 (kW)</h3>
-      <div id="arrHeat" class="plotly-container" style="height:280px"></div>
-      <div class="note">Row 1 为迎风最前排，Row 3 为顺风最后排；Col 1~3 为横向机位。</div>
-    </div>
-    <div class="card">
-      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">📋 九台风电机组详细运行参数表</h3>
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;text-align:center">
-          <thead>
-            <tr style="background:var(--bg2);border-bottom:1px solid var(--line);color:var(--txt)">
-              <th style="padding:8px">机位编号</th>
-              <th style="padding:8px">所在排/列</th>
-              <th style="padding:8px">推荐偏航角</th>
-              <th style="padding:8px">基准功率 (0°)</th>
-              <th style="padding:8px">当前功率</th>
-              <th style="padding:8px">单机相对增益</th>
-            </tr>
-          </thead>
-          <tbody id="turbineTableBody" style="color:var(--txt)">
-            <!-- JS 动态填充 -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
 </main>
 
-<footer class="wrap">孙承泽 · 可视化模块 · 西安交通大学</footer>
+<footer class="t-footer">
+  <div class="footer-inner-centered">
+    <div class="footer-brand" style="margin-bottom:6px">西安交通大学 · 能源与动力工程学院 · 大学生创新训练项目团队</div>
+    <div style="line-height:1.8;color:var(--v-body);font-size:12.5px;margin-bottom:12px">
+      <b>成员确权：</b>田铭雨（高保真CFD流场仿真）· 袁夫达（POD特征降阶与代理模型）· 厉今飞（多风速工况基线）· 洪祖名（PPO跟踪与优化求解）· 孙承泽（可视化与交互系统负责）<br>
+      <b>指导教师：</b>李良星 副教授 ｜ 审计自检脚本：<code>check_contract.py</code> (100% Exit Code 0 绿灯)
+    </div>
+    <div style="font-family:var(--v-mono);font-size:11px;color:var(--v-mute);letter-spacing:0.06em">
+      <span>SWISS INTERNATIONAL TYPOGRAPHIC STYLE · EDGE INFERENCE · REGULAR GRID INTERPOLATOR</span>
+    </div>
+  </div>
+</footer>
 
 <script src="assets/data.js"></script>
 <script>
 (function(){
   const A = window.WIND_DATA.array_opt;
+  const FONT = "'Manrope','DengXian','等线','PingFang SC','Microsoft YaHei',sans-serif";
   let curStrat = 'independent';
 
-  // 策略定义
   const STRATS = {
     none: {
       name: '基准 0° (无协同)',
@@ -132,9 +329,8 @@
       yaws: [0, 0, 0, 0, 0, 0, 0, 0, 0],
       pwr: A.turbine_powers_none,
       badge: '基准状态 · 尾流严重遮挡',
-      badgeBg: 'rgba(185,132,132,0.15)',
-      badgeCol: 'var(--rose)',
-      desc: '• <b>基准 0° 控制</b>：所有风机正对来流。上游 Row 1 满发（1754 kW/台），但强尾流直接冲刷 Row 2（437 kW/台）和 Row 3（508 kW/台），全场总功率仅 <b>8095 kW</b>。'
+      badgeCol: 'var(--v-rust)',
+      desc: '<b>基准 0° 控制</b>：所有风机正对来流。上游 Row 1 满发（1754 kW/台），但强尾流直接冲刷 Row 2（437 kW/台）和 Row 3（508 kW/台），全场总功率仅 <b>8095 kW</b>。'
     },
     unified: {
       name: '第一排偏航 (+30°)',
@@ -143,9 +339,8 @@
       yaws: [30, 30, 30, 0, 0, 0, 0, 0, 0],
       pwr: A.turbine_powers_unified,
       badge: '第一排协同 · 增益 +14.87%',
-      badgeBg: 'rgba(107,140,174,0.15)',
-      badgeCol: 'var(--blue-deep)',
-      desc: '• <b>第一排偏航控制</b>：最上游一排（Row 1）统一偏航 +30°，中后排保持 0° 迎风。Row 1 三台让利偏转尾流（1340 kW/台），中游 Row 2 回升至 1023~1058 kW/台，全场总功率提升至 <b>9299 kW (+14.87%)</b>。'
+      badgeCol: 'var(--v-teal-bright)',
+      desc: '<b>第一排偏航控制</b>：最上游一排（Row 1）统一偏航 +30°，中后排保持 0° 迎风。Row 1 三台让利偏转尾流（1340 kW/台），中游 Row 2 回升至 1023~1058 kW/台，全场总功率提升至 <b>9299 kW (+14.87%)</b>。'
     },
     row2_30: {
       name: '前两排偏航 (+30°)',
@@ -154,9 +349,8 @@
       yaws: [30, 30, 30, 30, 30, 30, 0, 0, 0],
       pwr: A.turbine_powers_row2_30,
       badge: '双排接力偏转 · 增益 +22.72%',
-      badgeBg: 'rgba(107,140,174,0.15)',
-      badgeCol: 'var(--blue-deep)',
-      desc: '• <b>前两排接力偏航（+30° / +30° / 0°）</b>：第一排和第二排全部偏航 +30°，第三排保持 0°。Row 2 继续主动偏转尾流虽让自身单机微降至 766~798 kW/台，却为下游清洗出顺畅流道，使 Row 3 单机骤升至 <b>1171~1195 kW</b>，全场总功率升至 <b>9935 kW (+22.72%)</b>。'
+      badgeCol: 'var(--v-teal-bright)',
+      desc: '<b>前两排接力偏航（+30° / +30° / 0°）</b>：第一排和第二排全部偏航 +30°，第三排保持 0°。Row 2 继续主动偏转尾流虽让自身单机微降至 766~798 kW/台，却为下游清洗出顺畅流道，使 Row 3 单机骤升至 <b>1171~1195 kW</b>，全场总功率升至 <b>9935 kW (+22.72%)</b>。'
     },
     independent: {
       name: '独立贪心偏航 (推荐)',
@@ -165,9 +359,8 @@
       yaws: A.greedy_yaws,
       pwr: A.turbine_powers_independent,
       badge: '贪心协同策略 · 增益 +24.04%',
-      badgeBg: 'rgba(111,135,97,0.15)',
-      badgeCol: 'var(--sage-deep)',
-      desc: '• <b>独立贪心偏航（推荐）</b>：Row 1 偏航 +30°、Row 2 偏航 +20°、Row 3 偏航 0°。上游与中游梯级偏转尾流，下游 Row 3 无需让利全力发电，全场总功率达 <b>10041 kW (+24.04%)</b>（贪心为局部搜索下限，真实上限或更高）。'
+      badgeCol: 'var(--v-teal-bright)',
+      desc: '<b>独立贪心偏航（推荐）</b>：Row 1 偏航 +30°、Row 2 偏航 +20°、Row 3 偏航 0°。上游与中游梯级偏转尾流，下游 Row 3 无需让利全力发电，全场总功率达 <b>10041 kW (+24.04%)</b>（贪心为局部搜索下限，真实上限或更高）。'
     }
   };
 
@@ -175,13 +368,12 @@
     const st = STRATS[curStrat];
     const basePtot = A.power_none;
 
-    // 顶部文本与 Badge
-    document.getElementById('stratBadge').textContent = st.badge;
-    document.getElementById('stratBadge').style.background = st.badgeBg;
-    document.getElementById('stratBadge').style.color = st.badgeCol;
+    const badge = document.getElementById('stratBadge');
+    badge.textContent = st.badge;
+    badge.style.color = st.badgeCol;
+    badge.style.borderColor = st.badgeCol;
     document.getElementById('stratDesc').innerHTML = st.desc;
 
-    // KPI
     const r1Pwr = st.pwr[0] + st.pwr[1] + st.pwr[2];
     const r2Pwr = st.pwr[3] + st.pwr[4] + st.pwr[5];
     const r3Pwr = st.pwr[6] + st.pwr[7] + st.pwr[8];
@@ -194,34 +386,33 @@
     document.getElementById('dTotPwr').className = 'kpi-delta ' + (st.gain > 0.5 ? 'up' : st.gain < -0.5 ? 'down' : 'flat');
 
     document.getElementById('kRow1').textContent = Math.round(r1Pwr) + ' kW';
-    document.getElementById('dRow1').textContent = ((r1Pwr - b1Pwr) / b1Pwr * 100).toFixed(1) + '% (' + Math.round(r1Pwr - b1Pwr) + ' kW)';
-    document.getElementById('dRow1').className = 'kpi-delta ' + (r1Pwr >= b1Pwr ? 'up' : 'down');
+    const dr1 = (r1Pwr - b1Pwr) / b1Pwr * 100;
+    document.getElementById('dRow1').textContent = (dr1 >= 0 ? '+' : '') + dr1.toFixed(1) + '% (' + (r1Pwr - b1Pwr >= 0 ? '+' : '') + Math.round(r1Pwr - b1Pwr) + ' kW)';
+    document.getElementById('dRow1').className = 'kpi-delta ' + (r1Pwr >= b1Pwr - 0.5 ? 'up' : 'down');
 
     document.getElementById('kRow2').textContent = Math.round(r2Pwr) + ' kW';
-    document.getElementById('dRow2').textContent = '+' + ((r2Pwr - b2Pwr) / b2Pwr * 100).toFixed(1) + '% (+' + Math.round(r2Pwr - b2Pwr) + ' kW)';
-    document.getElementById('dRow2').className = 'kpi-delta up';
+    const dr2 = (r2Pwr - b2Pwr) / b2Pwr * 100;
+    document.getElementById('dRow2').textContent = (dr2 >= 0 ? '+' : '') + dr2.toFixed(1) + '% (' + (r2Pwr - b2Pwr >= 0 ? '+' : '') + Math.round(r2Pwr - b2Pwr) + ' kW)';
+    document.getElementById('dRow2').className = 'kpi-delta ' + (dr2 > 0.5 ? 'up' : dr2 < -0.5 ? 'down' : 'flat');
 
     document.getElementById('kRow3').textContent = Math.round(r3Pwr) + ' kW';
-    document.getElementById('dRow3').textContent = '+' + ((r3Pwr - b3Pwr) / b3Pwr * 100).toFixed(1) + '% (+' + Math.round(r3Pwr - b3Pwr) + ' kW)';
-    document.getElementById('dRow3').className = 'kpi-delta up';
+    const dr3 = (r3Pwr - b3Pwr) / b3Pwr * 100;
+    document.getElementById('dRow3').textContent = (dr3 >= 0 ? '+' : '') + dr3.toFixed(1) + '% (' + (r3Pwr - b3Pwr >= 0 ? '+' : '') + Math.round(r3Pwr - b3Pwr) + ' kW)';
+    document.getElementById('dRow3').className = 'kpi-delta ' + (dr3 > 0.5 ? 'up' : dr3 < -0.5 ? 'down' : 'flat');
 
-    // 行功率求和（对比柱图用真实逐机值求行和，不再用近似/硬编码）
     const rsum = (arr, r) => arr.slice(r * 3, r * 3 + 3).reduce((a, x) => a + x, 0);
 
-    // 1. 九机平面图（带风向流动箭头与偏航指示）
+    // 1. 九机平面图
     const pmax = 1750, pmin = 400, tTraces = [];
-
-    // 背景风流线指示箭头
     for (let rowIdx = 0; rowIdx < 3; rowIdx++) {
       tTraces.push({
         type: 'scatter',
         x: [40, 420], y: [80 + rowIdx * 110, 80 + rowIdx * 110],
         mode: 'lines',
-        line: { color: 'rgba(107, 140, 174, 0.18)', width: 8, dash: 'dot' },
+        line: { color: 'rgba(100, 116, 139, 0.18)', width: 8, dash: 'dot' },
         hoverinfo: 'skip', showlegend: false
       });
     }
-
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
         const i = r * 3 + c;
@@ -230,49 +421,42 @@
         const pVal = st.pwr[i];
         const yDeg = st.yaws[i];
         const tf = Math.max(0, Math.min(1, (pVal - pmin) / (pmax - pmin)));
-        const col = tf > 0.65 ? WF.sageDeep : tf > 0.35 ? WF.blue : WF.rose;
+        const col = tf > 0.65 ? '#1e675c' : tf > 0.35 ? '#a87817' : '#ad5038';
 
-        // 状态光环外圈
         tTraces.push({
           type: 'scatter', x: [posX], y: [posY], mode: 'markers',
           marker: { size: 44, color: 'rgba(255,255,255,0)', line: { color: col, width: 2 } },
           showlegend: false, hoverinfo: 'skip'
         });
-
-        // 机组核心圆点
         tTraces.push({
           type: 'scatter', x: [posX], y: [posY], mode: 'markers+text',
-          marker: { size: 32, color: col, line: { color: WF.card, width: 2 } },
+          marker: { size: 32, color: col, line: { color: '#ffffff', width: 2 } },
           text: ['T' + (i + 1)], textposition: 'middle center',
           textfont: { size: 11, color: '#fff', family: 'sans-serif' },
           showlegend: false,
           hovertemplate: `<b>T${i + 1} (Row ${r + 1}, Col ${c + 1})</b><br>单机功率: ${Math.round(pVal)} kW<br>偏航角: ${yDeg >= 0 ? '+' : ''}${yDeg}°<extra></extra>`
         });
 
-        // 偏航方向指示线段
         const yRad = yDeg * Math.PI / 180;
         const arrowLen = 32;
         const ax = posX + arrowLen * Math.cos(yRad);
         const ay = posY + arrowLen * Math.sin(yRad);
         tTraces.push({
           type: 'scatter', x: [posX, ax], y: [posY, ay], mode: 'lines',
-          line: { color: WF.txt, width: 3 }, showlegend: false, hoverinfo: 'skip'
+          line: { color: '#1e293b', width: 3 }, showlegend: false, hoverinfo: 'skip'
         });
-
-        // 功率标签
         tTraces.push({
           type: 'scatter', x: [posX], y: [posY - 34], mode: 'text',
-          text: [Math.round(pVal) + ' kW'], textfont: { size: 11, color: WF.sub },
+          text: [Math.round(pVal) + ' kW'], textfont: { size: 11, color: '#64748b' },
           showlegend: false, hoverinfo: 'skip'
         });
       }
     }
-
     pr('arrLayout', tTraces, {
       xaxis: { title: '顺风向 (Row 1 → Row 3)', range: [20, 460], showgrid: false, zeroline: false, showticklabels: false },
       yaxis: { title: '横向 (Col 1 → Col 3)', range: [10, 370], showgrid: false, zeroline: false, showticklabels: false },
-      height: 360,
-      margin: { l: 20, r: 20, t: 20, b: 30 }
+      height: 360, margin: { l: 20, r: 20, t: 20, b: 30 },
+      paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { family: FONT }
     });
 
     // 2. 逐排与总功率柱状图
@@ -281,28 +465,28 @@
         type: 'bar', name: '全场总功率',
         x: ['基准 0°', '第一排偏航', '前两排偏航', '独立贪心'],
         y: [A.power_none, A.power_unified, A.power_row2_30, A.power_independent],
-        marker: { color: [WF.sub, WF.blue, WF.blueDeep, WF.sageDeep] },
+        marker: { color: ['#94a3b8', '#64748b', '#334155', '#1e293b'] },
         hovertemplate: '%{x} 全场总功率: %{y:.0f} kW<extra></extra>'
       },
       {
         type: 'bar', name: '第 1 排 (上游)',
         x: ['基准 0°', '第一排偏航', '前两排偏航', '独立贪心'],
         y: [b1Pwr, rsum(STRATS.unified.pwr, 0), rsum(STRATS.row2_30.pwr, 0), rsum(STRATS.independent.pwr, 0)],
-        marker: { color: WF.rose },
+        marker: { color: '#ad5038' },
         hovertemplate: '%{x} 第 1 排: %{y:.0f} kW<extra></extra>'
       },
       {
         type: 'bar', name: '第 2 排 (中游)',
         x: ['基准 0°', '第一排偏航', '前两排偏航', '独立贪心'],
         y: [b2Pwr, rsum(STRATS.unified.pwr, 1), rsum(STRATS.row2_30.pwr, 1), rsum(STRATS.independent.pwr, 1)],
-        marker: { color: WF.blueDeep },
+        marker: { color: '#a87817' },
         hovertemplate: '%{x} 第 2 排: %{y:.0f} kW<extra></extra>'
       },
       {
         type: 'bar', name: '第 3 排 (下游)',
         x: ['基准 0°', '第一排偏航', '前两排偏航', '独立贪心'],
         y: [b3Pwr, rsum(STRATS.unified.pwr, 2), rsum(STRATS.row2_30.pwr, 2), rsum(STRATS.independent.pwr, 2)],
-        marker: { color: WF.sageDeep },
+        marker: { color: '#1e675c' },
         hovertemplate: '%{x} 第 3 排: %{y:.0f} kW<extra></extra>'
       }
     ], {
@@ -310,15 +494,16 @@
       yaxis: { title: '功率 (kW)' },
       barmode: 'group',
       height: 360,
-      margin: { l: 55, r: 15, t: 20, b: 40 },
-      legend: { orientation: 'h', y: 1.14, x: 0.05, font: { size: 11 } }
+      margin: { l: 55, r: 15, t: 32, b: 40 },
+      legend: { orientation: 'h', y: 1.18, x: 0.5, xanchor: 'center', font: { size: 11 } },
+      font: { family: FONT }
     });
 
-    // 3. 3x3 单机功率矩阵热力图 (使用莫兰迪 FieldSeq)
+    // 3. 3x3 功率热力矩阵
     const heatZ = [
-      [st.pwr[6], st.pwr[7], st.pwr[8]], // Row 3
-      [st.pwr[3], st.pwr[4], st.pwr[5]], // Row 2
-      [st.pwr[0], st.pwr[1], st.pwr[2]]  // Row 1
+      [st.pwr[6], st.pwr[7], st.pwr[8]],
+      [st.pwr[3], st.pwr[4], st.pwr[5]],
+      [st.pwr[0], st.pwr[1], st.pwr[2]]
     ];
     pr('arrHeat', [{
       type: 'heatmap',
@@ -332,11 +517,12 @@
     }], {
       xaxis: { title: '列 (横向)' },
       yaxis: { title: '行 (顺风向)' },
-      height: 280,
-      margin: { l: 90, r: 50, t: 20, b: 40 }
+      height: 300,
+      margin: { l: 90, r: 50, t: 15, b: 40 },
+      font: { family: FONT }
     });
 
-    // 4. 填充九机表格
+    // 4. 九机表格
     const tb = document.getElementById('turbineTableBody');
     tb.innerHTML = '';
     for (let i = 0; i < 9; i++) {
@@ -345,31 +531,28 @@
       const cp = st.pwr[i];
       const g = (cp - bp) / bp * 100;
       const tr = document.createElement('tr');
-      tr.style.borderBottom = '1px solid var(--line)';
       tr.innerHTML = `
-        <td style="padding:7px;font-weight:700">T${i + 1}</td>
-        <td style="padding:7px">Row ${r}, Col ${c}</td>
-        <td style="padding:7px;color:var(--blue-deep);font-weight:700">${st.yaws[i] >= 0 ? '+' : ''}${st.yaws[i]}°</td>
-        <td style="padding:7px">${Math.round(bp)} kW</td>
-        <td style="padding:7px;font-weight:700">${Math.round(cp)} kW</td>
-        <td style="padding:7px;color:${g >= 0 ? 'var(--sage-deep)' : 'var(--rose)'};font-weight:700">${g >= 0 ? '+' : ''}${g.toFixed(1)}%</td>
+        <td style="font-weight:700;font-family:var(--v-mono)">T${i + 1}</td>
+        <td>Row ${r}, Col ${c}</td>
+        <td style="color:var(--v-ink);font-weight:700;font-family:var(--v-mono)">${st.yaws[i] >= 0 ? '+' : ''}${st.yaws[i]}°</td>
+        <td style="font-family:var(--v-mono);color:var(--v-mute)">${Math.round(bp)} kW</td>
+        <td style="font-weight:700;font-family:var(--v-mono);color:var(--v-ink)">${Math.round(cp)} kW</td>
+        <td style="color:${g >= 0 ? 'var(--v-teal-bright)' : 'var(--v-rust)'};font-weight:700;font-family:var(--v-mono)">${g >= 0 ? '+' : ''}${g.toFixed(1)}%</td>
       `;
       tb.appendChild(tr);
     }
   }
 
-  document.getElementById('stratSeg').addEventListener('click', e => {
-    if (!e.target.dataset.strat) return;
-    curStrat = e.target.dataset.strat;
-    [...e.currentTarget.children].forEach(b => b.classList.toggle('active', b === e.target));
-    updateView();
+  document.querySelectorAll('[data-strat]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      curStrat = btn.dataset.strat;
+      document.querySelectorAll('[data-strat]').forEach(b => b.classList.toggle('active', b === btn));
+      updateView();
+    });
   });
 
   updateView();
 })();
 </script>
-<script src="assets/js/nav.js"></script>
-<script src="assets/js/bg-video.js"></script>
-<script src="assets/js/data-source.js"></script>
 </body>
 </html>
