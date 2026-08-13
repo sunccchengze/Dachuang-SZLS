@@ -3,121 +3,349 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>功率需求跟踪 · 风电场偏航优化</title>
+  <title>功率需求跟踪 · 风电场偏航优化科研平台</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script src="assets/js/plotly-theme.js"></script>
   <style>
-    .target-presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-    .target-presets button { border: 1px solid var(--line); background: var(--bg2); padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--txt); cursor: pointer; transition: all .15s; }
-    .target-presets button:hover { border-color: var(--blue); color: var(--blue-deep); }
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+    :root {
+      --v-bg: #f8f9fa;
+      --v-bg-soft: #f1f3f5;
+      --v-bg-subtle: #e9ecef;
+      --v-panel: #ffffff;
+      --v-ink: #1e293b;
+      --v-body: #334155;
+      --v-mute: #64748b;
+      --v-faint: #94a3b8;
+      --v-line: rgba(30, 41, 59, 0.11);
+      --v-line-strong: rgba(30, 41, 59, 0.22);
+      --v-teal: #2d7569;
+      --v-teal-bright: #1e675c;
+      --v-yellow: #a87817;
+      --v-rust: #ad5038;
+      --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", monospace;
+      --v-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC Black", "Songti SC", "STSong", "STZhongsong", "SimSun", "宋体-简", serif;
+      --v-body-font: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--v-bg); color: var(--v-ink);
+      font-family: var(--v-body-font); line-height: 1.6;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    h1, h2, h3, h4, .l-title, .cb-label, .step-title { font-family: var(--v-display); }
+    .l-val, .t-nav-badge, .plot-tick, .step-idx, .kpi-delta { font-family: var(--v-mono); font-variant-numeric: tabular-nums; }
+
+    .t-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--v-line); height: 60px; display: flex; align-items: center;
+    }
+    .t-nav-inner {
+      max-width: 1240px; width: 100%; margin: 0 auto; padding: 0 32px;
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    }
+    .t-nav-brand {
+      font-family: var(--v-display); font-size: 16px; font-weight: 700; color: var(--v-ink);
+      letter-spacing: -0.3px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .t-nav-badge {
+      font-size: 10.5px; color: var(--v-teal-bright); padding: 3px 8px;
+      border: 1px solid var(--v-line-strong); border-radius: 3px; background: var(--v-bg-soft); font-weight: 700;
+    }
+    .t-container { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+
+    .v-pg-hero { padding: 44px 0 28px; }
+    .v-pg-tag {
+      font-family: var(--v-mono); font-size: 11px; font-weight: 700; color: var(--v-yellow);
+      letter-spacing: 0.12em; margin-bottom: 10px; text-transform: uppercase;
+    }
+    .v-pg-title { font-size: clamp(28px, 3.8vw, 40px); font-weight: 800; letter-spacing: -0.8px; color: var(--v-ink); margin-bottom: 8px; }
+    .v-pg-sub { font-size: 14.5px; color: var(--v-body); max-width: 860px; line-height: 1.6; }
+
+    .v-workbench-panel {
+      background: #ffffff; border: 1px solid var(--v-line-strong);
+      border-radius: 4px; overflow: hidden; margin-bottom: 36px;
+    }
+    .cause-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 16px 28px; background: var(--v-bg-soft);
+      border-bottom: 1px solid var(--v-line); flex-wrap: nowrap; width: 100%;
+    }
+    .cb-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+    .cb-label {
+      font-family: var(--v-display) !important; font-size: 11.5px !important; font-weight: 750 !important;
+      color: #ffffff !important; background: var(--v-teal-bright) !important;
+      padding: 5px 12px !important; border-radius: 2px !important; letter-spacing: 0.08em !important;
+      display: inline-block; flex-shrink: 0; white-space: nowrap;
+    }
+    .cb-text { font-size: 13px; color: var(--v-body); line-height: 1.5; flex: 1; min-width: 0; }
+    .cb-pill {
+      font-family: var(--v-mono); font-size: 12px; font-weight: 700;
+      padding: 6px 14px; border-radius: 2px; border: 1px solid var(--v-line-strong);
+      background: #ffffff; white-space: nowrap; flex-shrink: 0; color: var(--v-ink);
+    }
+
+    .ledger-strip { display: grid; grid-template-columns: repeat(4, 1fr); background: #ffffff; }
+    .ledger-col {
+      padding: 24px 28px; border-right: 1px solid var(--v-line);
+      display: flex; flex-direction: column; justify-content: space-between; min-width: 0; word-wrap: break-word;
+    }
+    .ledger-col:last-child { border-right: none; }
+    .l-meta {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+      font-family: var(--v-mono); font-size: 10.5px; color: var(--v-mute); font-weight: 700; letter-spacing: 0.05em;
+    }
+    .l-title { font-size: 13.5px; font-weight: 750; color: var(--v-ink); margin-bottom: 12px; line-height: 1.4; }
+    .l-val { font-weight: 750; font-size: 32px; line-height: 1; color: var(--v-ink); margin-bottom: 12px; transition: color 0.25s; }
+    .kpi-delta { display: block; font-size: 11.5px; font-weight: 700; }
+    .kpi-delta.up { color: var(--v-teal-bright); }
+    .kpi-delta.down { color: var(--v-rust); }
+    .kpi-delta.flat { color: var(--v-mute); }
+
+    .ctl-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+      padding: 20px 28px; border-bottom: 1px solid var(--v-line); background: #ffffff;
+    }
+    .ctl-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .ctl-label { font-family: var(--v-display); font-size: 13.5px; font-weight: 750; color: var(--v-ink); }
+    select.v-select, input.v-input {
+      font-family: var(--v-mono); font-size: 12.5px; font-weight: 700;
+      padding: 7px 12px; border: 1px solid var(--v-line-strong); border-radius: 3px;
+      background: var(--v-bg-soft); color: var(--v-ink);
+    }
+    input.v-input { width: 110px; }
+    select.v-select:focus-visible, input.v-input:focus-visible { outline: 2px solid var(--v-teal-bright); outline-offset: 1px; }
+    .v-btn {
+      font-family: var(--v-body-font); font-size: 12px; font-weight: 700;
+      padding: 7px 14px; background: var(--v-bg-soft);
+      border: 1px solid var(--v-line-strong); border-radius: 3px; color: var(--v-ink); cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); white-space: nowrap;
+    }
+    .v-btn:hover { background: var(--v-ink); color: #fff; border-color: var(--v-ink); transform: translateY(-2px); }
+    .v-btn:active { transform: translateY(0) scale(0.98); }
+    .unit-tag { font-size: 12px; color: var(--v-mute); font-weight: 600; }
+
+    .v-plots-container {
+      background: #ffffff; border: 1px solid var(--v-line-strong);
+      border-radius: 4px; padding: 28px 32px; margin-bottom: 36px;
+    }
+    .grid-plots { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+    .plot-head {
+      font-family: var(--v-display); font-size: 14.5px; font-weight: 750; color: var(--v-ink);
+      margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .plot-tick { font-size: 10px; font-weight: 700; color: var(--v-yellow); letter-spacing: 0.1em; }
+    .plot-note { font-size: 12px; color: var(--v-mute); line-height: 1.6; margin-top: 10px; }
+    .warn-strip {
+      font-size: 12.5px; color: var(--v-rust); background: rgba(173, 80, 56, 0.08);
+      border: 1px solid rgba(173, 80, 56, 0.35); border-radius: 3px;
+      padding: 10px 14px; display: none; margin-top: 12px; line-height: 1.6;
+    }
+
+    .pipe-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .pipe-step {
+      padding: 24px 28px; border-right: 1px solid var(--v-line);
+      display: flex; flex-direction: column; gap: 10px; min-width: 0;
+    }
+    .pipe-step:last-child { border-right: none; }
+    .step-idx { font-size: 11px; font-weight: 700; color: var(--v-yellow); letter-spacing: 0.1em; }
+    .step-title { font-size: 15px; font-weight: 750; color: var(--v-ink); line-height: 1.4; }
+    .step-desc { font-size: 12.5px; color: var(--v-mute); line-height: 1.65; }
+
+    .t-footer {
+      border-top: 1px solid var(--v-line-strong); padding: 60px 0; margin-top: 80px;
+      font-size: 12.5px; color: var(--v-body); line-height: 1.8; background: #ffffff; text-align: center;
+    }
+    .footer-inner-centered {
+      max-width: 960px; margin: 0 auto; padding: 0 32px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px;
+    }
+    .footer-brand { color: var(--v-ink); font-weight: 750; font-family: var(--v-display); font-size: 15px; }
+
+    @media (max-width: 1024px) {
+      .ledger-strip { grid-template-columns: repeat(2, 1fr); }
+      .ledger-col { border-bottom: 1px solid var(--v-line); }
+      .grid-plots { grid-template-columns: 1fr; }
+      .pipe-grid { grid-template-columns: 1fr; }
+      .pipe-step { border-right: none; border-bottom: 1px solid var(--v-line); }
+      .pipe-step:last-child { border-bottom: none; }
+    }
+    @media (max-width: 640px) {
+      .ledger-strip { grid-template-columns: 1fr; }
+      .t-nav-inner, .t-container { padding: 0 20px; }
+      .v-plots-container { padding: 20px; }
+    }
   </style>
 </head>
 <body>
-<nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div><div class="nav-links"></div></div></nav>
 
-<section class="wrap pg-hero">
-  <h1>🎛️ 电网调度功率需求跟踪 (AGC 闭环)</h1>
-  <p>输入电网调度期望总功率，系统自动逆向求解满足需求的最优协同偏航角序列</p>
-</section>
+<nav class="t-nav">
+  <div class="t-nav-inner">
+    <div class="t-nav-brand">
+      <span>风电场偏航优化平台</span>
+      <span class="t-nav-badge">SUN CHENGZE · VISUALIZATION</span>
+    </div>
+    <div style="display:flex;gap:18px;font-size:13px;font-weight:600;flex-wrap:wrap">
+      <a href="index.html" style="color:var(--v-mute);text-decoration:none">00 / HOME</a>
+      <a href="solver.html" style="color:var(--v-mute);text-decoration:none">03 / SOLVER</a>
+      <a href="dashboard.html" style="color:var(--v-mute);text-decoration:none">04 / DASHBOARD</a>
+      <a href="power_tracking.html" style="color:var(--v-teal-bright);text-decoration:none;font-weight:750">10 / AGC TRACKING</a>
+      <a href="overview.html" style="color:var(--v-mute);text-decoration:none">ALL MODULES →</a>
+    </div>
+  </div>
+</nav>
 
-<main class="wrap">
-  <!-- 4 大核心 KPI -->
-  <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
-    <div class="stat-card">
-      <p class="stat-number" id="ptYaw">+25°</p>
-      <p class="stat-label">推荐上游偏航角</p>
-      <p class="kpi-delta up" id="ptYawStatus">逆向求解完成</p>
+<header class="v-pg-hero t-container">
+  <div class="v-pg-tag">10 / AGC POWER SETPOINT TRACKING · INVERSE SOLVER</div>
+  <h1 class="v-pg-title">电网调度功率需求跟踪 (AGC 闭环)</h1>
+  <p class="v-pg-sub">
+    输入电网调度期望总功率，系统调用 <code style="font-family:var(--v-mono);font-size:12px">find_yaw_for_target</code>
+    自动逆向求解满足需求的最优协同偏航角序列，并给出跟踪误差与越界预警。
+  </p>
+</header>
+
+<main class="t-container">
+
+  <div class="v-workbench-panel">
+    <div class="cause-bar">
+      <div class="cb-left">
+        <span class="cb-label">逆向求解</span>
+        <span class="cb-text">目标功率 → 代理模型反向搜索 → 最优偏航角 γ*，毫秒级完成调度指令到机组指令的翻译。</span>
+      </div>
+      <span class="cb-pill">AGC CLOSED LOOP</span>
     </div>
-    <div class="stat-card">
-      <p class="stat-number" id="ptPow">2368 kW</p>
-      <p class="stat-label">优化实际输出总功率</p>
-      <p class="kpi-delta up" id="ptPowDelta">+178 kW vs 基准</p>
+    <div class="ledger-strip" style="border-bottom:1px solid var(--v-line)">
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>01 / SOLVED YAW</span><span style="color:var(--v-teal-bright)">γ*</span></div>
+          <div class="l-title">推荐上游偏航角</div>
+          <div class="l-val" id="ptYaw" style="color:var(--v-teal-bright)">+25°</div>
+        </div>
+        <span class="kpi-delta up" id="ptYawStatus">逆向求解完成</span>
+      </div>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>02 / ACTUAL OUTPUT</span><span style="color:var(--v-teal-bright)">PTOT</span></div>
+          <div class="l-title">优化实际输出总功率</div>
+          <div class="l-val" id="ptPow">2368 kW</div>
+        </div>
+        <span class="kpi-delta up" id="ptPowDelta">+178 kW vs 基准</span>
+      </div>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>03 / TRACKING ERROR</span><span style="color:var(--v-yellow)">|ΔP|</span></div>
+          <div class="l-title">电网需求跟踪误差</div>
+          <div class="l-val" id="ptErr">0.0%</div>
+        </div>
+        <span class="kpi-delta up" id="ptErrStatus">精准跟踪</span>
+      </div>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>04 / BASELINE</span><span style="color:var(--v-mute)">0° YAW</span></div>
+          <div class="l-title">0° 无偏航基准功率</div>
+          <div class="l-val" id="ptBase">2190 kW</div>
+        </div>
+        <span class="kpi-delta flat">自然对风出力</span>
+      </div>
     </div>
-    <div class="stat-card">
-      <p class="stat-number" id="ptErr">0.0%</p>
-      <p class="stat-label">电网需求跟踪误差</p>
-      <p class="kpi-delta flat" id="ptErrStatus">精准跟踪</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-number" id="ptBase">2190 kW</p>
-      <p class="stat-label">0° 无偏航基准功率</p>
-      <p class="kpi-delta down">自然对风出力</p>
+
+    <div class="ctl-bar">
+      <div class="ctl-group">
+        <span class="ctl-label">来流风速</span>
+        <select id="ptU" class="v-select">
+          <option value="6">6.0 m/s</option>
+          <option value="8" selected>8.0 m/s (额定)</option>
+          <option value="10">10.0 m/s</option>
+          <option value="12">12.0 m/s</option>
+        </select>
+        <span class="ctl-label" style="margin-left:14px">电网期望目标功率</span>
+        <input type="number" id="ptT" value="2350" step="20" min="500" max="8000" class="v-input">
+        <span class="unit-tag">kW</span>
+      </div>
+      <div class="ctl-group">
+        <span class="unit-tag">快捷预设：</span>
+        <button class="v-btn" onclick="setTarget(2200)">2200 kW (略高于基准)</button>
+        <button class="v-btn" onclick="setTarget(2300)">2300 kW (协同区间)</button>
+        <button class="v-btn" onclick="setTarget(2368)">2368 kW (物理极值)</button>
+        <button class="v-btn" onclick="setTarget(2500)">2500 kW (超限预警)</button>
+      </div>
     </div>
   </div>
 
-  <!-- 控制与跟踪可视化 -->
-  <div class="grid2">
-    <div class="card">
-      <div class="controls" style="flex-wrap:wrap;gap:12px">
-        <div>
-          <label style="font-weight:700">来流风速：</label>
-          <select id="ptU" style="padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--txt)">
-            <option value="6">6.0 m/s</option>
-            <option value="8" selected>8.0 m/s (额定)</option>
-            <option value="10">10.0 m/s</option>
-            <option value="12">12.0 m/s</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-weight:700">电网期望目标功率：</label>
-          <input type="number" id="ptT" value="2350" step="20" min="500" max="8000" style="width:110px;padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--txt)">
-          <span style="font-size:12px;color:var(--sub)">kW</span>
-        </div>
+  <div class="v-plots-container">
+    <div class="grid-plots">
+      <div>
+        <div class="plot-head"><span class="plot-tick">FIG. A</span>功率响应曲线与目标水平线</div>
+        <div id="curvePlot" style="height:320px"></div>
+        <div class="plot-note" id="ptNote"></div>
+        <div class="warn-strip" id="ptWarn"></div>
       </div>
-
-      <div class="target-presets">
-        <span style="font-size:12px;color:var(--sub);line-height:24px">快捷预设：</span>
-        <button onclick="setTarget(2200)">2200 kW (略高于基准)</button>
-        <button onclick="setTarget(2300)">2300 kW (协同区间)</button>
-        <button onclick="setTarget(2368)">2368 kW (物理极值)</button>
-        <button onclick="setTarget(2500)">2500 kW (超限预警)</button>
+      <div>
+        <div class="plot-head"><span class="plot-tick">FIG. B</span>目标功率与实际出力对比 (Gauge)</div>
+        <div id="gaugePlot" style="height:320px"></div>
+        <div class="plot-note">绿色柱代表实际优化出力，砖红柱代表电网目标下达需求，灰柱为 0° 自然基准。</div>
       </div>
-
-      <div id="curvePlot" class="plotly-container" style="height:320px;margin-top:12px"></div>
-      <div class="note" id="ptNote" style="margin-top:8px"></div>
-      <div class="note" id="ptWarn" style="color:var(--rose);background:rgba(185,132,132,0.1);padding:8px;border-radius:6px;display:none;margin-top:8px"></div>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">📊 目标功率与实际出力对比仪表 (Gauge)</h3>
-      <div id="gaugePlot" class="plotly-container" style="height:320px"></div>
-      <div class="note">绿色指针代表实际输出总功率，虚线/刻度代表电网目标下达需求。</div>
     </div>
   </div>
 
-  <!-- 闭环控制算法说明 -->
-  <div class="card" style="margin-top:18px">
-    <h3 style="margin:0 0 12px;font-size:15px;color:var(--txt)">⚙️ 自动发电控制 (AGC) 功率跟踪闭环流程</h3>
-    <div class="grid3">
-      <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
-        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">1. 目标下发与边界校验</div>
-        <div style="font-size:12px;color:var(--sub);line-height:1.6">
+  <div class="v-workbench-panel" style="margin-bottom:0">
+    <div class="cause-bar">
+      <div class="cb-left">
+        <span class="cb-label">闭环流程</span>
+        <span class="cb-text">自动发电控制 (AGC) 功率跟踪闭环：目标下发 → 反向搜索 → 指令执行与补偿。</span>
+      </div>
+      <span class="cb-pill">CONTROL LOOP · 3 STAGES</span>
+    </div>
+    <div class="pipe-grid">
+      <div class="pipe-step">
+        <span class="step-idx">STEP 1 / DISPATCH</span>
+        <span class="step-title">目标下发与边界校验</span>
+        <span class="step-desc">
           电网下达当前调度周期期望总功率 <i>P</i><sub>target</sub>，系统校验其是否处于风场物理可达功率区间 [<i>P</i><sub>min</sub>, <i>P</i><sub>max</sub>]。
-        </div>
+        </span>
       </div>
-      <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
-        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">2. 代理模型反向搜索</div>
-        <div style="font-size:12px;color:var(--sub);line-height:1.6">
-          调用 <code>find_yaw_for_target</code> 接口，在 1 毫秒内反向搜索使 |<i>P</i><sub>tot</sub>(γ) − <i>P</i><sub>target</sub>| 最小的最优偏航角 γ<sup>*</sup>。
-        </div>
+      <div class="pipe-step">
+        <span class="step-idx">STEP 2 / INVERSE SEARCH</span>
+        <span class="step-title">代理模型反向搜索</span>
+        <span class="step-desc">
+          调用 <code style="font-family:var(--v-mono);font-size:11px">find_yaw_for_target</code> 接口，在 1 毫秒内反向搜索使 |<i>P</i><sub>tot</sub>(γ) − <i>P</i><sub>target</sub>| 最小的最优偏航角 γ<sup>*</sup>。
+        </span>
       </div>
-      <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
-        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">3. 闭环指令执行与补偿</div>
-        <div style="font-size:12px;color:var(--sub);line-height:1.6">
-          将优化角下发至风电机组偏航驱动机构，若存在未建模扰动则由下层变桨/转矩控制器进行快速微调补偿。
-        </div>
+      <div class="pipe-step">
+        <span class="step-idx">STEP 3 / EXECUTE</span>
+        <span class="step-title">闭环指令执行与补偿</span>
+        <span class="step-desc">
+          将优化角下发至风电机组偏航驱动机构，若存在未建模扰动则由下层变桨 / 转矩控制器进行快速微调补偿。
+        </span>
       </div>
     </div>
   </div>
+
 </main>
 
-<footer class="wrap">孙承泽 · 可视化模块 · 西安交通大学</footer>
+<footer class="t-footer">
+  <div class="footer-inner-centered">
+    <div class="footer-brand" style="margin-bottom:6px">西安交通大学 · 能源与动力工程学院 · 大学生创新训练项目团队</div>
+    <div style="line-height:1.8;color:var(--v-body);font-size:12.5px;margin-bottom:12px">
+      <b>成员确权：</b>田铭雨（高保真CFD流场仿真）· 袁夫达（POD特征降阶与代理模型）· 厉今飞（多风速工况基线）· 洪祖名（PPO跟踪与优化求解）· 孙承泽（可视化与交互系统负责）<br>
+      <b>指导教师：</b>李良星 副教授 ｜ 审计自检脚本：<code>check_contract.py</code> (100% Exit Code 0 绿灯)
+    </div>
+    <div style="font-family:var(--v-mono);font-size:11px;color:var(--v-mute);letter-spacing:0.06em">
+      <span>SWISS INTERNATIONAL TYPOGRAPHIC STYLE · EDGE INFERENCE · REGULAR GRID INTERPOLATOR</span>
+    </div>
+  </div>
+</footer>
 
 <script src="assets/data.js"></script>
 <script src="assets/js/interp.js"></script>
 <script>
 const S = window.SURROGATE, m = window.WIND_DATA.multi;
+const FONT = "'Manrope','DengXian','等线','PingFang SC','Microsoft YaHei',sans-serif";
 const ptU = document.getElementById('ptU'), ptT = document.getElementById('ptT');
 
 window.setTarget = function(val) {
@@ -141,34 +369,33 @@ function render() {
   document.getElementById('ptErrStatus').className = 'kpi-delta ' + (errVal < 2.0 ? 'up' : 'down');
 
   document.getElementById('ptNote').innerHTML =
-    `当前环境风速 <b>${u} m/s</b>：0° 基准出力 <b>${Math.round(r.base)} kW</b>，逆向求解推荐偏航角 <b class="up">${r.yaw >= 0 ? '+' : ''}${r.yaw}°</b>，优化后输出 <b>${Math.round(r.ptot)} kW</b>。`;
+    `当前环境风速 <b>${u} m/s</b>：0° 基准出力 <b>${Math.round(r.base)} kW</b>，逆向求解推荐偏航角 <b style="color:var(--v-teal-bright)">${r.yaw >= 0 ? '+' : ''}${r.yaw}°</b>，优化后输出 <b>${Math.round(r.ptot)} kW</b>。`;
 
   const pw = document.getElementById('ptWarn');
   if (r.outOfRange && r.reasons && r.reasons.length) {
     pw.style.display = 'block';
-    pw.textContent = '⚠️ ' + r.reasons.join('；') + '（目标功率超出物理上限，系统已收敛至当前风速最大可能出力）';
+    pw.textContent = '越界预警：' + r.reasons.join('；') + '（目标功率超出物理上限，系统已收敛至当前风速最大可能出力）';
   } else {
     pw.style.display = 'none';
     pw.textContent = '';
   }
 
-  // 1. 功率响应与目标水平线图
   const iU = m.wind_speeds.indexOf(u);
   if (iU >= 0) {
     pr('curvePlot', [
-      { x: m.yaw_angles, y: m.ptot[iU], mode: 'lines', name: '全场总功率曲线', line: { color: WF.blue, width: 2.5 }, fill: 'tozeroy', fillcolor: 'rgba(107,140,174,0.08)' },
-      { x: [m.yaw_angles[0], m.yaw_angles[m.yaw_angles.length - 1]], y: [t, t], mode: 'lines', name: '电网目标功率', line: { color: WF.rose, width: 2, dash: 'dash' } },
-      { x: [r.yaw], y: [r.ptot], mode: 'markers', name: '匹配偏航点', marker: { size: 14, color: WF.sageDeep, line: { color: WF.plotBg, width: 2.5 } } }
+      { x: m.yaw_angles, y: m.ptot[iU], mode: 'lines', name: '全场总功率曲线', line: { color: '#1e675c', width: 2.5 }, fill: 'tozeroy', fillcolor: 'rgba(30, 103, 92, 0.07)' },
+      { x: [m.yaw_angles[0], m.yaw_angles[m.yaw_angles.length - 1]], y: [t, t], mode: 'lines', name: '电网目标功率', line: { color: '#ad5038', width: 2, dash: 'dash' } },
+      { x: [r.yaw], y: [r.ptot], mode: 'markers', name: '匹配偏航点', marker: { size: 14, color: '#a87817', line: { color: '#ffffff', width: 2.5 } } }
     ], {
-      xaxis: { title: '偏航角 γ₁ (°)' },
-      yaxis: { title: '功率 (kW)' },
+      xaxis: { title: '偏航角 γ₁ (°)', gridcolor: '#e9ecef' },
+      yaxis: { title: '功率 (kW)', gridcolor: '#e9ecef' },
       height: 320,
-      margin: { l: 55, r: 15, t: 20, b: 40 },
-      legend: { orientation: 'h', y: 1.14, x: 0.05 }
+      margin: { l: 55, r: 15, t: 32, b: 40 },
+      legend: { orientation: 'h', y: 1.18, x: 0.5, xanchor: 'center', font: { size: 11 } },
+      font: { family: FONT }
     });
   }
 
-  // 2. 目标 vs 实际 仪表图 (精细自适应尺度，清晰呈现百千瓦级微调)
   const pMin = Math.min(r.base, r.ptot, t);
   const pMax = Math.max(r.base, r.ptot, t);
   const span = Math.max(20, pMax - pMin);
@@ -180,17 +407,18 @@ function render() {
       type: 'bar',
       x: ['0° 自然基准', '实际优化出力', '电网调度目标'],
       y: [r.base, r.ptot, t],
-      marker: { color: [WF.sub, WF.sageDeep, WF.rose] },
+      marker: { color: ['#94a3b8', '#1e675c', '#ad5038'] },
       text: [Math.round(r.base) + ' kW', Math.round(r.ptot) + ' kW', Math.round(t) + ' kW'],
       textposition: 'outside',
       hovertemplate: '%{x}: %{y:.0f} kW<extra></extra>'
     }
   ], {
-    xaxis: { title: '工况分类' },
-    yaxis: { title: '功率 (kW)', range: [yLow, yHigh] },
+    xaxis: { title: '工况分类', gridcolor: '#e9ecef' },
+    yaxis: { title: '功率 (kW)', range: [yLow, yHigh], gridcolor: '#e9ecef' },
     height: 320,
     margin: { l: 55, r: 15, t: 30, b: 40 },
-    showlegend: false
+    showlegend: false,
+    font: { family: FONT }
   });
 }
 
@@ -198,8 +426,5 @@ ptU.onchange = render;
 ptT.oninput = render;
 render();
 </script>
-<script src="assets/js/nav.js"></script>
-<script src="assets/js/bg-video.js"></script>
-<script src="assets/js/data-source.js"></script>
 </body>
 </html>
