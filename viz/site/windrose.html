@@ -3,111 +3,335 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>风玫瑰与年发电量 AEP · 风电场偏航优化</title>
+  <title>风玫瑰与年发电量 AEP · 风电场偏航优化科研平台</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script src="assets/js/plotly-theme.js"></script>
   <style>
-    .rose-tab { display: inline-flex; background: var(--bg2); border-radius: 8px; padding: 4px; gap: 4px; border: 1px solid var(--line); margin-bottom: 12px; }
-    .rose-tab button { border: none; background: transparent; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--sub); cursor: pointer; transition: all .2s; }
-    .rose-tab button.active { background: var(--card); color: var(--txt); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+    :root {
+      --v-bg: #f8f9fa;
+      --v-bg-soft: #f1f3f5;
+      --v-bg-subtle: #e9ecef;
+      --v-panel: #ffffff;
+      --v-ink: #1e293b;
+      --v-body: #334155;
+      --v-mute: #64748b;
+      --v-faint: #94a3b8;
+      --v-line: rgba(30, 41, 59, 0.11);
+      --v-line-strong: rgba(30, 41, 59, 0.22);
+      --v-teal: #2d7569;
+      --v-teal-bright: #1e675c;
+      --v-yellow: #a87817;
+      --v-rust: #ad5038;
+      --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", monospace;
+      --v-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC Black", "Songti SC", "STSong", "STZhongsong", "SimSun", "宋体-简", serif;
+      --v-body-font: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--v-bg); color: var(--v-ink);
+      font-family: var(--v-body-font); line-height: 1.6;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    h1, h2, h3, h4, .l-title, .cb-label, .step-title { font-family: var(--v-display); }
+    .l-val, .t-nav-badge, .plot-tick, .step-idx, .kpi-delta { font-family: var(--v-mono); font-variant-numeric: tabular-nums; }
+
+    .t-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--v-line); height: 60px; display: flex; align-items: center;
+    }
+    .t-nav-inner {
+      max-width: 1240px; width: 100%; margin: 0 auto; padding: 0 32px;
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    }
+    .t-nav-brand {
+      font-family: var(--v-display); font-size: 16px; font-weight: 700; color: var(--v-ink);
+      letter-spacing: -0.3px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .t-nav-badge {
+      font-size: 10.5px; color: var(--v-teal-bright); padding: 3px 8px;
+      border: 1px solid var(--v-line-strong); border-radius: 3px; background: var(--v-bg-soft); font-weight: 700;
+    }
+    .t-container { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+
+    .v-pg-hero { padding: 44px 0 28px; }
+    .v-pg-tag {
+      font-family: var(--v-mono); font-size: 11px; font-weight: 700; color: var(--v-yellow);
+      letter-spacing: 0.12em; margin-bottom: 10px; text-transform: uppercase;
+    }
+    .v-pg-title { font-size: clamp(28px, 3.8vw, 40px); font-weight: 800; letter-spacing: -0.8px; color: var(--v-ink); margin-bottom: 8px; }
+    .v-pg-sub { font-size: 14.5px; color: var(--v-body); max-width: 860px; line-height: 1.6; }
+
+    .v-workbench-panel {
+      background: #ffffff; border: 1px solid var(--v-line-strong);
+      border-radius: 4px; overflow: hidden; margin-bottom: 36px;
+    }
+    .cause-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 16px 28px; background: var(--v-bg-soft);
+      border-bottom: 1px solid var(--v-line); flex-wrap: nowrap; width: 100%;
+    }
+    .cb-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+    .cb-label {
+      font-family: var(--v-display) !important; font-size: 11.5px !important; font-weight: 750 !important;
+      color: #ffffff !important; background: var(--v-teal-bright) !important;
+      padding: 5px 12px !important; border-radius: 2px !important; letter-spacing: 0.08em !important;
+      display: inline-block; flex-shrink: 0; white-space: nowrap;
+    }
+    .cb-text { font-size: 13px; color: var(--v-body); line-height: 1.5; flex: 1; min-width: 0; }
+    .cb-pill {
+      font-family: var(--v-mono); font-size: 12px; font-weight: 700;
+      padding: 6px 14px; border-radius: 2px; border: 1px solid var(--v-line-strong);
+      background: #ffffff; white-space: nowrap; flex-shrink: 0; color: var(--v-ink);
+    }
+
+    .mode-bar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 20px 28px; border-bottom: 1px solid var(--v-line); background: #ffffff;
+    }
+    .mode-label { font-family: var(--v-display); font-size: 14px; font-weight: 750; color: var(--v-ink); }
+    .v-btn {
+      font-family: var(--v-body-font); font-size: 12.5px; font-weight: 700;
+      padding: 8px 16px; background: var(--v-bg-soft);
+      border: 1px solid var(--v-line-strong); border-radius: 3px; color: var(--v-ink); cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); white-space: nowrap;
+    }
+    .v-btn:hover { background: var(--v-ink); color: #fff; border-color: var(--v-ink); transform: translateY(-2px); }
+    .v-btn:active { transform: translateY(0) scale(0.98); }
+    .v-btn.active { background: var(--v-teal-bright); color: #fff; border-color: var(--v-teal-bright); }
+    .v-btn.small { padding: 5px 12px; font-size: 11.5px; }
+
+    .ledger-strip { display: grid; grid-template-columns: repeat(4, 1fr); background: #ffffff; }
+    .ledger-col {
+      padding: 24px 28px; border-right: 1px solid var(--v-line);
+      display: flex; flex-direction: column; justify-content: space-between; min-width: 0; word-wrap: break-word;
+    }
+    .ledger-col:last-child { border-right: none; }
+    .l-meta {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+      font-family: var(--v-mono); font-size: 10.5px; color: var(--v-mute); font-weight: 700; letter-spacing: 0.05em;
+    }
+    .l-title { font-size: 13.5px; font-weight: 750; color: var(--v-ink); margin-bottom: 12px; line-height: 1.4; }
+    .l-val { font-weight: 750; font-size: 32px; line-height: 1; color: var(--v-ink); margin-bottom: 12px; }
+    .kpi-delta { display: block; font-size: 11.5px; font-weight: 700; }
+    .kpi-delta.up { color: var(--v-teal-bright); }
+    .kpi-delta.flat { color: var(--v-mute); }
+
+    .v-plots-container {
+      background: #ffffff; border: 1px solid var(--v-line-strong);
+      border-radius: 4px; padding: 28px 32px; margin-bottom: 36px;
+    }
+    .grid-plots { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+    .plot-head {
+      font-family: var(--v-display); font-size: 14.5px; font-weight: 750; color: var(--v-ink);
+      margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      justify-content: space-between;
+    }
+    .plot-head .hl { display: flex; align-items: center; gap: 10px; }
+    .plot-tick { font-size: 10px; font-weight: 700; color: var(--v-yellow); letter-spacing: 0.1em; }
+    .plot-note { font-size: 12px; color: var(--v-mute); line-height: 1.6; margin-top: 10px; }
+
+    .aep-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .aep-step {
+      padding: 24px 28px; border-right: 1px solid var(--v-line);
+      display: flex; flex-direction: column; gap: 10px; min-width: 0;
+    }
+    .aep-step:last-child { border-right: none; }
+    .step-idx { font-size: 11px; font-weight: 700; color: var(--v-yellow); letter-spacing: 0.1em; }
+    .step-title { font-size: 15px; font-weight: 750; color: var(--v-ink); line-height: 1.4; }
+    .step-desc { font-size: 12.5px; color: var(--v-mute); line-height: 1.65; }
+    .aep-note {
+      padding: 16px 28px; border-top: 1px solid var(--v-line);
+      font-size: 12px; color: var(--v-mute); line-height: 1.7; background: #ffffff;
+    }
+
+    .t-footer {
+      border-top: 1px solid var(--v-line-strong); padding: 60px 0; margin-top: 80px;
+      font-size: 12.5px; color: var(--v-body); line-height: 1.8; background: #ffffff; text-align: center;
+    }
+    .footer-inner-centered {
+      max-width: 960px; margin: 0 auto; padding: 0 32px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px;
+    }
+    .footer-brand { color: var(--v-ink); font-weight: 750; font-family: var(--v-display); font-size: 15px; }
+
+    @media (max-width: 1024px) {
+      .ledger-strip { grid-template-columns: repeat(2, 1fr); }
+      .ledger-col { border-bottom: 1px solid var(--v-line); }
+      .grid-plots { grid-template-columns: 1fr; }
+      .aep-grid { grid-template-columns: 1fr; }
+      .aep-step { border-right: none; border-bottom: 1px solid var(--v-line); }
+      .aep-step:last-child { border-bottom: none; }
+    }
+    @media (max-width: 640px) {
+      .ledger-strip { grid-template-columns: 1fr; }
+      .t-nav-inner, .t-container { padding: 0 20px; }
+      .v-plots-container { padding: 20px; }
+    }
   </style>
 </head>
 <body>
-<nav><div class="nav-inner"><div class="brand">风电场偏航优化<br><span style="font-size:11px;color:var(--sub)">可视化模块</span></div><div class="nav-links"></div></div></nav>
 
-<section class="wrap pg-hero">
-  <h1>🌬️ 风玫瑰与年发电量 (AEP) 分析</h1>
-  <p>两台串列与 3×3 阵列双布局 · 12 风向 × 4 风速实扫描 · 收益扇区与频率假设全部显式声明</p>
-</section>
-
-<main class="wrap">
-  <!-- 布局切换：两台串列 / 3×3 阵列 -->
-  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-    <span style="font-size:13px;color:var(--sub);font-weight:700">对比布局</span>
-    <div class="rose-tab" id="modeTab" style="margin-bottom:0">
-      <button data-m="tandem" class="active">两台串列 · 间距 5D</button>
-      <button data-m="array">3×3 阵列 · 5D×3D</button>
+<nav class="t-nav">
+  <div class="t-nav-inner">
+    <div class="t-nav-brand">
+      <span>风电场偏航优化平台</span>
+      <span class="t-nav-badge">SUN CHENGZE · VISUALIZATION</span>
+    </div>
+    <div style="display:flex;gap:18px;font-size:13px;font-weight:600;flex-wrap:wrap">
+      <a href="index.html" style="color:var(--v-mute);text-decoration:none">00 / HOME</a>
+      <a href="array.html" style="color:var(--v-mute);text-decoration:none">05 / 3×3 ARRAY</a>
+      <a href="windrose.html" style="color:var(--v-teal-bright);text-decoration:none;font-weight:750">07 / WIND ROSE</a>
+      <a href="power_tracking.html" style="color:var(--v-mute);text-decoration:none">10 / AGC</a>
+      <a href="overview.html" style="color:var(--v-mute);text-decoration:none">ALL MODULES →</a>
     </div>
   </div>
+</nav>
 
-  <!-- 4 大核心 KPI 指标卡（数值由本页 JS 从 data.js 实算填充） -->
-  <div class="stats-bar" style="grid-template-columns:repeat(4,1fr)">
-    <div class="stat-card">
-      <p class="stat-number" id="kGainDir">—</p>
-      <p class="stat-label" id="kGainDirLbl">—</p>
-      <p class="kpi-delta up" id="kGainDirDelta">—</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-number" id="kGainMean">—</p>
-      <p class="stat-label" id="kGainMeanLbl">—</p>
-      <p class="kpi-delta up" id="kGainMeanDelta">—</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-number" id="kAep">—</p>
-      <p class="stat-label">AEP 净增（功率加权 · 等权风向假设）</p>
-      <p class="kpi-delta flat">12 风向各 1/12 频率</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-number" id="kElec">—</p>
-      <p class="stat-label" id="kElecLbl">年增电量（等权假设）</p>
-      <p class="kpi-delta flat">8760 h 折算</p>
-    </div>
-  </div>
+<header class="v-pg-hero t-container">
+  <div class="v-pg-tag">07 / WIND ROSE &amp; AEP · DIRECTIONAL SCAN LEDGER</div>
+  <h1 class="v-pg-title">风玫瑰与年发电量 (AEP) 分析</h1>
+  <p class="v-pg-sub">
+    两台串列与 3×3 阵列双布局 · 12 风向 × 4 风速实扫描 · 收益扇区与频率假设全部显式声明，
+    不虚构场址风频，不外推金额与碳账。
+  </p>
+</header>
 
-  <!-- 增益玫瑰图与扇区分布双图 -->
-  <div class="grid2">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <h3 style="margin:0;font-size:15px;color:var(--txt)">🧭 最优偏航增益玫瑰（实扫描）</h3>
-        <div class="rose-tab" id="speedTab"></div>
+<main class="t-container">
+
+  <div class="v-workbench-panel">
+    <div class="cause-bar">
+      <div class="cb-left">
+        <span class="cb-label">扫描台账</span>
+        <span class="cb-text">每格增益均为 FLORIS GCH 实扫描结果；KPI 由本页 JS 从 data.js 实算填充，零硬编码。</span>
       </div>
-      <div id="rosePlot" class="plotly-container" style="height:420px"></div>
-      <div class="note" id="roseNote"></div>
+      <span class="cb-pill">12 DIRS × 4 SPEEDS</span>
     </div>
 
-    <div class="card">
-      <h3 style="margin:0 0 10px;font-size:15px;color:var(--txt)">📊 各风向扇区增益分布（实扫描）</h3>
-      <div id="sectorPlot" class="plotly-container" style="height:420px"></div>
-      <div class="note" id="sectorNote"></div>
-    </div>
-  </div>
-
-  <!-- AEP 计算原理与假设 -->
-  <div class="card" style="margin-top:18px">
-    <h3 style="margin:0 0 12px;font-size:15px;color:var(--txt)">💡 AEP（年等效发电量）计算原理与假设</h3>
-    <div class="grid3">
-      <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
-        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">1. 真实样本域</div>
-        <div style="font-size:12px;color:var(--sub);line-height:1.6" id="aepDomain"></div>
+    <div class="mode-bar">
+      <span class="mode-label">对比布局</span>
+      <div id="modeTab" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="v-btn active" data-m="tandem">两台串列 · 间距 5D</button>
+        <button class="v-btn" data-m="array">3×3 阵列 · 5D×3D</button>
       </div>
-      <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
-        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">2. 加权公式与等权假设</div>
-        <div style="font-size:12px;color:var(--sub);line-height:1.6">
-          AEP = 8760 × Σ<sub>θ</sub> Σ<sub>v</sub> f(θ, v) · P(θ, v)。当前无场址风频数据，取等权假设（12 风向各 1/12、4 风速各 1/4），ΔAEP = <b id="aepPct">—</b>。接入厉今飞的场址风玫瑰后数字自动更新。
+    </div>
+
+    <div class="ledger-strip">
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>01 / SECTOR PEAK</span><span style="color:var(--v-teal-bright)">8 M/S</span></div>
+          <div class="l-title" id="kGainDirLbl">—</div>
+          <div class="l-val" id="kGainDir">—</div>
         </div>
+        <span class="kpi-delta up" id="kGainDirDelta">—</span>
       </div>
-      <div style="background:var(--bg2);padding:14px;border-radius:8px;border:1px solid var(--line)">
-        <div style="font-weight:700;color:var(--txt);margin-bottom:6px">3. 风向频率敏感性</div>
-        <div style="font-size:12px;color:var(--sub);line-height:1.6">
-          扇区增益高不等于 AEP 增益高。若盛行西风、270° 扇区频率 30%（其余 11 向均分 70%）：ΔAEP ≈ <b id="aepWest">—</b>，<span id="westUnit">机组</span>年增电量 ≈ <b id="elecWest">—</b>。
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>02 / 4-SPEED MEAN</span><span style="color:var(--v-teal-bright)">AXIS</span></div>
+          <div class="l-title" id="kGainMeanLbl">—</div>
+          <div class="l-val" id="kGainMean">—</div>
         </div>
+        <span class="kpi-delta up" id="kGainMeanDelta">—</span>
+      </div>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>03 / DELTA AEP</span><span style="color:var(--v-yellow)">POWER-WEIGHTED</span></div>
+          <div class="l-title">AEP 净增（功率加权 · 等权风向假设）</div>
+          <div class="l-val" id="kAep">—</div>
+        </div>
+        <span class="kpi-delta flat">12 风向各 1/12 频率</span>
+      </div>
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta"><span>04 / EXTRA ENERGY</span><span style="color:var(--v-yellow)">8760 H</span></div>
+          <div class="l-title" id="kElecLbl">年增电量（等权假设）</div>
+          <div class="l-val" id="kElec">—</div>
+        </div>
+        <span class="kpi-delta flat">8760 h 折算</span>
       </div>
     </div>
-    <div class="note" style="margin-top:12px">
+  </div>
+
+  <div class="v-plots-container">
+    <div class="grid-plots">
+      <div>
+        <div class="plot-head">
+          <span class="hl"><span class="plot-tick">FIG. A</span>最优偏航增益玫瑰（实扫描）</span>
+          <span id="speedTab" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+        </div>
+        <div id="rosePlot" style="height:420px"></div>
+        <div class="plot-note" id="roseNote"></div>
+      </div>
+      <div>
+        <div class="plot-head">
+          <span class="hl"><span class="plot-tick">FIG. B</span>各风向扇区增益分布（实扫描）</span>
+        </div>
+        <div id="sectorPlot" style="height:420px"></div>
+        <div class="plot-note" id="sectorNote"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="v-workbench-panel" style="margin-bottom:0">
+    <div class="cause-bar">
+      <div class="cb-left">
+        <span class="cb-label">AEP 方法论</span>
+        <span class="cb-text">年等效发电量计算原理与假设：真实样本域、等权加权公式与风向频率敏感性三段式声明。</span>
+      </div>
+      <span class="cb-pill">ASSUMPTION LEDGER</span>
+    </div>
+    <div class="aep-grid">
+      <div class="aep-step">
+        <span class="step-idx">ASSUMPTION 1 / SAMPLE DOMAIN</span>
+        <span class="step-title">真实样本域</span>
+        <span class="step-desc" id="aepDomain"></span>
+      </div>
+      <div class="aep-step">
+        <span class="step-idx">ASSUMPTION 2 / WEIGHTING</span>
+        <span class="step-title">加权公式与等权假设</span>
+        <span class="step-desc">
+          AEP = 8760 × Σ<sub>θ</sub> Σ<sub>v</sub> f(θ, v) · P(θ, v)。当前无场址风频数据，取等权假设（12 风向各 1/12、4 风速各 1/4），ΔAEP = <b id="aepPct" style="color:var(--v-teal-bright)">—</b>。接入厉今飞的场址风玫瑰后数字自动更新。
+        </span>
+      </div>
+      <div class="aep-step">
+        <span class="step-idx">ASSUMPTION 3 / SENSITIVITY</span>
+        <span class="step-title">风向频率敏感性</span>
+        <span class="step-desc">
+          扇区增益高不等于 AEP 增益高。若盛行西风、270° 扇区频率 30%（其余 11 向均分 70%）：ΔAEP ≈ <b id="aepWest" style="color:var(--v-teal-bright)">—</b>，<span id="westUnit">机组</span>年增电量 ≈ <b id="elecWest" style="color:var(--v-teal-bright)">—</b>。
+        </span>
+      </div>
+    </div>
+    <div class="aep-note">
       数据边界：候选偏航网格 ±30°（5° 步长）、风向分辨率 30°（加密至 15° 可能在斜向显现弱旁瓣）；两台串列为逐格全枚举最优，3×3 阵列为双通道贪心（逐机 + 逐排秩次取优）局部最优——贪心是收益下限，真最优或更高。本页不再给出金额与碳减排估算——缺少电价与排放因子假设，留待答辩素材按真实参数补。
     </div>
   </div>
+
 </main>
 
-<footer class="wrap">孙承泽 · 可视化模块 · 西安交通大学</footer>
+<footer class="t-footer">
+  <div class="footer-inner-centered">
+    <div class="footer-brand" style="margin-bottom:6px">西安交通大学 · 能源与动力工程学院 · 大学生创新训练项目团队</div>
+    <div style="line-height:1.8;color:var(--v-body);font-size:12.5px;margin-bottom:12px">
+      <b>成员确权：</b>田铭雨（高保真CFD流场仿真）· 袁夫达（POD特征降阶与代理模型）· 厉今飞（多风速工况基线）· 洪祖名（PPO跟踪与优化求解）· 孙承泽（可视化与交互系统负责）<br>
+      <b>指导教师：</b>李良星 副教授 ｜ 审计自检脚本：<code>check_contract.py</code> (100% Exit Code 0 绿灯)
+    </div>
+    <div style="font-family:var(--v-mono);font-size:11px;color:var(--v-mute);letter-spacing:0.06em">
+      <span>SWISS INTERNATIONAL TYPOGRAPHIC STYLE · EDGE INFERENCE · REGULAR GRID INTERPOLATOR</span>
+    </div>
+  </div>
+</footer>
 
 <script src="assets/data.js"></script>
 <script>
 (function(){
+  var FONT = "'Manrope','DengXian','等线','PingFang SC','Microsoft YaHei',sans-serif";
   var WD = window.WIND_DATA || {};
 
-  // ===== 两种布局的统一行结构：{dir, U, base, opt, gain} =====
   var MODES = {
     tandem: {
       rows: (WD.windrose_opt || []).map(function(r){
@@ -118,7 +342,7 @@
       unit: '两台机组',
       delta1: '全扫描域唯一非零扇区',
       delta2: '6 / 8 / 10 / 12 m/s 均为 +25° 最优',
-      domain: '两台串列 NREL 5MW（间距 5D = 630 m，TI = 6%），FLORIS GCH 扫描 12 风向 × 4 风速 × 13 偏航角 = 624 工况；每格取最优偏航收益，见 <code>cases_windrose*.csv</code>。',
+      domain: '两台串列 NREL 5MW（间距 5D = 630 m，TI = 6%），FLORIS GCH 扫描 12 风向 × 4 风速 × 13 偏航角 = 624 工况；每格取最优偏航收益，见 <code style="font-family:var(--v-mono);font-size:11px">cases_windrose*.csv</code>。',
       roseNote: '<b>单瓣玫瑰成因</b>：两台串列布局、横向无交叠——只有当来流正对机组串列轴（270°）时下游机组才处于尾流内，偏航引导才有收益；其余 11 个风向两机互不遮挡，增益为 0。风向分辨率现为 30°，加密至 15° 后 240°~300° 区间可能出现弱旁瓣。',
       sectorNote: '柱为当前选择风速下该风向的最优偏航增益；折线为四速平均增益。除 270° 外各向均为 0——布局决定，非数据缺失。'
     },
@@ -131,7 +355,7 @@
       unit: '九台机组',
       delta1: '90°/270° 镜像并列最强，Δ0.01 pct 为数值噪声',
       delta2: '6~12 m/s 逐风速自适应组合偏航（±30°）',
-      domain: '3×3 阵列 NREL 5MW（行距 5D = 630 m、列距 3D = 378 m，TI = 6%），FLORIS GCH；48 个风向×风速条件，每条件双通道贪心（逐机 9×13 候选 + 逐排秩次 3×13 候选取优），共 7536 次求解，见 <code>cases_array_windrose.csv</code>。',
+      domain: '3×3 阵列 NREL 5MW（行距 5D = 630 m、列距 3D = 378 m，TI = 6%），FLORIS GCH；48 个风向×风速条件，每条件双通道贪心（逐机 9×13 候选 + 逐排秩次 3×13 候选取优），共 7536 次求解，见 <code style="font-family:var(--v-mono);font-size:11px">cases_array_windrose.csv</code>。',
       roseNote: '<b>四瓣玫瑰成因</b>：增益只在来流与阵列格点成线时出现——90°/270° 沿 5D 行轴（三机串列）最强（8 m/s 时 +24.0% 级），0°/180° 沿 3D 列轴次之（+21.6%），60°/120°/240°/300° 沿晶格对角（斜距 √(5²+3²)·D ≈ 5.83D，与完全对齐角仅差约 1°）中等（+10.7~11.3%），30°/150°/210°/330° 斜穿格点间隙、尾流互不相交，增益 ≈ 0。八扇区结构由几何决定，非数据缺失。',
       sectorNote: '柱为当前选择风速下该风向的贪心最优增益；折线为四速平均增益。30° / 150° / 210° / 330° 无格点对齐，增益为 0——布局决定，非数据缺失。'
     }
@@ -157,15 +381,13 @@
     return s / n;
   }
 
-  // ===== KPI 与 AEP 实算（功率加权） =====
   function fillStatic(){
     var C = MODES[mode];
     var sumBase = 0, sumOpt = 0;
     rows.forEach(function(r){ sumBase += r.base; sumOpt += r.opt; });
-    var dAep = (sumOpt - sumBase) / sumBase * 100;              // 等权 ΔAEP %
-    var dElec = (sumOpt - sumBase) / rows.length * 8760 / 1e4;  // 万 kWh/年
+    var dAep = (sumOpt - sumBase) / sumBase * 100;
+    var dElec = (sumOpt - sumBase) / rows.length * 8760 / 1e4;
 
-    // 盛行西风示例：270° 频率 30%，其余均分
     var wBase = 0, wOpt = 0;
     dirs.forEach(function(d){
       var w = (d === 270) ? 0.30 : 0.70 / (dirs.length - 1);
@@ -194,7 +416,6 @@
     document.getElementById('sectorNote').textContent = C.sectorNote;
   }
 
-  // ===== 布局切换 tab =====
   document.getElementById('modeTab').addEventListener('click', function(e){
     var m = e.target.dataset && e.target.dataset.m;
     if (!m || m === mode) return;
@@ -206,13 +427,12 @@
     renderAll();
   });
 
-  // ===== 风速切换 tab =====
   rebuildMode(mode);
   var tabEl = document.getElementById('speedTab');
   speeds.forEach(function(v){
     var b = document.createElement('button');
+    b.className = 'v-btn small' + (v === curSpeed ? ' active' : '');
     b.textContent = v.toFixed(0) + ' m/s';
-    if (v === curSpeed) b.className = 'active';
     b.dataset.v = v;
     tabEl.appendChild(b);
   });
@@ -232,16 +452,17 @@
       type: 'barpolar',
       r: gains,
       theta: dirs,
-      marker: { color: gains, colorscale: WF.GainSeq, line: { color: WF.card, width: 1.5 } },
+      marker: { color: gains, colorscale: WF.GainSeq, line: { color: '#ffffff', width: 1.5 } },
       hovertemplate: '%{theta}°：增益 +%{r:.2f}%<extra></extra>'
     }], {
       polar: {
-        radialaxis: { title: '增益 (%)', color: WF.sub, tickfont: { color: WF.sub, size: 10 }, range: [0, maxG * 1.15] },
-        angularaxis: { rotation: 90, direction: 'clockwise', color: WF.sub, tickfont: { color: WF.sub, size: 10 } }
+        radialaxis: { title: '增益 (%)', color: '#64748b', tickfont: { color: '#64748b', size: 10 }, range: [0, maxG * 1.15], gridcolor: '#e9ecef' },
+        angularaxis: { rotation: 90, direction: 'clockwise', color: '#64748b', tickfont: { color: '#64748b', size: 10 } }
       },
       height: 420,
       margin: { l: 40, r: 40, t: 25, b: 30 },
-      showlegend: false
+      showlegend: false,
+      paper_bgcolor: 'rgba(0,0,0,0)', font: { family: FONT }
     });
 
     pr('sectorPlot', [
@@ -249,7 +470,7 @@
         type: 'bar', name: '最优偏航增益（当前风速，%）',
         x: dirs.map(dirLabel),
         y: gains,
-        marker: { color: WF.sageDeep },
+        marker: { color: '#1e675c' },
         hovertemplate: '%{x}：+%{y:.2f}%<extra></extra>'
       },
       {
@@ -257,16 +478,17 @@
         x: dirs.map(dirLabel),
         y: dirs.map(function(d){ return meanOf(d, 'gain'); }),
         mode: 'lines+markers',
-        line: { color: WF.blue, width: 2.4 },
-        marker: { size: 7, color: WF.blueDeep },
+        line: { color: '#a87817', width: 2.4 },
+        marker: { size: 7, color: '#a87817' },
         hovertemplate: '%{x} 四速均值：+%{y:.2f}%<extra></extra>'
       }
     ], {
-      xaxis: { title: '风向扇区（30° 分辨率）', tickfont: { size: 10 } },
-      yaxis: { title: '偏航功率增益 (%)', range: [0, maxG * 1.3] },
+      xaxis: { title: '风向扇区（30° 分辨率）', tickfont: { size: 10 }, gridcolor: '#e9ecef' },
+      yaxis: { title: '偏航功率增益 (%)', range: [0, maxG * 1.3], gridcolor: '#e9ecef' },
       height: 420,
-      margin: { l: 50, r: 30, t: 25, b: 50 },
-      legend: { orientation: 'h', y: 1.12, x: 0.05 }
+      margin: { l: 50, r: 30, t: 32, b: 50 },
+      legend: { orientation: 'h', y: 1.18, x: 0.5, xanchor: 'center', font: { size: 11 } },
+      font: { family: FONT }
     });
   }
 
@@ -278,8 +500,5 @@
   renderAll();
 })();
 </script>
-<script src="assets/js/nav.js"></script>
-<script src="assets/js/bg-video.js"></script>
-<script src="assets/js/data-source.js"></script>
 </body>
 </html>
