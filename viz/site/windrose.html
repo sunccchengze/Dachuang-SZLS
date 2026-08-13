@@ -173,23 +173,52 @@
       .t-nav-inner, .t-container { padding: 0 20px; }
       .v-plots-container { padding: 20px; }
     }
+      /* ===== 统一双行导航模块条（系统级覆盖，全站同一套，杜绝指示冲突） ===== */
+    .t-nav { height: auto; }
+    .t-nav-inner { max-width: none; width: 100%; margin: 0; padding: 0; display: block; }
+    .t-nav-row1 { max-width: 1240px; margin: 0 auto; padding: 13px 32px 11px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .t-nav-here { font-family: var(--v-mono); font-size: 11px; font-weight: 700; color: var(--v-mute); letter-spacing: 0.06em; white-space: nowrap; }
+    .t-nav-links { border-top: 1px solid var(--v-line); overflow-x: auto; scrollbar-width: none; }
+    .t-nav-links::-webkit-scrollbar { display: none; }
+    .t-nav-links-in { max-width: 1240px; margin: 0 auto; padding: 0 24px; display: flex; align-items: stretch; width: max-content; min-width: 100%; }
+    .t-nav-links a { font-family: var(--v-body-font); font-size: 12px; font-weight: 600; color: var(--v-mute); text-decoration: none; padding: 9px 9px 8px; white-space: nowrap; border-bottom: 2px solid transparent; display: inline-flex; gap: 6px; align-items: baseline; }
+    .t-nav-links a i { font-style: normal; font-family: var(--v-mono); font-size: 9.5px; font-weight: 700; color: var(--v-faint); letter-spacing: 0.05em; }
+    .t-nav-links a:hover { color: var(--v-ink); background: var(--v-bg-soft); }
+    .t-nav-links a.active { color: var(--v-teal-bright); border-bottom-color: var(--v-teal-bright); }
+    .t-nav-links a.active i { color: var(--v-teal-bright); }
+    @media (max-width: 640px) { .t-nav-row1 { padding: 12px 20px 10px; } }
   </style>
 </head>
 <body>
 
 <nav class="t-nav">
   <div class="t-nav-inner">
-    <div class="t-nav-brand">
-      <span>风电场偏航优化平台</span>
-      <span class="t-nav-badge">SUN CHENGZE · VISUALIZATION</span>
+    <div class="t-nav-row1">
+      <a href="index.html" class="t-nav-brand" style="text-decoration:none;color:inherit">
+        <span>风电场偏航优化平台</span>
+        <span class="t-nav-badge">SUN CHENGZE · VISUALIZATION</span>
+      </a>
+      <span class="t-nav-here" id="tNavHere"></span>
     </div>
-    <div style="display:flex;gap:18px;font-size:13px;font-weight:600;flex-wrap:wrap">
-      <a href="index.html" style="color:var(--v-mute);text-decoration:none">00 / HOME</a>
-      <a href="array.html" style="color:var(--v-mute);text-decoration:none">05 / 3×3 ARRAY</a>
-      <a href="windrose.html" style="color:var(--v-teal-bright);text-decoration:none;font-weight:750">07 / WIND ROSE</a>
-      <a href="power_tracking.html" style="color:var(--v-mute);text-decoration:none">10 / AGC</a>
-      <a href="overview.html" style="color:var(--v-mute);text-decoration:none">ALL MODULES →</a>
-    </div>
+    <div class="t-nav-links"><div class="t-nav-links-in">
+      <a href="index.html" data-nav-code="00" data-nav-name="首页"><i>00</i>首页</a>
+      <a href="wake.html" data-nav-code="01" data-nav-name="尾流"><i>01</i>尾流</a>
+      <a href="optimization.html" data-nav-code="02" data-nav-name="优化"><i>02</i>优化</a>
+      <a href="solver.html" data-nav-code="03" data-nav-name="求解"><i>03</i>求解</a>
+      <a href="dashboard.html" data-nav-code="04" data-nav-name="看板"><i>04</i>看板</a>
+      <a href="array.html" data-nav-code="05" data-nav-name="阵列"><i>05</i>阵列</a>
+      <a href="heatmap.html" data-nav-code="06" data-nav-name="热力"><i>06</i>热力</a>
+      <a href="windrose.html" data-nav-code="07" data-nav-name="风玫瑰"><i>07</i>风玫瑰</a>
+      <a href="pod.html" data-nav-code="08" data-nav-name="POD"><i>08</i>POD</a>
+      <a href="model.html" data-nav-code="09" data-nav-name="精度"><i>09</i>精度</a>
+      <a href="power_tracking.html" data-nav-code="10" data-nav-name="跟踪"><i>10</i>跟踪</a>
+      <a href="3d_farm.html" data-nav-code="11" data-nav-name="3D风场"><i>11</i>3D风场</a>
+      <a href="3d_surface.html" data-nav-code="12" data-nav-name="3D曲面"><i>12</i>3D曲面</a>
+      <a href="3d_volume.html" data-nav-code="13" data-nav-name="3D体"><i>13</i>3D体</a>
+      <a href="interface.html" data-nav-code="14" data-nav-name="契约"><i>14</i>契约</a>
+      <a href="aerodynamic_demo.html" data-nav-code="15" data-nav-name="流线演示"><i>15</i>流线</a>
+      <a href="overview.html" data-nav-code="MAP" data-nav-name="系统总览"><i>MAP</i>总览</a>
+    </div></div>
   </div>
 </nav>
 
@@ -500,5 +529,6 @@
   renderAll();
 })();
 </script>
+<script src="assets/js/nav.js"></script>
 </body>
 </html>
