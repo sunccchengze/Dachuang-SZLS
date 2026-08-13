@@ -2,8 +2,9 @@
 
 > 本文件是本仓库「技能库&准则」的统一入口、技能路由表和全流程质量控制最高准则。
 >
-> **适用项目**：西安交通大学大创 · 风电场偏航优化可视化系统（负责人：孙承泽，指导教师：李良星）
-> **全量同步来源**：`sunccchengze/turbine-blade-ai-platform` 分支 `arena/019fe072-turbine-blade-ai-platform` + 本地蒸馏大师库与领域技能库
+> **适用项目**：西安交通大学大创 · 风电场偏航优化可视化系统（组员孙承泽负责可视化与交互模块，指导教师：李良星）
+> **历史同步来源**：`sunccchengze/turbine-blade-ai-platform` 分支 `arena/019fe072-turbine-blade-ai-platform` + 本地蒸馏大师库与领域技能库
+> **2026-08-13 新增底座**：`sunccchengze/-SKILL-` 分支 `arena/019ff854-skill`（通用技能路由器 + 4 项新装载）
 
 ---
 
@@ -25,7 +26,9 @@
 |---|---|---|
 | **AI 痕迹消除与去模板化** | `Stop-slop.md`, `Humanizer - 中文版.md` | 彻底消除 AI 浮夸词汇、空洞排比、破折号泛滥与二元对立结构，还原真实工科研究语气 |
 | **宪法级准则与决策仲裁** | `最高优先级AGENT必须遵守的宪法级文件 - 副本.md`, `内阁决策.md` | 编码前思考（不脑补）、极简至上、外科手术式修改、追问/反对/机会/外行/执行五方红蓝对抗 |
-| **设计美学与视觉品味** | `taste-skill/`, `impeccable/`, `huashu-design/`, `awesome-design-md/`, `awesome-shadcn-ui/` | 杜绝廉价 AI 卡片与浮动阴影，建立顶级信息设计品味、网格对齐、发丝线与莫兰迪工科美学 |
+| **设计美学与视觉品味** | `victor-design/`, `taste-skill/`, `impeccable/`, `huashu-design/`, `awesome-design-md/`, `awesome-shadcn-ui/` | 证据驱动跨载体设计（海报/演示/产品 UI）；杜绝廉价 AI 卡片与浮动阴影，建立网格对齐、发丝线与莫兰迪工科美学 |
+| **活人感中文写作** | `human-writing/`, `Stop-slop.md`, `Humanizer - 中文版.md` | 材料先于篇幅；成稿禁翻案腔、破折号与提示性冒号；审校只选一个技能，避免把作者声音磨平 |
+| **截图复刻与代码库 Wiki** | `screencoder/`, `openwiki/` | UI 截图先建成可编辑 HTML/CSS 基线再谈再设计；代码库文档以源码为事实源 |
 | **演示文稿与路演答辩** | `guizang-ppt-skill-main/`, `frontend-slides/`, `skills-main/skills/pptx/` | 瑞士国际主义网格排版（Vignelli/Tufte 风格）、单文件 Web 演示、高密度大创/挑战杯答辩 Deck |
 | **UI/UX 与前端工程** | `ui-ux-pro-max/`, `gsap-skills/`, `agent-browser/`, `browser-use/`, `playwright/` | 现代 UI/UX 设计规范、GSAP 动效物理仿真、无后端纯静态边缘渲染、自动化端到端测试 |
 | **女娲蒸馏 12 大师智囊** | `nuwa-distilled/` | 【老弗】FLORIS流场 · 【老贝】贝兹极限 · 【老冯】涡动力学 · 【老布】POD/SVD · 【老卡】神经网络 · 【老鲍】统计误差 · 【费曼】物理直觉 · 【老塔】信息设计 · 【老乔】极致美学 · 【老达】手稿美学 · 【老加】高密度路演 · 【老芒】逆向决策 |
@@ -44,9 +47,10 @@
 2. **涉及 POD/SVD 降阶模型、流场基模态重构、能量累积占比**：
    - 调度大师：**【老布】(Steve Brunton)**、**【费曼】(Richard Feynman)**
    - 挂载 SKILL：`karpathy-skills`, `DeepTutor`, `boraoztunc-skills`
-3. **涉及 PPT 制作、答辩排版、图表去 AI 味、视觉美化**：
+3. **涉及 PPT 制作、答辩排版、图表去 AI 味、视觉美化、产品 UI 重塑**：
    - 调度大师：**【老塔】(Edward Tufte)**、**【老乔】(Steve Jobs)**、**【老加】(Garry Tan)**、**【老达】(Leonardo da Vinci)**
-   - 挂载 SKILL：`guizang-ppt-skill-main`, `taste-skill`, `impeccable`, `huashu-design`, `Stop-slop.md`, `Humanizer - 中文版.md`
+   - 挂载 SKILL：`victor-design`（主技能，产品 UI 读 `references/adapters/product-ui.md`）、`taste-skill`、`ui-ux-pro-max`、`Stop-slop.md`
+   - 截图复刻先走 `screencoder` 建忠实基线，再设计才切回 `victor-design`
 4. **涉及强化学习 PPO、神经网络代理模型、损失收敛与误差分析**：
    - 调度大师：**【老卡】(Andrej Karpathy)**、**【老鲍】(George Box)**
    - 挂载 SKILL：`karpathy-skills`, `agent-skills-main/skills/code-review-and-quality`

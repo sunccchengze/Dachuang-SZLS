@@ -64,14 +64,15 @@ Corrections, insights, and knowledge gaps captured during development.
 
 ---
 
-## [LRN-20260810-05] 决策交互偏好：选择题式收口（默认交互模式）
+## [LRN-20260810-05] 决策交互偏好：禁止选择题（已覆盖旧规则）
 - **Logged**: 2026-08-10T10:30:00Z
+- **Updated**: 2026-08-13
 - **Priority**: critical
-- **Status**: verified
+- **Status**: superseded
 - **Category**: best_practice
-- **Trigger**: user_explicit_request（附决策汇总截图）
-- **Context**: 所有需要用户裁定的分岔点
-- **Correct Approach**: 涉及方案选择、授权放行、口径取舍时，一律用结构化选择题（2~4 个候选 + 可自定义）收口，不写长篇开放式提问；每个选项附一句话代价/后果说明，用户点击即决策。
+- **Trigger**: user_explicit_request
+- **Context**: 用户后来说“以后不要给我发选择题了。”
+- **Correct Approach**: 不再发送多选问答。能执行就执行；关键歧义用一两句直接问，或写明假设后动手。
 
 ---
 
@@ -82,7 +83,7 @@ Corrections, insights, and knowledge gaps captured during development.
 - **Category**: correction
 - **Trigger**: user_explicit_request
 - **Context**: 部署分支改绑 arena/019feacd-wind-farm-viz 时用户明确禁令
-- **Correct Approach**: 一切工作只在 arena/019feacd-wind-farm-viz 上 commit/push；永不执行 merge/rebase/push 到 main；Cloudflare Pages 生产分支由用户绑定 019feacd；019fe42f 作为历史基线保留，仅可合入其资产，不回写。
+- **Correct Approach**: 永不 merge/rebase/push 到 main。本会话只在 `arena/019ff8d6-wind-farm-viz` 上 commit/push。代码事实继承 `arena/019feb53-wind-farm-viz` 的 `cf554c9a`。历史分支 `019feacd` / `019fe42f` 只作资产来源，不回写。
 
 ---
 
@@ -104,4 +105,33 @@ Corrections, insights, and knowledge gaps captured during development.
 - **Category**: workflow_strategy
 - **Trigger**: user_correction（十四天不是给我冲刺补基础的吗...我只是要准备8.23号组会的可视化部分暑期进展汇报）
 - **Context**: 14 天学习攻坚与开发路线的优先级回归
-- **Correct Approach**: 绝对不能脱离承泽真实诉求而空谈远期竞赛（A0 展板/挑战杯大 Deck）或学术发表（顶刊 300DPI 分层图）；当前会话与随后工作 100% 聚焦于 **8月23日组会 · 可视化与交互模块暑期研发进展汇报**。工作主线调整为两手抓：第一，用“大白话+第一性原理”协助承泽**冲刺补强流场基础、协同偏航和降阶加速通识**，练出汇报底气；第二，准备组会现场演示的**网页可视化讲演脚本、核心截屏与数据链路解释**。
+- **Correct Approach**: 绝对不能脱离承泽真实诉求而空谈远期竞赛（A0 展板/挑战杯大 Deck）或学术发表（顶刊 300DPI 分层图）；当前会话与随后工作 100% 聚焦于 **8月23日组会 · 可视化与交互模块暑期研发进展汇报**。工作主线调整为两手抓：第一，用“大白话+第一性原理”协助承泽**冲刺补强流场基础、协同偏航和降阶加速通识**，练出汇报底气；第二，准备组会现场演示的**网页可视化讲演脚本、核心截屏与数据链路解释**。组会只讲风电项目，禁止夹带两机叶片优化。
+
+---
+
+## [LRN-20260813-01] 019ff854 技能底座已吸收；前端待命
+- **Logged**: 2026-08-13
+- **Priority**: critical
+- **Status**: verified
+- **Category**: best_practice
+- **Trigger**: user_explicit_request
+- **Context**: 新会话接手 019feb53，要求更新技能库后等指令再改前端
+- **Correct Approach**:
+  1. 技能检索走最小组队，主技能前端为 `victor-design` + `product-ui`；
+  2. 维持现有浅色莫兰迪/瑞士网格，不另起暗色或另一套视觉语言；
+  3. 用户未点名的页面一律不改；
+  4. 用户说“先不要动手”时只确认就绪，不预改 `site/`。
+
+## [LRN-20260813-02] 逐页重塑与排版红线
+- **Logged**: 2026-08-13
+- **Priority**: critical
+- **Status**: verified
+- **Category**: correction
+- **Trigger**: user_correction（019feb53 会话）
+- **Correct Approach**:
+  1. 中文标题宋体黑，中文正文/UI 等线；等宽栈末尾挂 DengXian，防宋体回滚；
+  2. 文字永不溢出；cause-bar / pill 禁止折行；
+  3. 内容按 `t-container` 左对齐，子块不得再加一层 32px 左垫；
+  4. Plotly legend 置顶，禁止压 X 轴标题；
+  5. `bg.mp4` 口径是数字孪生线框运行示意，不是 3×3 九机实录；非视口页删除 `bg-video.js`；
+  6. 0° 基线色用墨色，不要给基态乱上绿/黄。
