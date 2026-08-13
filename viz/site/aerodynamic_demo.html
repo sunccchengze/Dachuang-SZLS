@@ -3,58 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>8.23 组会偷师特别展示 · 气动流线势流避障与计算网格交互引擎</title>
+  <title>气动流线演示 · 风电场偏航优化科研平台</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
     :root {
-      --ink: #0b0e0d;
-      --paper: #e6ebe1;
-      --teal: #86b9aa;
-      --teal-bright: #b5ded0;
-      --yellow: #e7c85b;
-      --rust: #c5684a;
-      --line: rgba(220, 232, 222, 0.15);
-      --line-strong: rgba(220, 232, 222, 0.3);
-      --mono: 'DM Mono', ui-monospace, Consolas, monospace;
+      --v-bg: #f8f9fa;
+      --v-bg-soft: #f1f3f5;
+      --v-ink: #1e293b;
+      --v-body: #334155;
+      --v-mute: #64748b;
+      --v-line: rgba(30, 41, 59, 0.11);
+      --v-line-strong: rgba(30, 41, 59, 0.22);
+      --v-teal-bright: #1e675c;
+      --v-yellow: #a87817;
+      --v-mono: 'DM Mono', ui-monospace, Consolas, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", monospace;
+      --v-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC Black", "Songti SC", "STSong", "STZhongsong", "SimSun", "宋体-简", serif;
+      --v-body-font: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color-scheme: light;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #101413;
-      color: var(--paper);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--v-bg);
+      color: var(--v-ink);
+      font-family: var(--v-body-font);
       overflow: hidden;
       height: 100vh;
       display: flex;
       flex-direction: column;
     }
-    /* 悬浮学术面板 */
+    /* 悬浮学术面板（浅色） */
     .hud-panel {
       position: absolute;
       top: 24px; left: 24px;
-      background: rgba(21, 26, 24, 0.88);
-      border: 1px solid var(--line-strong);
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--v-line-strong);
+      border-radius: 4px;
       padding: 18px 24px;
       backdrop-filter: blur(10px);
       z-index: 10;
       max-width: 480px;
     }
     .hud-title {
+      font-family: var(--v-display);
       font-size: 16px;
-      font-weight: 700;
-      color: var(--paper);
+      font-weight: 750;
+      color: var(--v-ink);
       margin-bottom: 6px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
     }
     .hud-tag {
-      font-family: var(--mono);
+      font-family: var(--v-mono);
       font-size: 10px;
-      color: var(--yellow);
+      font-weight: 700;
+      color: var(--v-yellow);
       letter-spacing: 0.14em;
+      white-space: nowrap;
     }
     .hud-desc {
       font-size: 12px;
-      color: var(--teal);
+      color: var(--v-body);
       line-height: 1.6;
       margin-bottom: 14px;
     }
@@ -62,37 +73,41 @@
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 12px;
-      border-top: 1px solid var(--line);
+      border-top: 1px solid var(--v-line);
       padding-top: 12px;
     }
     .hud-metric .num {
-      font-family: var(--mono);
+      font-family: var(--v-mono);
       font-size: 18px;
       font-weight: 700;
-      color: var(--teal-bright);
+      color: var(--v-teal-bright);
+      font-variant-numeric: tabular-nums;
     }
     .hud-metric .label {
       font-size: 11px;
-      color: rgba(230, 235, 225, 0.6);
+      color: var(--v-mute);
       margin-top: 2px;
     }
     .back-btn {
       position: absolute;
       top: 24px; right: 24px;
-      background: rgba(21, 26, 24, 0.88);
-      border: 1px solid var(--line-strong);
-      color: var(--paper);
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--v-line-strong);
+      border-radius: 3px;
+      color: var(--v-ink);
       padding: 8px 16px;
       font-size: 12px;
-      font-family: var(--mono);
+      font-weight: 700;
+      font-family: var(--v-body-font);
       cursor: pointer;
       z-index: 10;
       text-decoration: none;
       transition: all 0.2s;
     }
     .back-btn:hover {
-      background: var(--teal);
-      color: #000;
+      background: var(--v-teal-bright);
+      border-color: var(--v-teal-bright);
+      color: #fff;
     }
     canvas {
       width: 100%;
@@ -106,9 +121,11 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-family: var(--mono);
+      gap: 16px;
+      flex-wrap: wrap;
+      font-family: var(--v-mono);
       font-size: 11px;
-      color: rgba(230, 235, 225, 0.5);
+      color: var(--v-mute);
       pointer-events: none;
     }
   </style>
@@ -123,7 +140,7 @@
     <span class="hud-tag">AERODYNAMIC CANVAS</span>
   </div>
   <div class="hud-desc">
-    致敬并吸收自 <code>turbine-blade-ai-platform</code> 独门精髓：鼠标移动时触发气流势流绕障偏转，网格节点指尖感应发亮；点击屏幕即可生成动量压力涟漪！
+    鼠标移动时触发气流势流绕障偏转，网格节点指尖感应发亮；点击屏幕即可生成动量压力涟漪。三台风机按梯级偏航布置，观察流线如何绕过转子扫掠面。
   </div>
   <div class="hud-grid">
     <div class="hud-metric">
@@ -146,7 +163,7 @@
 <div class="footer-bar">
   <span>MOUSE HOVER: 势流偶极子偏转 / GRID NODE LIGHTING</span>
   <span>CLICK / TAP: 触发压力波同心波纹</span>
-  <span>8.23 组会展示专属 · 孙承泽 · 西安交通大学大创项目</span>
+  <span>孙承泽 · 西安交通大学大创项目 · 风电场偏航优化可视化</span>
 </div>
 
 <script>
@@ -166,7 +183,6 @@
   window.addEventListener('resize', resize);
   resize();
 
-  // 鼠标目标与惯性追溯 (LERP)
   const mouse = { x: width / 2, y: height / 2, tx: width / 2, ty: height / 2, active: false };
   window.addEventListener('mousemove', e => {
     mouse.tx = e.clientX;
@@ -175,13 +191,11 @@
   });
   window.addEventListener('mouseleave', () => { mouse.active = false; });
 
-  // 压力波涟漪
   const ripples = [];
   window.addEventListener('click', e => {
     ripples.push({ x: e.clientX, y: e.clientY, r: 0, alpha: 0.8 });
   });
 
-  // 初始化 48 条模拟进气流线
   const N_LINES = 48;
   const lines = [];
   for (let i = 0; i < N_LINES; i++) {
@@ -192,7 +206,6 @@
     });
   }
 
-  // 空间 3 台风机障点布局
   const turbines = [
     { x: 0.35, y: 0.35, label: 'T1 (+30°)' },
     { x: 0.55, y: 0.50, label: 'T2 (+20°)' },
@@ -214,17 +227,16 @@
       if (el) el.textContent = fps.toFixed(1);
     }
 
-    // LERP 惯性追踪
     mouse.x += (mouse.tx - mouse.x) * 0.15;
     mouse.y += (mouse.ty - mouse.y) * 0.15;
 
-    // 清屏 (高级黑色墨绿底)
-    ctx.fillStyle = '#101413';
+    // 清屏（浅色工程纸底）
+    ctx.fillStyle = '#f8f9fa';
     ctx.fillRect(0, 0, width, height);
 
-    // 1. 绘制 48px CFD 几何计算网格及指尖感应发光
+    // 1. 48px CFD 几何计算网格及指尖感应发光
     const gridSize = 48;
-    ctx.strokeStyle = 'rgba(220, 232, 222, 0.05)';
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.055)';
     ctx.lineWidth = 1;
     for (let x = 0; x < width; x += gridSize) {
       ctx.beginPath();
@@ -237,7 +249,6 @@
       ctx.stroke();
     }
 
-    // 网格交点感应高亮
     for (let x = 0; x < width; x += gridSize) {
       for (let y = 0; y < height; y += gridSize) {
         const dx = x - mouse.x;
@@ -245,7 +256,7 @@
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 120) {
           const alpha = (1 - dist / 120) * 0.65;
-          ctx.fillStyle = `rgba(134, 185, 170, ${alpha})`;
+          ctx.fillStyle = `rgba(30, 103, 92, ${alpha})`;
           ctx.beginPath();
           ctx.arc(x, y, 2.5, 0, Math.PI * 2);
           ctx.fill();
@@ -256,8 +267,8 @@
     // 2. 惯性阻尼探照光斑
     if (mouse.active) {
       const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 220);
-      grad.addColorStop(0, 'rgba(134, 185, 170, 0.18)');
-      grad.addColorStop(1, 'rgba(16, 20, 19, 0)');
+      grad.addColorStop(0, 'rgba(30, 103, 92, 0.10)');
+      grad.addColorStop(1, 'rgba(248, 249, 250, 0)');
       ctx.fillStyle = grad;
       ctx.beginPath();
       ctx.arc(mouse.x, mouse.y, 220, 0, Math.PI * 2);
@@ -274,7 +285,6 @@
         const px = (width / steps) * s;
         let py = l.y0;
 
-        // 遇到鼠标或风机的势流避障排斥
         const dx = px - mouse.x;
         const dy = py - mouse.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -291,25 +301,25 @@
         else ctx.lineTo(points[pIdx].x, points[pIdx].y);
       }
 
-      ctx.strokeStyle = 'rgba(134, 185, 170, 0.28)';
+      ctx.strokeStyle = 'rgba(45, 117, 105, 0.30)';
       ctx.stroke();
     });
 
-    // 4. 绘制 3 台风机几何标示与偏转轴
+    // 4. 三台风机几何标示与偏转轴
     turbines.forEach(tb => {
       const tx = tb.x * width;
       const ty = tb.y * height;
       const tDist = Math.sqrt((tx - mouse.x) ** 2 + (ty - mouse.y) ** 2);
       const isHover = tDist < 90;
 
-      ctx.strokeStyle = isHover ? '#e7c85b' : 'rgba(181, 222, 208, 0.5)';
+      ctx.strokeStyle = isHover ? '#a87817' : 'rgba(30, 103, 92, 0.55)';
       ctx.lineWidth = isHover ? 2.5 : 1.5;
       ctx.beginPath();
       ctx.arc(tx, ty, 26, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.fillStyle = '#fff';
-      ctx.font = '700 11px var(--mono)';
+      ctx.fillStyle = '#1e293b';
+      ctx.font = '700 11px "DM Mono", Consolas, monospace';
       ctx.textAlign = 'center';
       ctx.fillText(tb.label, tx, ty - 35);
     });
@@ -323,7 +333,7 @@
         ripples.splice(i, 1);
         continue;
       }
-      ctx.strokeStyle = `rgba(231, 200, 91, ${rItem.alpha})`;
+      ctx.strokeStyle = `rgba(168, 120, 23, ${rItem.alpha})`;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(rItem.x, rItem.y, rItem.r, 0, Math.PI * 2);
