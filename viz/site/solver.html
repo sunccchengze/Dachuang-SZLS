@@ -140,13 +140,13 @@
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      padding: 16px 0;
+      padding: 16px 32px;
       background: #ffffff;
       border-top: 1px solid var(--v-line-strong);
-      border-left: none;
-      border-right: none;
+      border-left: 1px solid var(--v-line-strong);
+      border-right: 1px solid var(--v-line-strong);
       border-bottom: none;
-      border-radius: 0;
+      border-radius: 6px 6px 0 0;
       flex-wrap: nowrap;
       margin: 0;
       width: 100%;
@@ -193,13 +193,14 @@
 
     /* 学术指标横向精简数据带 (Academic Ledger Strip) */
     .ledger-strip {
-      border-bottom: 1px solid var(--v-line-strong);
-      border-left: none;
-      border-right: none;
+      border: 1px solid var(--v-line-strong);
+      border-top: none;
       background: #ffffff;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       margin: 0 0 32px 0;
+      border-radius: 0 0 6px 6px;
+      overflow: hidden;
     }
     .ledger-col {
       padding: 32px 28px;
@@ -210,7 +211,6 @@
       min-width: 0;
       word-wrap: break-word;
     }
-    .ledger-col:first-child { padding-left: 0; }
     .ledger-col:last-child { border-right: none; }
     .l-meta {
       display: flex;
@@ -248,15 +248,12 @@
       color: var(--v-body);
     }
 
-    /* 控制面板与主图表 - 严格对齐 x=0 边沿 */
+    /* 控制面板与主图表 - 与正文同 32px 边距对齐 */
     .v-control-card {
       background: #ffffff;
-      border-top: 1px solid var(--v-line-strong);
-      border-bottom: 1px solid var(--v-line-strong);
-      border-left: none;
-      border-right: none;
-      border-radius: 0;
-      padding: 28px 0;
+      border: 1px solid var(--v-line-strong);
+      border-radius: 6px;
+      padding: 28px 32px;
       margin-bottom: 48px;
     }
     .yaw-controls {
@@ -357,11 +354,13 @@
     @media (max-width: 1024px) {
       .ledger-strip { grid-template-columns: repeat(2, 1fr); }
       .ledger-col { border-bottom: 1px solid var(--v-line); }
+      .ledger-col:last-child { border-bottom: none; }
     }
     @media (max-width: 640px) {
       .ledger-strip { grid-template-columns: 1fr; }
       .t-nav-inner, .t-container { padding: 0 20px; }
-      .v-control-card { padding: 20px 0; }
+      .cause-bar { padding: 14px 20px; }
+      .v-control-card { padding: 20px 20px; }
       .yaw-controls { flex-direction: column; align-items: flex-start; }
     }
       /* ===== 统一双行导航模块条（系统级覆盖，全站同一套，杜绝指示冲突） ===== */
