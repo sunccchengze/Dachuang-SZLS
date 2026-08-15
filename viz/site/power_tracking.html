@@ -308,13 +308,19 @@
   </div>
 
 
-  <div class="v-plots-container" style="border:1px solid rgba(30,41,59,0.18); background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,249,250,0.9));">
-    <div class="plot-head"><span class="plot-tick">NATURE FIG</span>PPO功率跟踪出版图 — MAE 0.523% + 多种子稳定性 · PDF矢量</div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px;">
-      <div><img src="assets/img/nature/fig9_tracking.png" style="width:100%;border:1px solid var(--v-line);border-radius:4px"><div class="plot-note">Target [0.78,0.98] 正弦跟踪，实际+噪声 0.5% MAE，误差带 <a href="assets/img/nature/fig9_tracking.pdf" target="_blank">→ PDF</a></div></div>
-      <div><img src="assets/img/nature/fig17_ppo_mae.png" style="width:100%;border:1px solid var(--v-line);border-radius:4px"><div class="plot-note">5种子 MAE 0.55±0.05% 稳定性</div></div>
-    </div>
+
+  <div class="v-plots-container">
+    <div class="plot-head"><span class="plot-tick">NATURE FIG · 01</span>PPO目标功率跟踪时序</div>
+    <img src="assets/img/nature/fig9_tracking.png" style="width:100%;border:1px solid var(--v-line);border-radius:4px;display:block">
+    <div class="plot-note">Target [0.78,0.98] 正弦跟踪，实际+噪声 0.5% MAE，误差带，Nature单栏3.5in <a href="assets/img/nature/fig9_tracking.pdf" target="_blank" style="font-family:var(--v-mono);font-size:11px;color:var(--v-teal-bright);font-weight:700">→ PDF</a></div>
   </div>
+
+  <div class="v-plots-container">
+    <div class="plot-head"><span class="plot-tick">NATURE FIG · 02</span>PPO多种子MAE稳定性</div>
+    <img src="assets/img/nature/fig17_ppo_mae.png" style="width:100%;max-width:420px;border:1px solid var(--v-line);border-radius:4px;display:block;margin:0 auto">
+    <div class="plot-note">5种子 MAE 0.55±0.05% 稳定性，误差棒SEM，0°基准对比。</div>
+  </div>
+
 
   <div class="v-plots-container">
     <div class="grid-plots">
