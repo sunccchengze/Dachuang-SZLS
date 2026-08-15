@@ -396,6 +396,18 @@
     el.className = 'dk-sub ' + (d > 0.5 ? 'up' : d < -0.5 ? 'down' : 'flat');
   }
 
+  function arcPoints(cx, cy, r, a0, a1, steps){
+    steps = steps || 64;
+    const d2r = Math.PI / 180;
+    const xs=[], ys=[];
+    for(let k=0;k<=steps;k++){
+      const t = k/steps;
+      const ang = a0 + (a1 - a0) * t;
+      xs.push(cx + r * Math.cos(ang * d2r));
+      ys.push(cy + r * Math.sin(ang * d2r));
+    }
+    return {x:xs, y:ys};
+  }
   function arcR(cx, cy, r, a0, a1){
     const d2r = Math.PI / 180,
       x0 = cx + r * Math.cos(a0 * d2r), y0 = cy + r * Math.sin(a0 * d2r),
@@ -441,13 +453,15 @@
       }]
     });
 
-    // 半圆仪表
+    // 半圆仪表 — 使用 scatter 拟合弧线替代非法 path 类型，修复白屏
     const maxG = Math.max(pred.ptot, base.ptot) * 1.18;
     const frac = Math.max(0, Math.min(1, pred.ptot / maxG)), angV = 180 - frac * 180, cx = 160, cy = 150, r = 110;
     const gCol = gain > 5 ? '#1e675c' : gain > 0 ? '#2d7569' : '#ad5038';
+    const bgArc = arcPoints(cx, cy, r, 180, 0, 80);
+    const valArc = arcPoints(cx, cy, r, 180, angV, 80);
     pr('dGauge', [
-      { type: 'path', path: arcR(cx, cy, r, 180, 0), line: { color: '#e9ecef', width: 16 }, showlegend: false },
-      { type: 'path', path: arcR(cx, cy, r, 180, angV), line: { color: gCol, width: 16 }, showlegend: false },
+      { x: bgArc.x, y: bgArc.y, mode: 'lines', line: { color: '#e9ecef', width: 16 }, hoverinfo: 'skip', showlegend: false },
+      { x: valArc.x, y: valArc.y, mode: 'lines', line: { color: gCol, width: 16 }, hoverinfo: 'skip', showlegend: false },
       { x: [cx], y: [cy - 30], mode: 'text', text: [Math.round(pred.ptot) + ' kW'], textfont: { size: 24, color: '#1e293b', family: "'DM Mono',monospace" }, showlegend: false },
       { x: [cx], y: [cy], mode: 'text', text: [(gain >= 0 ? '+' : '') + gain.toFixed(1) + '%'], textfont: { size: 14, color: gCol, family: "'DM Mono',monospace" }, showlegend: false }
     ], {
