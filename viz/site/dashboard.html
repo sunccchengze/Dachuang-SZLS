@@ -453,21 +453,21 @@
       }]
     });
 
-    // 半圆仪表 — 使用 scatter 拟合弧线替代非法 path 类型，修复白屏
+    // 半圆仪表 — 使用 scatter 拟合弧线替代非法 path 类型，修复白屏；上半圆仪表，圆心底部，顶部可见
     const maxG = Math.max(pred.ptot, base.ptot) * 1.18;
-    const frac = Math.max(0, Math.min(1, pred.ptot / maxG)), angV = 180 - frac * 180, cx = 160, cy = 150, r = 110;
+    const frac = Math.max(0, Math.min(1, pred.ptot / maxG)), angV = 180 - frac * 180, cx = 160, cy = 30, r = 100;
     const gCol = gain > 5 ? '#1e675c' : gain > 0 ? '#2d7569' : '#ad5038';
     const bgArc = arcPoints(cx, cy, r, 180, 0, 80);
     const valArc = arcPoints(cx, cy, r, 180, angV, 80);
     pr('dGauge', [
-      { x: bgArc.x, y: bgArc.y, mode: 'lines', line: { color: '#e9ecef', width: 16 }, hoverinfo: 'skip', showlegend: false },
-      { x: valArc.x, y: valArc.y, mode: 'lines', line: { color: gCol, width: 16 }, hoverinfo: 'skip', showlegend: false },
-      { x: [cx], y: [cy - 30], mode: 'text', text: [Math.round(pred.ptot) + ' kW'], textfont: { size: 24, color: '#1e293b', family: "'DM Mono',monospace" }, showlegend: false },
-      { x: [cx], y: [cy], mode: 'text', text: [(gain >= 0 ? '+' : '') + gain.toFixed(1) + '%'], textfont: { size: 14, color: gCol, family: "'DM Mono',monospace" }, showlegend: false }
+      { x: bgArc.x, y: bgArc.y, mode: 'lines', line: { color: '#e9ecef', width: 14 }, hoverinfo: 'skip', showlegend: false },
+      { x: valArc.x, y: valArc.y, mode: 'lines', line: { color: gCol, width: 14 }, hoverinfo: 'skip', showlegend: false },
+      { x: [cx], y: [cy + 35], mode: 'text', text: [Math.round(pred.ptot) + ' kW'], textfont: { size: 22, color: '#1e293b', family: "'DM Mono',monospace" }, showlegend: false },
+      { x: [cx], y: [cy + 65], mode: 'text', text: [(gain >= 0 ? '+' : '') + gain.toFixed(1) + '%'], textfont: { size: 13, color: gCol, family: "'DM Mono',monospace" }, showlegend: false }
     ], {
       xaxis: { range: [0, 320], showgrid: false, zeroline: false, showticklabels: false },
-      yaxis: { range: [40, 170], showgrid: false, zeroline: false, showticklabels: false },
-      height: 220, margin: { l: 0, r: 0, t: 5, b: 0 }, showlegend: false,
+      yaxis: { range: [0, 150], showgrid: false, zeroline: false, showticklabels: false },
+      height: 220, margin: { l: 10, r: 10, t: 10, b: 10 }, showlegend: false,
       paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
     });
     document.getElementById('gaugeNote').innerHTML = '当前风速 <b>' + U + ' m/s</b> · 偏航 <b>' + yawV + '°</b> · 增益 <b style="color:' + gCol + '">' + (gain >= 0 ? '+' : '') + gain.toFixed(1) + '%</b>';
