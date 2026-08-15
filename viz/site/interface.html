@@ -124,8 +124,10 @@
     .v-plots-container {
       background: #ffffff; border: 1px solid var(--v-line-strong);
       border-radius: 4px; padding: 28px 32px; margin-bottom: 36px;
+      overflow: hidden;
     }
-    .grid-plots { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+    .grid-plots { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; min-width: 0; }
+    .grid-plots > div { min-width: 0; }
     .plot-head {
       font-family: var(--v-display); font-size: 14.5px; font-weight: 750; color: var(--v-ink);
       margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
@@ -136,6 +138,10 @@
       border-radius: 3px; padding: 16px 18px;
       font-family: var(--v-mono); font-size: 11.5px; line-height: 1.6;
       overflow-x: auto; max-width: 100%; color: var(--v-body);
+      box-sizing: border-box;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
     .kw { color: #64748b; font-weight: 700; }
     .fn { color: #1e675c; font-weight: 700; }
@@ -181,7 +187,7 @@
       .ledger-col { border-bottom: 1px solid var(--v-line); }
       .team-grid { grid-template-columns: repeat(2, 1fr); }
       .team-step { border-bottom: 1px solid var(--v-line); }
-      .grid-plots { grid-template-columns: 1fr; }
+      .grid-plots { grid-template-columns: 1fr; min-width: 0;}
     }
     @media (max-width: 640px) {
       .ledger-strip { grid-template-columns: 1fr; }
