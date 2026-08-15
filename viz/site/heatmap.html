@@ -165,14 +165,16 @@
 <main class="t-container">
 
 
-  <div class="v-plots-container" style="border:1px solid rgba(30,41,59,0.18); background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,249,250,0.9));">
-    <div class="plot-head"><span class="plot-tick">NATURE FIG</span>多风速增益热力 + 3D曲面 — viridis感知均匀 · PDF矢量</div>
-    <div style="display:grid; gap:18px;">
-      <img src="assets/img/nature/fig2_multi_wind.png" style="width:100%;border:1px solid var(--v-line);border-radius:4px">
-      <div class="plot-note">Gain矩阵 yaw×U，热力viridis + 定风速切片折线，单栏3.5in/双栏7.2in <a href="assets/img/nature/fig2_multi_wind.pdf" target="_blank">→ PDF</a></div>
-      <img src="assets/img/nature/fig13_3d_gain.png" style="width:100%;max-width:520px;border:1px solid var(--v-line);border-radius:4px;margin:0 auto;display:block">
-      <div class="plot-note">3D曲面 gain = f(yaw,U)，展示最优随风速上移</div>
-    </div>
+  <div class="v-plots-container">
+    <div class="plot-head"><span class="plot-tick">NATURE FIG · 01</span>多风速增益热力矩阵 — viridis感知均匀</div>
+    <img src="assets/img/nature/fig2_multi_wind.png" style="width:100%;height:auto;border:1px solid var(--v-line);border-radius:4px;display:block" alt="multi wind">
+    <div class="plot-note">Gain矩阵 yaw×U，热力viridis + 定风速切片折线，单栏3.5in/双栏7.2in，感知均匀色盲安全 <a href="assets/img/nature/fig2_multi_wind.pdf" target="_blank" style="font-family:var(--v-mono);font-size:11px;color:var(--v-teal-bright);font-weight:700">→ PDF</a></div>
+  </div>
+
+  <div class="v-plots-container">
+    <div class="plot-head"><span class="plot-tick">NATURE FIG · 02</span>3D增益曲面 — gain = f(yaw,U)</div>
+    <img src="assets/img/nature/fig13_3d_gain.png" style="width:100%;max-width:520px;height:auto;border:1px solid var(--v-line);border-radius:4px;display:block;margin:0 auto" alt="3d gain">
+    <div class="plot-note">3D曲面展示最优随风速上移，Nature单栏</div>
   </div>
 
   <div class="v-plots-container">
