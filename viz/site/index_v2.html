@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>风电场偏航优化平台 · 科研工作台系统</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/media.css">
+  <link rel="stylesheet" href="css/home.css">
+  <style>
+    /* 
+     * 彻彻底底对标 Vercel + Taste-Skill 浅色学术工作台设计系统
+     * 纯正莫兰迪工科浅色调 (color-scheme: light) ➕ 极细黑白墨线 ➕ Cubic-Bezier 丝滑微动效 ➕ 严禁卡片堆砌与边界溢出
+     */
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+    :root {
+      --v-bg: #f8f9fa;          /* 莫兰迪米白工程纸灰灰底 */
+      --v-bg-soft: #f1f3f5;     /* 亚光白灰面板 */
+      --v-bg-subtle: #e9ecef;   /* 分隔底线 */
+      --v-panel: #ffffff;       /* 纯白几何板点 */
+      --v-panel-hover: #fcfdfe; /* 丝滑悬浮反光白 */
+      --v-ink: #1e293b;         /* 钛灰深黑墨水主字 */
+      --v-body: #334155;        /* 正文字色 */
+      --v-mute: #64748b;        /* 二级文字与注释 */
+      --v-faint: #94a3b8;       /* 辅助线及底标文本 */
+      --v-line: rgba(30, 41, 59, 0.11);
+      --v-line-strong: rgba(30, 41, 59, 0.22);
+      --v-teal: #2d7569;
+      --v-teal-bright: #1e675c; /* 高饱和深海钛绿高亮 */
+      --v-yellow: #a87817;      /* 暖琥珀金 */
+      --v-rust: #ad5038;        /* 铁砖红阶灰 */
+      --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", monospace;
+      --v-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC Black", "Songti SC", "STSong", "STZhongsong", "SimSun", "宋体-简", serif;
+      --v-body-font: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--v-bg);
+      color: var(--v-ink);
+      font-family: var(--v-body-font);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, .hero-title, .sec-title, .viewport-title, .dir-card-title, .l-title {
+      font-family: var(--v-display);
+    }
+    body, p, li, td, th, span, div, a, button, .hero-lead, .sec-desc, .dir-card-desc, .t-telemetry, .btn-link, .hero-capsule, .hero-footnote, .terminal-title, .terminal-badge, .step-name, .step-note, .l-details, .t-footer, .dir-group-head, .card-foot-grid, .m-label, .m-sub {
+      font-family: var(--v-body-font);
+    }
+    .num, .card-big-num, .m-val, .step-idx, .dir-card-idx, .l-val, .sec-num, .t-nav-badge {
+      font-family: var(--v-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 
+     * 1. 顶部系统遥测条与导航条 (严密流式布局，彻底杜绝顶部横幅重叠！)
+     */
+    .t-telemetry {
+      background: #ffffff;
+      border-bottom: 1px solid var(--v-line);
+      font-size: 11px;
+      font-family: var(--v-mono);
+      position: relative;
+      z-index: 40;
+      padding: 8px 0;
+    }
+    .t-telemetry-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px 18px;
+      white-space: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .t-telemetry-inner::-webkit-scrollbar { display: none; }
+    .status-active {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--v-teal-bright);
+      font-weight: 700;
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
+    }
+
+    .t-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--v-line);
+      height: 60px;
+      display: flex;
+      align-items: center;
+    }
+    .t-nav-inner {
+      max-width: 1240px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .t-nav-brand {
+      font-family: var(--v-display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--v-ink);
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .t-nav-badge {
+      font-family: var(--v-mono);
+      font-size: 10.5px;
+      color: var(--v-teal-bright);
+      padding: 3px 8px;
+      border: 1px solid var(--v-line-strong);
+      border-radius: 3px;
+      background: var(--v-bg-soft);
+      font-weight: 600;
+    }
+    .t-nav-meta {
+      font-family: var(--v-mono);
+      font-size: 11px;
+      color: var(--v-mute);
+    }
+
+    /* 容器控制 */
+    .t-container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    /* 
+     * 2. Hero 区域与背景光斑层
+     */
+    .hero-wrapper {
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid var(--v-line);
+      background:
+        radial-gradient(1200px 620px at 78% -12%, rgba(45,117,105,0.18), transparent 62%),
+        radial-gradient(900px 520px at -8% 28%, rgba(168,120,23,0.13), transparent 58%),
+        radial-gradient(860px 480px at 108% 76%, rgba(30,41,59,0.08), transparent 62%),
+        var(--v-bg);
+    }
+    #aero-bg-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 72px 32px 64px;
+      max-width: 1240px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+      gap: 48px;
+      align-items: start;
+    }
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--v-yellow);
+      font: 700 10.5px var(--v-mono);
+      letter-spacing: 0.12em;
+      margin-bottom: 20px;
+    }
+    .hero-title {
+      color: var(--v-ink);
+      font: 800 clamp(38px, 4.8vw, 62px)/1.08 var(--v-display);
+      letter-spacing: -0.055em;
+      margin-bottom: 20px;
+    }
+    .hero-title span.hl { color: var(--v-teal-bright); }
+    .hero-title-sub {
+      display: block;
+      margin-top: 14px;
+      color: var(--v-ink);
+      font: 750 clamp(22px, 2.6vw, 32px)/1.25 var(--v-display);
+      letter-spacing: -0.02em;
+    }
+    .hero-lead {
+      color: var(--v-body);
+      font-size: 15px;
+      line-height: 1.8;
+      max-width: 580px;
+      margin-bottom: 16px;
+    }
+    .hero-capsule {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: rgba(30, 103, 92, 0.07);
+      border: 1px solid rgba(30, 103, 92, 0.22);
+      border-radius: 4px;
+      color: var(--v-ink);
+      font-size: 11.5px;
+      font-family: var(--v-mono);
+      font-weight: 500;
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+    .hero-footnote {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--v-mute);
+      font: 11px var(--v-mono);
+      margin-bottom: 32px;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--v-teal-bright);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 2px 8px -2px rgba(30, 103, 92, 0.25);
+    }
+    .btn-primary:hover {
+      background: var(--v-ink);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px -4px rgba(30, 41, 59, 0.22);
+    }
+    .btn-primary:active { transform: translateY(0) scale(0.98); }
+    .btn-primary:focus-visible { outline: 2px solid var(--v-teal-bright); outline-offset: 2px; }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--v-panel);
+      color: var(--v-ink);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 12px 20px;
+      border: 1px solid var(--v-line-strong);
+      border-radius: 4px;
+      text-decoration: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-secondary:hover {
+      border-color: var(--v-teal-bright);
+      background: var(--v-bg-soft);
+      transform: translateY(-2px);
+    }
+    .btn-secondary:active { transform: translateY(0) scale(0.98); }
+    .btn-secondary:focus-visible { outline: 2px solid var(--v-teal-bright); outline-offset: 2px; }
+    .btn-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--v-mute);
+      padding: 12px 16px;
+      text-decoration: none;
+      font-size: 12px;
+      font-family: var(--v-mono);
+      font-weight: 600;
+      transition: color 0.15s;
+    }
+    .btn-link:hover { color: var(--v-ink); }
+
+    /* Hero 右侧：精密终端 — 真毛玻璃透光 (True Frosted Glass) */
+    .terminal-panel {
+      position: relative;
+      border: 1px solid rgba(255,255,255,0.82);
+      background: rgba(255,255,255,0.38);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      backdrop-filter: blur(28px) saturate(180%);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow:
+        0 20px 56px rgba(30,41,59,0.14),
+        0 2px 12px rgba(30,41,59,0.06),
+        0 1px 0 rgba(255,255,255,0.92) inset,
+        0 0 0 1px rgba(255,255,255,0.6) inset;
+    }
+    .terminal-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.12) 100%),
+        radial-gradient(70% 45% at 22% 0%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 60%),
+        radial-gradient(55% 50% at 88% 100%, rgba(45,117,105,0.14) 0%, rgba(255,255,255,0) 70%);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.9;
+    }
+    .terminal-panel::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 12%; right: 12%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.92), transparent);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .terminal-panel > * { position: relative; z-index: 1; }
+    @keyframes topPulse {
+      0%, 100% { opacity: 0.85; background-position: 0% 50%; }
+      50% { opacity: 1; background-position: 100% 50%; }
+    }
+    .terminal-top-line {
+      height: 2px;
+      background: linear-gradient(90deg, var(--v-teal-bright), var(--v-yellow), var(--v-rust));
+      background-size: 200% 200%;
+      animation: topPulse 6s ease-in-out infinite;
+    }
+    .terminal-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.68);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.32);
+      -webkit-backdrop-filter: blur(18px) saturate(170%);
+      backdrop-filter: blur(18px) saturate(170%);
+    }
+    .terminal-title {
+      font: 11px var(--v-mono);
+      color: var(--v-ink);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .terminal-badge {
+      font: 10px var(--v-mono);
+      color: var(--v-teal-bright);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+    }
+    .terminal-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: rgba(30,41,59,0.11);
+      border-bottom: 1px solid rgba(255,255,255,0.55);
+    }
+    .terminal-metric-item {
+      background: rgba(255,255,255,0.34);
+      -webkit-backdrop-filter: blur(12px) saturate(165%);
+      backdrop-filter: blur(12px) saturate(165%);
+      padding: 16px 20px;
+      transition: background 0.28s cubic-bezier(0.16,1,0.3,1);
+    }
+    .terminal-metric-item:hover {
+      background: rgba(255,255,255,0.58);
+    }
+    .m-label {
+      color: var(--v-mute);
+      font: 9.5px var(--v-mono);
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+    .m-val {
+      font-family: var(--v-mono);
+      font-size: 24px;
+      font-weight: 750;
+      color: var(--v-teal-bright);
+      margin-top: 4px;
+      line-height: 1.1;
+    }
+    .m-val span {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--v-mute);
+    }
+    .m-sub {
+      color: var(--v-faint);
+      font: 10.5px var(--v-mono);
+      margin-top: 4px;
+    }
+
+    /* 科研证据链表 — 真透光底层 */
+    .pipeline-wrap {
+      padding: 18px 20px;
+      background: rgba(255,255,255,0.30);
+      -webkit-backdrop-filter: blur(18px) saturate(165%);
+      backdrop-filter: blur(18px) saturate(165%);
+    }
+    .pipeline-header {
+      color: var(--v-mute);
+      font: 10px var(--v-mono);
+      letter-spacing: 0.12em;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+    }
+    .pipeline-step {
+      display: grid;
+      grid-template-columns: 26px 1fr auto;
+      gap: 12px;
+      padding: 10px 0;
+      align-items: center;
+      border-bottom: 1px solid rgba(30,41,59,0.08);
+    }
+    .pipeline-step:last-child { border-bottom: none; }
+    .step-idx {
+      font-family: var(--v-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--v-faint);
+    }
+    .step-name {
+      color: var(--v-ink);
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+    .step-note {
+      color: var(--v-mute);
+      font: 10.5px var(--v-mono);
+      margin-top: 2px;
+    }
+    .step-tag {
+      font: 10px var(--v-mono);
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+
+    /* Section Header */
+    .sec-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--v-line-strong);
+    }
+    .sec-left { display: flex; gap: 14px; align-items: flex-start; }
+    .sec-num {
+      color: var(--v-yellow);
+      font: 700 12px var(--v-mono);
+      padding-top: 4px;
+    }
+    .sec-title {
+      color: var(--v-ink);
+      font: 750 clamp(22px, 2.8vw, 34px)/1.15 var(--v-display);
+      letter-spacing: -0.04em;
+    }
+    .sec-en {
+      color: var(--v-mute);
+      font: 10.5px var(--v-mono);
+      margin-top: 6px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .sec-desc {
+      max-width: 640px;
+      color: var(--v-body);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* 
+     * 3. 彻底整改：不用卡片式设计！使用“学术指标横向精简数据带” (Academic Ledger Strip)
+     *    完全解决：文字溢出边界、局促折行问题，提供极充裕的文字与表格展示宽度！
+     */
+    .ledger-strip {
+      border: 1px solid rgba(255,255,255,0.68);
+      background: rgba(255,255,255,0.56);
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr 1fr;
+      margin: 0 0 32px 0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(30,41,59,0.06), 0 1px 0 rgba(255,255,255,0.8) inset;
+    }
+    .ledger-col {
+      padding: 36px 32px;
+      border-right: 1px solid var(--v-line);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-width: 0; /* 防止子元素造成任意水平外溢 */
+      word-wrap: break-word;
+    }
+    .ledger-col:last-child { border-right: none; }
+    .l-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-family: var(--v-mono);
+      font-size: 10.5px;
+      color: var(--v-mute);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .l-title {
+      font-size: 15px;
+      font-weight: 750;
+      color: var(--v-ink);
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+    .l-val {
+      font-family: var(--v-mono);
+      font-weight: 750;
+      font-size: 42px;
+      line-height: 1;
+      color: var(--v-teal-bright);
+      margin-bottom: 24px;
+    }
+    /* 指标细目竖单结构，彻底保证充裕空间与绝对不溢出界外 */
+    .l-details {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 16px;
+      border-top: 1px solid var(--v-line);
+      font-family: var(--v-body-font);
+      font-size: 12.5px;
+      color: var(--v-body);
+    }
+    .l-details-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .l-details-row span.num {
+      font-family: var(--v-mono);
+      font-weight: 700;
+      color: var(--v-ink);
+    }
+
+    /* 
+     * 4. 彻底修正：风力发电机“数字孪生”线框结构运行监测视口 (Digital Twin Rotor Viewport)
+     *    100% 忠于 bg.mp4 视频事实：展示风力涡轮机轮毂、齿轮箱、机舱线框与透明数字孪生！
+     */
+    .viewport-panel {
+      position: relative;
+      width: 100%;
+      height: 440px;
+      border: 1px solid var(--v-line-strong);
+      border-radius: 4px;
+      overflow: hidden;
+      background: #0d1110;
+      margin-top: 16px;
+    }
+    .viewport-panel video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.88;
+      background: #0d1110;
+    }
+    .viewport-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(180deg, rgba(15,23,42,0.3) 0%, rgba(15,23,42,0.85) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 30px 36px;
+      pointer-events: none;
+    }
+    .viewport-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--v-mono);
+      font-size: 11.5px;
+      color: #ffffff;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .viewport-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      color: #fff;
+    }
+    .viewport-title {
+      font-family: var(--v-display);
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+    }
+    .viewport-sub {
+      font-family: var(--v-mono);
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.82);
+      margin-top: 6px;
+    }
+
+    /* 
+     * 5. Taste-Skill 升级：15 页面导航卡片极细发丝网格与极其丝滑细腻的动画 (Smooth Cubic-Bezier)
+     *    不标明 (15 PAGES)，不加内部标语
+     */
+    .dir-group { margin-top: 48px; }
+    .dir-group-head {
+      font-family: var(--v-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--v-mute);
+      letter-spacing: 0.14em;
+      border-bottom: 1px solid var(--v-line);
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .dir-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr 1fr;
+      gap: 16px;
+    }
+    .dir-card {
+      background: var(--v-panel);
+      border: 1px solid var(--v-line);
+      border-radius: 4px;
+      padding: 24px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      text-decoration: none;
+      color: inherit;
+      /* Taste-Skill: 极其丝滑细腻的对数贝塞尔缓动，呈现光质反光悬浮 */
+      transition: 
+        transform 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+        background-color 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .dir-card:hover {
+      border-color: rgba(30, 103, 92, 0.6);
+      background: #ffffff;
+      transform: translateY(-4px);
+      box-shadow: 
+        0 14px 32px -10px rgba(30, 103, 92, 0.09),
+        0 4px 12px -4px rgba(30, 41, 59, 0.06);
+    }
+    .dir-card-idx {
+      font-family: var(--v-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--v-faint);
+      margin-bottom: 12px;
+      letter-spacing: 0.05em;
+    }
+    .dir-card-title {
+      font-size: 17px;
+      font-weight: 750;
+      color: var(--v-ink);
+      margin-bottom: 8px;
+    }
+    .dir-card-desc {
+      font-size: 13.5px;
+      color: var(--v-body);
+      line-height: 1.6;
+      margin-bottom: 26px;
+    }
+    .dir-card-link {
+      font-family: var(--v-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--v-teal-bright);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dir-card-arrow {
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .dir-card:hover .dir-card-arrow {
+      transform: translateX(4px);
+    }
+
+    /* 页脚 (严密垂直居中排版，彻底解决左右不对齐和不居中问题) */
+    .t-footer {
+      border-top: 1px solid var(--v-line-strong);
+      padding: 60px 0;
+      margin-top: 96px;
+      font-size: 12.5px;
+      color: var(--v-body);
+      line-height: 1.8;
+      background: #ffffff;
+      text-align: center;
+    }
+    .footer-inner-centered {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 8px;
+    }
+    .footer-brand {
+      color: var(--v-ink);
+      font-weight: 750;
+      font-family: var(--v-display);
+      font-size: 15px;
+    }
+
+    @media (max-width: 1080px) {
+      .hero-content { grid-template-columns: 1fr; }
+      .ledger-strip { grid-template-columns: repeat(2, 1fr); }
+      .ledger-col { border-bottom: 1px solid var(--v-line); }
+      .dir-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .ledger-strip { grid-template-columns: 1fr; }
+      .dir-grid { grid-template-columns: 1fr; }
+      .t-nav-inner, .t-container, .t-telemetry-inner { padding: 0 18px; }
+      .hero-content { padding: 48px 18px 40px; }
+      .viewport-overlay { padding: 20px; }
+    }
+      /* ===== 统一双行导航模块条（系统级覆盖，全站同一套，杜绝指示冲突） ===== */
+    .t-nav { height: auto; }
+    .t-nav-inner { max-width: none; width: 100%; margin: 0; padding: 0; display: block; }
+    .t-nav-row1 { max-width: 1240px; margin: 0 auto; padding: 13px 32px 11px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .t-nav-here { font-family: var(--v-mono); font-size: 11px; font-weight: 700; color: var(--v-mute); letter-spacing: 0.06em; white-space: nowrap; }
+    .t-nav-links { border-top: 1px solid var(--v-line); }
+    .t-nav-links-in { max-width: 1240px; margin: 0 auto; padding: 0 24px; display: flex; align-items: stretch; overflow-x: auto; scrollbar-width: none; }
+    .t-nav-links-in::-webkit-scrollbar { display: none; }
+    .t-nav-links a { font-family: var(--v-body-font); font-size: 12px; font-weight: 600; color: var(--v-mute); text-decoration: none; padding: 9px 9px 8px; white-space: nowrap; border-bottom: 2px solid transparent; display: inline-flex; gap: 6px; align-items: baseline; }
+    .t-nav-links a i { font-style: normal; font-family: var(--v-mono); font-size: 9.5px; font-weight: 700; color: var(--v-faint); letter-spacing: 0.05em; }
+    .t-nav-links a:hover { color: var(--v-ink); background: var(--v-bg-soft); }
+    .t-nav-links a.active { color: var(--v-teal-bright); border-bottom-color: var(--v-teal-bright); }
+    .t-nav-links a.active i { color: var(--v-teal-bright); }
+    @media (max-width: 640px) { .t-nav-row1 { padding: 12px 20px 10px; } }
+  </style>
+</head>
+<body>
+
+<!-- 顶部系统遥测条 -->
+<div class="t-telemetry">
+  <div class="t-telemetry-inner">
+    <span class="status-active">
+      <span class="status-dot"></span>
+      本地双线性插值引擎就绪 / Local Active
+    </span>
+    <span style="color:var(--v-line-strong)">|</span>
+    <span style="color:var(--v-mute)">
+      推理延迟: <strong style="color:var(--v-ink)">&lt; 0.5 ms</strong> (常规切片)
+    </span>
+    <span style="color:var(--v-line-strong)">|</span>
+    <span style="color:var(--v-mute)">
+      验证载体: <strong style="color:var(--v-ink)">NREL 5MW 九机阵列</strong> (FLORIS GCH)
+    </span>
+    <span style="color:var(--v-line-strong)">|</span>
+    <span style="color:var(--v-mute)">
+      优化提速: <strong style="color:var(--v-yellow)">~700× / ~2700×</strong> (vs CFD/SLSQP)
+    </span>
+    <span style="color:var(--v-line-strong)">|</span>
+    <span style="color:var(--v-mute)">
+      证据等级: <strong style="color:var(--v-teal)">E2 代理 / E3 物理实测</strong>
+    </span>
+  </div>
+</div>
+
+<!-- 极简工科导航栏 -->
+<nav class="t-nav">
+  <div class="t-nav-inner">
+    <div class="t-nav-row1">
+      <a href="index.html" class="t-nav-brand" style="text-decoration:none;color:inherit">
+        <span>风电场偏航优化平台</span>
+        <span class="t-nav-badge">SUN CHENGZE · VISUALIZATION</span>
+      </a>
+      <span class="t-nav-here" id="tNavHere"></span>
+    </div>
+    <div class="t-nav-links"><div class="t-nav-links-in">
+      <a href="index.html" data-nav-code="00" data-nav-name="首页"><i>00</i>首页</a>
+      <a href="wake.html" data-nav-code="01" data-nav-name="尾流"><i>01</i>尾流</a>
+      <a href="optimization.html" data-nav-code="02" data-nav-name="优化"><i>02</i>优化</a>
+      <a href="solver.html" data-nav-code="03" data-nav-name="求解"><i>03</i>求解</a>
+      <a href="dashboard.html" data-nav-code="04" data-nav-name="看板"><i>04</i>看板</a>
+      <a href="array.html" data-nav-code="05" data-nav-name="阵列"><i>05</i>阵列</a>
+      <a href="heatmap.html" data-nav-code="06" data-nav-name="热力"><i>06</i>热力</a>
+      <a href="windrose.html" data-nav-code="07" data-nav-name="风玫瑰"><i>07</i>风玫瑰</a>
+      <a href="pod.html" data-nav-code="08" data-nav-name="POD"><i>08</i>POD</a>
+      <a href="model.html" data-nav-code="09" data-nav-name="精度"><i>09</i>精度</a>
+      <a href="power_tracking.html" data-nav-code="10" data-nav-name="跟踪"><i>10</i>跟踪</a>
+      <a href="3d_farm.html" data-nav-code="11" data-nav-name="3D风场"><i>11</i>3D风场</a>
+      <a href="3d_surface.html" data-nav-code="12" data-nav-name="3D曲面"><i>12</i>3D曲面</a>
+      <a href="3d_volume.html" data-nav-code="13" data-nav-name="3D体"><i>13</i>3D体</a>
+      <a href="interface.html" data-nav-code="14" data-nav-name="契约"><i>14</i>契约</a>
+      <a href="aerodynamic_demo.html" data-nav-code="15" data-nav-name="流线演示"><i>15</i>流线</a>
+      <a href="overview.html" data-nav-code="MAP" data-nav-name="系统总览"><i>MAP</i>总览</a>
+    </div></div>
+  </div>
+</nav>
+
+<!-- Hero 画布层 (浅白底色叠加鼠标阻尼追踪光斑及 CFD 网格十字节点发亮) -->
+<div class="hero-wrapper">
+  <canvas id="aero-bg-canvas"></canvas>
+
+  <div class="hero-content">
+    <!-- 左侧：科研核心叙事与交互按钮组 -->
+    <div>
+      <div class="hero-tag">
+        <span>XI'AN JIAOTONG UNIVERSITY · RESEARCH WORKSPACE</span>
+      </div>
+
+      <h1 class="hero-title">
+        Aerodynamics steers.<br>
+        <span class="hl">Synergy multiplies.</span>
+        <span class="hero-title-sub">气动让航 · 协同倍增</span>
+      </h1>
+
+      <p class="hero-lead">
+        从 5D 两台串列对风避让到 3×3 九机阵列多排让利错峰。利用 FLORIS 4.6.6 高斯 GCH 尾流与 POD 正交降阶在浏览器本地毫秒级重构场强，再通过可达域 PPO 强化学习实时实现全场总电量目标跟踪。
+      </p>
+
+      <div class="hero-capsule">
+        <span>效能对比：传统离线 CFD 单算例需数十秒至数小时 ➔ 本工作台纯本地内存插值引擎实现 &lt;0.5 ms 瞬时响应</span>
+      </div>
+
+      <div class="hero-footnote">
+        <span style="color:var(--v-yellow)">*</span>
+        <span>FLORIS 4.6.6 物理实算 · 纯前端无后端推理 · 7,536 次全风向工况扫描审计</span>
+      </div>
+
+      <!-- 操作按钮组 -->
+      <div class="hero-actions">
+        <a href="array.html" class="btn-primary">
+          <span>进入 3×3 阵列控制</span>
+          <span style="font-family:var(--v-mono);font-size:11px;opacity:0.9">Array</span>
+        </a>
+        <a href="wake.html" class="btn-secondary">
+          <span>探索尾流交互切片</span>
+          <span style="font-family:var(--v-mono);font-size:11px;opacity:0.85">Wake</span>
+        </a>
+        <a href="overview.html" class="btn-link">
+          <span>方法论与数据证据 →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- 右侧：精密终端 (白白面板对齐榜样卡面结构) -->
+    <div class="terminal-panel">
+      <div class="terminal-top-line"></div>
+      <div class="terminal-header">
+        <div class="terminal-title">
+          <span style="color:var(--v-yellow)">●</span>
+          <span>NREL 5MW ARRAY · REALTIME TELEMETRY</span>
+        </div>
+        <span class="terminal-badge">E2 / E3 ACTIVE</span>
+      </div>
+
+      <div class="terminal-metrics">
+        <div class="terminal-metric-item">
+          <div class="m-label">INFERENCE LATENCY</div>
+          <div class="m-val">&lt; 0.5 <span>ms</span></div>
+          <div class="m-sub">RegularGridInterpolator</div>
+        </div>
+        <div class="terminal-metric-item">
+          <div class="m-label">ARRAY MAX GAIN</div>
+          <div class="m-val">+24.04 <span>%</span></div>
+          <div class="m-sub">[30°, 20°, 0°] 独立贪心</div>
+        </div>
+        <div class="terminal-metric-item">
+          <div class="m-label">POD FIDELITY</div>
+          <div class="m-val" style="color:var(--v-yellow)">97.97 <span>%</span></div>
+          <div class="m-sub">前 2 阶模态正交重构</div>
+        </div>
+        <div class="terminal-metric-item">
+          <div class="m-label">PPO TRACKING MAE</div>
+          <div class="m-val" style="color:var(--v-rust)">0.523 <span>%</span></div>
+          <div class="m-sub">4 维物理可达域闭环</div>
+        </div>
+      </div>
+
+      <!-- 4 阶段科研证据链流水 (Evidence Flow Pipeline) -->
+      <div class="pipeline-wrap">
+        <div class="pipeline-header">
+          <span>EVIDENCE FLOW PIPELINE</span>
+          <span>STATUS</span>
+        </div>
+
+        <div>
+          <div class="pipeline-step">
+            <span class="step-idx">01</span>
+            <div>
+              <div class="step-name">FLORIS 4.6.6 GCH 物理矩阵</div>
+              <div class="step-note">5D 串列与 3×3 阵列 7,536 次风向风速离线算例</div>
+            </div>
+            <span class="step-tag" style="color:var(--v-teal-bright)">VERIFIED E2</span>
+          </div>
+          <div class="pipeline-step">
+            <span class="step-idx">02</span>
+            <div>
+              <div class="step-name">双线性网格常驻内存切片</div>
+              <div class="step-note">RegularGridInterpolator 线性核 → &lt;0.5 ms 推理</div>
+            </div>
+            <span class="step-tag" style="color:var(--v-teal-bright)">ACTIVE E2</span>
+          </div>
+          <div class="pipeline-step">
+            <span class="step-idx">03</span>
+            <div>
+              <div class="step-name">3×3 阵列四阶梯偏航矩阵</div>
+              <div class="step-note">0° / 第一排 / 前两排 / 独立贪心让利错峰验证</div>
+            </div>
+            <span class="step-tag" style="color:var(--v-yellow)">AUDITED E2</span>
+          </div>
+          <div class="pipeline-step">
+            <span class="step-idx">04</span>
+            <div>
+              <div class="step-name">PPO 强化学习实时功率闭环</div>
+              <div class="step-note">目标域 [0.78, 0.98] · 稳态平均调节时间 0.944s</div>
+            </div>
+            <span class="step-tag" style="color:var(--v-rust)">CLOSED E3</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 主区域 -->
+<main class="t-container">
+
+  <!-- Section 01: 核心物理与智能优化考核指标 -->
+  <!-- 彻底整改：弃用卡片式设计！使用“学术指标横向精简数据带” (Academic Ledger Strip) 解决边界外溢 -->
+  <section style="padding:64px 0 24px">
+    <div class="sec-header">
+      <div class="sec-left">
+        <span class="sec-num">01</span>
+        <div>
+          <h2 class="sec-title">核心物理与智能优化考核指标</h2>
+          <div class="sec-en">AUDITED CORE METRICS / GROUND TRUTH N=7,536 SCANS</div>
+        </div>
+      </div>
+      <div class="sec-desc">
+        全网数据增益、POD 模态重构与 PPO 跟踪精度皆由真实 FLORIS 4.6.6 与独立测试集审计确权，提供足量横向表列与分行指标解析。
+      </div>
+    </div>
+
+    <!-- 4 列学术指标横向精简带 (纯黑白发丝边界，无外框阴影卡片) -->
+    <div class="ledger-strip">
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta">
+            <span>01 / ARRAY YAW GAIN</span>
+            <span style="color:var(--v-teal-bright)">PRIMARY KPI</span>
+          </div>
+          <div class="l-title">3×3 九机阵列独立贪心增收</div>
+          <div class="l-val" data-count="24.04" data-suffix="%">0%</div>
+        </div>
+        <div class="l-details">
+          <div class="l-details-row"><span>Row 1 (迎风第一排)</span><span class="num">+30°</span></div>
+          <div class="l-details-row"><span>Row 2 (二次错峰)</span><span class="num">+20°</span></div>
+          <div class="l-details-row"><span>全场总功率优化</span><span class="num">10041 kW</span></div>
+        </div>
+      </div>
+
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta">
+            <span>02 / TANDEM STEERING</span>
+            <span style="color:var(--v-yellow)">AERO RELIEF</span>
+          </div>
+          <div class="l-title">两台串列 (5D) 尾流协同增量</div>
+          <div class="l-val" style="color:var(--v-yellow)" data-count="8.13" data-suffix="%">0%</div>
+        </div>
+        <div class="l-details">
+          <div class="l-details-row"><span>前机主导让利比</span><span class="num">-16.8%</span></div>
+          <div class="l-details-row"><span>后机流速自然回温</span><span class="num">6.38 m/s</span></div>
+          <div class="l-details-row"><span>下游单机发量飙升</span><span class="num">+108.4%</span></div>
+        </div>
+      </div>
+
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta">
+            <span>03 / POD FIDELITY</span>
+            <span style="color:var(--v-teal-bright)">DIM REDUCTION</span>
+          </div>
+          <div class="l-title">POD 前两阶模态动能捕捉率</div>
+          <div class="l-val" data-count="97.97" data-suffix="%">0%</div>
+        </div>
+        <div class="l-details">
+          <div class="l-details-row"><span>Mode 0 (反向偶极子)</span><span class="num">76.4%</span></div>
+          <div class="l-details-row"><span>Mode 1 (中心自恢复)</span><span class="num">21.6%</span></div>
+          <div class="l-details-row"><span>有限空间维度压缩</span><span class="num">8192→2</span></div>
+        </div>
+      </div>
+
+      <div class="ledger-col">
+        <div>
+          <div class="l-meta">
+            <span>04 / PPO TRACKING</span>
+            <span style="color:var(--v-rust)">CLOSED LOOP</span>
+          </div>
+          <div class="l-title">PPO 强化学习稳态跟踪 MAE</div>
+          <div class="l-val" style="color:var(--v-rust)" data-count="0.523" data-suffix="%">0%</div>
+        </div>
+        <div class="l-details">
+          <div class="l-details-row"><span>测试集样本分布</span><span class="num">200 集</span></div>
+          <div class="l-details-row"><span>平衡态调节时间</span><span class="num">0.944 s</span></div>
+          <div class="l-details-row"><span>进稳态偏航抖动</span><span class="num">0°/step</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 02: 彻底更正！风力发电机“数字孪生”与线框结构运行监测视口 -->
+  <section style="padding:48px 0 32px">
+    <div class="sec-header">
+      <div class="sec-left">
+        <span class="sec-num">02</span>
+        <div>
+          <h2 class="sec-title">风力涡轮机数字孪生与线框结构运行监测视口</h2>
+          <div class="sec-en">DIGITAL TWIN ROTOR VIEWPORT / WIREFRAME STRUCTURAL DYNAMICS</div>
+        </div>
+      </div>
+      <div class="sec-desc">
+        呈现风力发电机的数字孪生与线框结构运行示意，清晰透视轮毂、齿轮箱、主传动承轴与机舱等构造。
+      </div>
+    </div>
+
+    <div class="viewport-panel">
+      <video autoplay muted loop playsinline>
+        <source src="assets/media/bg.mp4" type="video/mp4">
+      </video>
+      <div class="viewport-overlay">
+        <div class="viewport-head">
+          <span>● DIGITAL TWIN ROTOR STRUCTURAL MONITORING</span>
+          <span>NACELLE, GEARBOX & MAIN SHAFT WIREFRAME VIEW</span>
+        </div>
+        <div class="viewport-foot">
+          <div>
+            <div class="viewport-title">风力发电机（风力涡轮机）数字孪生与透明线框结构运行示意</div>
+            <div class="viewport-sub">DIGITAL TWIN · NACELLE & ROTOR WIREFRAME VISUALIZATION · NREL 5MW REFERENCE TURBINE</div>
+          </div>
+          <div style="text-align:right;font-family:var(--v-mono);font-size:12px">
+            <span style="color:rgba(255,255,255,0.75)">REFERENCE ROTOR</span><br>
+            <span style="font-size:24px;font-weight:700;color:var(--v-teal-bright)">126.0 METERS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 03: 全景工科子网页导览矩阵 (去 Emoji、不标明15页、Taste-Skill 极其丝滑细腻动画) -->
+  <section style="padding:48px 0 24px">
+    <div class="sec-header">
+      <div class="sec-left">
+        <span class="sec-num">03</span>
+        <div>
+          <h2 class="sec-title">全景工科子网页导览矩阵</h2>
+          <div class="sec-en">WORKSPACE DIRECTORY / INTERACTIVE RESEARCH MODULES</div>
+        </div>
+      </div>
+      <div class="sec-desc">
+        全向所列子页面皆遵循瑞士国际主义网格系统与发丝边界规范，纯浏览器端极速响应，支持离线会议室高精度报告。
+      </div>
+    </div>
+
+    <!-- MODULE GROUP A -->
+    <div class="dir-group" style="margin-top:0">
+      <div class="dir-group-head">
+        <span>A / CORE INTERACTION · 核心尾流与实时控制</span>
+        <span>01 - 04</span>
+      </div>
+      <div class="dir-grid">
+        <a href="wake.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">01 / WAKE ANALYSIS</div>
+            <div class="dir-card-title">尾流交互分析</div>
+            <div class="dir-card-desc">拖动偏航角滑块，流场速度等势图与上下游两机功率实时联动计算。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+        <a href="optimization.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">02 / OPTIMIZATION</div>
+            <div class="dir-card-title">偏航优化结果</div>
+            <div class="dir-card-desc">0° 自然迎风 vs +25° 最优偏航切片对标与 -16.8%/+108.4% 账本。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+        <a href="solver.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">03 / REALTIME SOLVER</div>
+            <div class="dir-card-title">实时优化求解器</div>
+            <div class="dir-card-desc">输入任意风速，现场秒解双线性插值 vs SLSQP / DE 的性能对比。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+        <a href="dashboard.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">04 / DASHBOARD</div>
+            <div class="dir-card-title">Dashboard 总台</div>
+            <div class="dir-card-desc">打通仿真数据-流场物理-实时优化的一屏综合管控仪表主板。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE GROUP B -->
+    <div class="dir-group">
+      <div class="dir-group-head">
+        <span>B / 3D SIMULATION & FIELD · 空间几何与三维流动</span>
+        <span>05 - 09</span>
+      </div>
+      <div class="dir-grid">
+        <a href="3d_farm.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">05 / 3D ARRAY FARM</div>
+            <div class="dir-card-title">3D 九机风电场</div>
+            <div class="dir-card-desc">九台风机偏航让道实景几何拓扑，真实转子转动与对角偏转视角。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+        <a href="3d_surface.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">06 / 3D SURFACE</div>
+            <div class="dir-card-title">3D 尾流曲面</div>
+            <div class="dir-card-desc">各高度层流速分布的三维速度表面投影，支持鼠标自动全向环绕。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+        <a href="3d_volume.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">07 / 3D VOLUME</div>
+            <div class="dir-card-title">3D 体渲染</div>
+            <div class="dir-card-desc">三维空间低能风速泡整体包络，带切片深度扫描交互动画功能。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+        <a href="heatmap.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">08 / HEATMAP MATRIX</div>
+            <div class="dir-card-title">功率热力矩阵</div>
+            <div class="dir-card-desc">多偏航角 × 多风速工况下的系统总功率增益分布热力方格矩阵。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+      </div>
+      <div class="dir-grid" style="margin-top:16px;grid-template-columns: 1.6fr 1fr 1fr 1fr">
+        <a href="windrose.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">09 / WINDROSE & AEP</div>
+            <div class="dir-card-title">风玫瑰与 AEP</div>
+            <div class="dir-card-desc">7,536 次扫描实算八扇区分布，双机与阵列切换及年度发量 ΔAEP。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE GROUP C -->
+    <div class="dir-group">
+      <div class="dir-group-head">
+        <span>C / REDUCTION & ARRAY CONTROL · 模态降阶与协同优化</span>
+        <span>10 - 13</span>
+      </div>
+      <div class="dir-grid">
+        <a href="overview.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">10 / DATA OVERVIEW</div>
+            <div class="dir-card-title">实算数据总览</div>
+            <div class="dir-card-desc">全风序仿真算例统计总表，展示双机与多机各物理特征对准关系。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+        <a href="pod.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">11 / POD REDUCTION</div>
+            <div class="dir-card-title">POD 降阶分析</div>
+            <div class="dir-card-desc">偶极子 76.38% + 回复 21.58% = 前两阶 97.97% 精度论据。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+        <a href="array.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">12 / 3X3 ARRAY FARM</div>
+            <div class="dir-card-title">3×3 阵列控制</div>
+            <div class="dir-card-desc"><b>王牌页</b>：自然/第一排/前两排/贪心 四阶梯因果矩阵卡 (+24.04%)。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+        <a href="power_tracking.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">13 / POWER TRACKING</div>
+            <div class="dir-card-title">目标功率跟踪</div>
+            <div class="dir-card-desc">面向调度目标下达期望总功率，逆向极速搜索可达偏航组合指令。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+      </div>
+    </div>
+
+    <!-- MODULE GROUP D -->
+    <div class="dir-group">
+      <div class="dir-group-head">
+        <span>D / ENGINEERING CONTRACTS · 模型确权与统一契约</span>
+        <span>14 - 15</span>
+      </div>
+      <div class="dir-grid" style="grid-template-columns:repeat(2, 1fr)">
+        <a href="model.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">14 / MODEL ACCURACY</div>
+            <div class="dir-card-title">代理模型精度</div>
+            <div class="dir-card-desc">散点严格聚拢在 y = x 核心标定对角线上，全风速工况零系统偏差。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+        <a href="interface.html" class="dir-card">
+          <div>
+            <div class="dir-card-idx">15 / DATA INTERFACES</div>
+            <div class="dir-card-title">协作契约接口</div>
+            <div class="dir-card-desc">明示 CFD仿真 / 降阶代理 / PPO强化学习 / 网页交互 统一数据契约表。</div>
+          </div>
+          <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- 页脚 (不再出现内部营销设计标语，纯正工程版权与确权声明) -->
+<footer class="t-footer">
+  <div class="footer-inner-centered">
+    <div class="footer-brand" style="margin-bottom:6px">西安交通大学 · 能源与动力工程学院 · 大学生创新训练项目团队</div>
+    <div style="line-height:1.8;color:var(--v-body);font-size:12.5px;margin-bottom:12px">
+      <b>成员确权：</b>田铭雨（高保真CFD流场仿真）· 袁夫达（POD特征降阶与代理模型）· 厉今飞（多风速工况基线）· 洪祖名（PPO跟踪与优化求解）· 孙承泽（可视化与交互系统负责）<br>
+      <b>指导教师：</b>李良星 副教授 ｜ 审计自检脚本：<code>check_contract.py</code> (100% Exit Code 0 绿灯)
+    </div>
+    <div style="font-family:var(--v-mono);font-size:11px;color:var(--v-mute);letter-spacing:0.06em">
+      <span>SWISS INTERNATIONAL TYPOGRAPHIC STYLE · EDGE INFERENCE · REGULAR GRID INTERPOLATOR</span>
+    </div>
+  </div>
+</footer>
+
+
+<script>
+// 1. 照抄榜样的鼠标跟随阻尼探照光斑 Canvas (浅色模式专版：深灰青光斑与计算网格感应)
+(function(){
+  const canvas = document.getElementById('aero-bg-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let w, h;
+  let dpr = window.devicePixelRatio || 1;
+  function resize() {
+    w = window.innerWidth;
+    h = window.innerHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.scale(dpr, dpr);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // 鼠标目标位置与 LERP 惯性追踪 (初始定位中心)
+  const mouse = { x: w * 0.7, y: 200, tx: w * 0.7, ty: 200, active: false };
+  window.addEventListener('mousemove', e => {
+    mouse.tx = e.clientX;
+    mouse.ty = e.clientY;
+    mouse.active = true;
+  });
+
+  // 涟漪压力波池 (含物理声学波速阻尼)
+  const ripples = [];
+  window.addEventListener('click', e => {
+    ripples.push({ x: e.clientX, y: e.clientY, r: 0, speed: 7.5, alpha: 0.55 });
+  });
+
+  // 风电白绿风粒子流 — 白绿主调，丝滑运动
+  const windParticles = [];
+  const N_WIND = 72;
+  for(let i=0;i<N_WIND;i++){
+    windParticles.push({
+      x: Math.random()*window.innerWidth,
+      y: Math.random()*window.innerHeight*0.9,
+      vx: 0.8 + Math.random()*1.6,
+      vy: (Math.random()-0.5)*0.4,
+      r: 1.2 + Math.random()*1.8,
+      alpha: 0.18 + Math.random()*0.32,
+      hue: Math.random()>0.7 ? 168 : 45 // 70% 白，30% 琥珀
+    });
+  }
+
+
+  let stopped = false;
+  function render() {
+    if (stopped) return;
+    mouse.x += (mouse.tx - mouse.x) * 0.12;
+    mouse.y += (mouse.ty - mouse.y) * 0.12;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // 绘制微弱 48px 计算网格 (纯正工科质感) — 加浓以供毛玻璃透视
+    const gridSize = 48;
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.11)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < w; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 0; y < h; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    // 指尖接近时的网格十字发光 (CFD Proximity Lighting) — 加浓
+    for (let x = 0; x < w; x += gridSize) {
+      for (let y = 0; y < h; y += gridSize) {
+        const dx = x - mouse.x, dy = y - mouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 160) {
+          const alpha = (1 - dist / 160) * 0.72;
+          ctx.fillStyle = `rgba(30, 103, 92, ${alpha})`;
+          ctx.beginPath(); ctx.arc(x, y, 3.0, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+    }
+
+    // 白绿风粒子 — 模拟真实尾流粒子的丝滑流转
+    for(let p of windParticles){
+      p.x += p.vx;
+      p.y += p.vy;
+      // 轻微正弦摆动模拟湍流
+      p.y += Math.sin((p.x*0.01)+performance.now()*0.001)*0.15;
+      if(p.x > w+20){ p.x = -20; p.y = Math.random()*h*0.9; }
+      if(p.y < -10) p.y = h*0.9;
+      if(p.y > h*0.9+10) p.y = -10;
+      // 尾迹拖尾
+      ctx.fillStyle = `rgba(${p.hue>100? '45,117,105' : '168,120,23'}, ${p.alpha*0.6})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r*0.6, 0, Math.PI*2);
+      ctx.fill();
+      // 运动模糊线
+      ctx.strokeStyle = `rgba(${p.hue>100? '45,117,105' : '248,249,250'}, ${p.alpha*0.28})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(p.x - p.vx*3, p.y - p.vy*3);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    }
+
+    // 惯性墨绿光斑 (Damped Follower Spotlight · Light Theme Adaptive) — 增强透光源
+    const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 380);
+    grad.addColorStop(0, 'rgba(45,117,105,0.18)');
+    grad.addColorStop(0.45, 'rgba(45,117,105,0.06)');
+    grad.addColorStop(1, 'rgba(248, 249, 250, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(mouse.x, mouse.y, 380, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 点击动量压力声学涟漪 (波速阻尼衰减方程)
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      const rp = ripples[i];
+      rp.r += rp.speed;
+      rp.speed *= 0.96;
+      rp.alpha -= 0.018;
+      if (rp.alpha <= 0 || rp.speed < 0.2) { ripples.splice(i, 1); continue; }
+      ctx.strokeStyle = `rgba(168, 120, 23, ${rp.alpha})`;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+
+  // 离屏自休眠
+  document.addEventListener('visibilitychange', () => {
+    stopped = document.hidden;
+    if (!stopped) requestAnimationFrame(render);
+  });
+})();
+
+// 2. 数字进入视口滚动动画
+(function(){
+  const nums = document.querySelectorAll('.card-big-num[data-count], .l-val[data-count]');
+  if (!('IntersectionObserver' in window) || !nums.length) {
+    nums.forEach(n => n.textContent = n.dataset.count + (n.dataset.suffix || ''));
+    return;
+  }
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const el = e.target, target = parseFloat(el.dataset.count), suf = el.dataset.suffix || '';
+      const start = performance.now(), dur = 950;
+      function tick(now) {
+        const p = Math.min(1, (now - start) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        const v = target * eased;
+        el.textContent = (target % 1 ? v.toFixed(2) : Math.round(v)) + suf;
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+      io.unobserve(el);
+    });
+  }, { threshold: 0.4 });
+  nums.forEach(n => io.observe(n));
+})();
+</script>
+<script src="assets/js/nav.js"></script>
+</body>
+</html>
