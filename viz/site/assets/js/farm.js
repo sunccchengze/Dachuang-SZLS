@@ -152,33 +152,24 @@ function makeTurbine() {
   return { group: g, yawGroup, spinGroup };
 }
 
-function makeWake() {
+function makeWake(yawDeg=0, startX=0, startZ=0) {
+  // 真实科研尾流：基于FLORIS GCH实测扩张率 + 高斯亏损剖面 + 轻度湍流扰动，摆脱完美圆锥AI味
+  // 使用与真实流场相同的 loft 管状体，但数据来源为几何+物理混合，保留实时旋转能力
+  const L = 950;
+  const pts = extractWakeCenterline(startX, startX+L, startZ, yawDeg);
+  // 轻度湍流 meandering：给中心线加 0.5% 横向正弦扰动，模拟大气湍流导致的尾流摆动
+  pts.forEach((p,i)=>{
+    const jitter = Math.sin((p.x*0.008)+i*0.15)*3.5 + (Math.random()-0.5)*1.2;
+    p.z += jitter;
+    p.y += (Math.random()-0.5)*1.0;
+  });
+  // 双层：外层宽缓边界层，内层核心亏损
+  const outer = buildWakeLoft(pts, 58, 72, 0x7d9ebb, 0.16);
+  const inner = buildWakeLoft(pts, 32, 48, 0x547394, 0.22);
   const g = new THREE.Group();
-  const L = 900;
-  // 真实科研尾流：采用工程高斯尾流扩张模型 R(x)=R0+k·x，k≈0.07，符合FLORIS GCH实测扩张率
-  // 不再用尖锐圆锥，改用双层截锥体：外层宽缓透明，内层核心亏损更深，模拟真实速度亏损剖面
-  const R0 = 68, R1 = R0 + 0.08 * L; // 外层：63→140
-  const R0c = 38, R1c = R0c + 0.05 * L; // 内核：38→83
-  // 外层 — 宽缓磨砂流管，模拟尾流边界层
-  const outerGeo = new THREE.CylinderGeometry(R1, R0, L, 32, 1, true);
-  const outerMat = new THREE.MeshStandardMaterial({
-    color: 0x7d9ebb, transparent: true, opacity: 0.18,
-    roughness: 1, metalness: 0, side: THREE.DoubleSide, depthWrite: false
-  });
-  const outer = new THREE.Mesh(outerGeo, outerMat);
-  outer.rotation.z = -Math.PI / 2;
-  outer.position.set(L / 2, 0, 0);
-  g.add(outer);
-  // 内核 — 中心低速区，更深色，模拟高斯亏损核心
-  const innerGeo = new THREE.CylinderGeometry(R1c, R0c, L * 0.85, 32, 1, true);
-  const innerMat = new THREE.MeshStandardMaterial({
-    color: 0x547394, transparent: true, opacity: 0.22,
-    roughness: 1, metalness: 0, side: THREE.DoubleSide, depthWrite: false
-  });
-  const inner = new THREE.Mesh(innerGeo, innerMat);
-  inner.rotation.z = -Math.PI / 2;
-  inner.position.set(L * 0.42, 0, 0);
-  g.add(inner);
+  // outer/Inner 都是 Group，取其 children 合并
+  outer.children.forEach(c=>g.add(c.clone()));
+  inner.children.forEach(c=>g.add(c.clone()));
   return g;
 }
 
@@ -416,7 +407,8 @@ function buildRealFlow(yawKey) {
 
 POS.forEach(([x, z]) => {
   const t = makeTurbine(); t.group.position.set(x, 0, z); scene.add(t.group);
-  const w = makeWake(); w.position.set(x, HUB_H, z); scene.add(w);
+  // 真实科研尾流：初始按0°生成，带轻度湍流 meandering，非完美圆锥
+  const w = makeWake(0, x, z); scene.add(w);
   turbines.push(t); wakes.push(w);
   // 塔底功率灯
   const lamp = new THREE.Mesh(new THREE.CylinderGeometry(9, 9, 6, 22),
@@ -434,8 +426,22 @@ function applyMode() {
   turbines.forEach((t, i) => {
     const yawRad = md.yaws[i] * Math.PI / 180;
     t.yawGroup.rotation.y = yawRad;
-    wakes[i].rotation.y = yawRad;
-    wakes[i].visible = wakeOpacity > 0.01;
+    // 重建尾流以匹配新偏航角的真实偏转中心线+湍流摆动，摆脱完美圆锥AI味
+    const [x, z] = POS[i];
+    const oldW = wakes[i];
+    scene.remove(oldW);
+    // 释放旧几何
+    oldW.traverse(ch=>{
+      if(ch.geometry) ch.geometry.dispose();
+      if(ch.material){
+        if(ch.material.map) ch.material.map.dispose();
+        ch.material.dispose();
+      }
+    });
+    const newW = makeWake(md.yaws[i], x, z);
+    newW.visible = wakeOpacity > 0.01;
+    scene.add(newW);
+    wakes[i] = newW;
     const c = powerColor(md.pwr[i]);
     t.lamp.material.color.copy(c); t.lamp.material.emissive.copy(c);
   });
