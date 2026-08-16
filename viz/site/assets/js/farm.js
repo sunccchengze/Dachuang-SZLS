@@ -154,16 +154,31 @@ function makeTurbine() {
 
 function makeWake() {
   const g = new THREE.Group();
-  const L = 820;
-  // 锥体：尖在左端(x=0，风机处)，宽口在右端(x=L，下游)。ConeGeometry 底面在 -y/2、尖在 +h/2，
-  // 绕 z 转 -90° 后：尖朝 -x(来流)，底面朝 +x(下游)，再平移 L/2 让尖位于 0。
-  const cone = new THREE.Mesh(new THREE.ConeGeometry(175, L, 40, 1, true),
-    new THREE.MeshStandardMaterial({
-      color: 0x6b8cae, transparent: true, opacity: 0.35,
-      roughness: 1, side: THREE.DoubleSide, depthWrite: false
-    }));
-  cone.rotation.z = -Math.PI / 2; cone.position.set(L / 2, 0, 0);
-  g.add(cone);
+  const L = 900;
+  // 真实科研尾流：采用工程高斯尾流扩张模型 R(x)=R0+k·x，k≈0.07，符合FLORIS GCH实测扩张率
+  // 不再用尖锐圆锥，改用双层截锥体：外层宽缓透明，内层核心亏损更深，模拟真实速度亏损剖面
+  const R0 = 68, R1 = R0 + 0.08 * L; // 外层：63→140
+  const R0c = 38, R1c = R0c + 0.05 * L; // 内核：38→83
+  // 外层 — 宽缓磨砂流管，模拟尾流边界层
+  const outerGeo = new THREE.CylinderGeometry(R1, R0, L, 32, 1, true);
+  const outerMat = new THREE.MeshStandardMaterial({
+    color: 0x7d9ebb, transparent: true, opacity: 0.18,
+    roughness: 1, metalness: 0, side: THREE.DoubleSide, depthWrite: false
+  });
+  const outer = new THREE.Mesh(outerGeo, outerMat);
+  outer.rotation.z = -Math.PI / 2;
+  outer.position.set(L / 2, 0, 0);
+  g.add(outer);
+  // 内核 — 中心低速区，更深色，模拟高斯亏损核心
+  const innerGeo = new THREE.CylinderGeometry(R1c, R0c, L * 0.85, 32, 1, true);
+  const innerMat = new THREE.MeshStandardMaterial({
+    color: 0x547394, transparent: true, opacity: 0.22,
+    roughness: 1, metalness: 0, side: THREE.DoubleSide, depthWrite: false
+  });
+  const inner = new THREE.Mesh(innerGeo, innerMat);
+  inner.rotation.z = -Math.PI / 2;
+  inner.position.set(L * 0.42, 0, 0);
+  g.add(inner);
   return g;
 }
 

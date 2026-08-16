@@ -156,7 +156,11 @@
       position: relative;
       overflow: hidden;
       border-bottom: 1px solid var(--v-line);
-      background: var(--v-bg);
+      background:
+        radial-gradient(1200px 620px at 78% -12%, rgba(45,117,105,0.18), transparent 62%),
+        radial-gradient(900px 520px at -8% 28%, rgba(168,120,23,0.13), transparent 58%),
+        radial-gradient(860px 480px at 108% 76%, rgba(30,41,59,0.08), transparent 62%),
+        var(--v-bg);
     }
     #aero-bg-canvas {
       position: absolute;
@@ -292,19 +296,43 @@
     }
     .btn-link:hover { color: var(--v-ink); }
 
-    /* Hero 右侧：精密终端 — 毛玻璃模糊透明 (不改背景，只卡片本身玻璃化) */
+    /* Hero 右侧：精密终端 — 真毛玻璃透光 (True Frosted Glass) */
     .terminal-panel {
       position: relative;
-      background: rgba(255,255,255,0.48);
-      -webkit-backdrop-filter: blur(16px);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.66);
-      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.82);
+      background: rgba(255,255,255,0.38);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      backdrop-filter: blur(28px) saturate(180%);
+      border-radius: 16px;
       overflow: hidden;
       box-shadow:
-        0 8px 24px rgba(30,41,59,0.08),
-        0 1px 0 rgba(255,255,255,0.80) inset;
+        0 20px 56px rgba(30,41,59,0.14),
+        0 2px 12px rgba(30,41,59,0.06),
+        0 1px 0 rgba(255,255,255,0.92) inset,
+        0 0 0 1px rgba(255,255,255,0.6) inset;
     }
+    .terminal-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.12) 100%),
+        radial-gradient(70% 45% at 22% 0%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 60%),
+        radial-gradient(55% 50% at 88% 100%, rgba(45,117,105,0.14) 0%, rgba(255,255,255,0) 70%);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.9;
+    }
+    .terminal-panel::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 12%; right: 12%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.92), transparent);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .terminal-panel > * { position: relative; z-index: 1; }
     @keyframes topPulse {
       0%, 100% { opacity: 0.85; background-position: 0% 50%; }
       50% { opacity: 1; background-position: 100% 50%; }
@@ -317,13 +345,13 @@
     }
     .terminal-header {
       padding: 14px 20px;
-      border-bottom: 1px solid rgba(30,41,59,0.07);
+      border-bottom: 1px solid rgba(255,255,255,0.68);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(255,255,255,0.36);
-      -webkit-backdrop-filter: blur(10px);
-      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,0.32);
+      -webkit-backdrop-filter: blur(18px) saturate(170%);
+      backdrop-filter: blur(18px) saturate(170%);
     }
     .terminal-title {
       font: 11px var(--v-mono);
@@ -345,14 +373,18 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1px;
-      background: rgba(30,41,59,0.07);
-      border-bottom: 1px solid rgba(30,41,59,0.06);
+      background: rgba(30,41,59,0.11);
+      border-bottom: 1px solid rgba(255,255,255,0.55);
     }
     .terminal-metric-item {
-      background: rgba(255,255,255,0.40);
-      -webkit-backdrop-filter: blur(8px);
-      backdrop-filter: blur(8px);
+      background: rgba(255,255,255,0.34);
+      -webkit-backdrop-filter: blur(12px) saturate(165%);
+      backdrop-filter: blur(12px) saturate(165%);
       padding: 16px 20px;
+      transition: background 0.28s cubic-bezier(0.16,1,0.3,1);
+    }
+    .terminal-metric-item:hover {
+      background: rgba(255,255,255,0.58);
     }
     .m-label {
       color: var(--v-mute);
@@ -379,12 +411,12 @@
       margin-top: 4px;
     }
 
-    /* 科研证据链表 */
+    /* 科研证据链表 — 真透光底层 */
     .pipeline-wrap {
       padding: 18px 20px;
-      background: rgba(255,255,255,0.32);
-      -webkit-backdrop-filter: blur(8px);
-      backdrop-filter: blur(8px);
+      background: rgba(255,255,255,0.30);
+      -webkit-backdrop-filter: blur(18px) saturate(165%);
+      backdrop-filter: blur(18px) saturate(165%);
     }
     .pipeline-header {
       color: var(--v-mute);
@@ -468,12 +500,16 @@
      *    完全解决：文字溢出边界、局促折行问题，提供极充裕的文字与表格展示宽度！
      */
     .ledger-strip {
-      border-top: 1px solid var(--v-line-strong);
-      border-bottom: 1px solid var(--v-line-strong);
-      background: #ffffff;
+      border: 1px solid rgba(255,255,255,0.68);
+      background: rgba(255,255,255,0.56);
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      margin: 0;
+      grid-template-columns: 1.6fr 1fr 1fr 1fr;
+      margin: 0 0 32px 0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(30,41,59,0.06), 0 1px 0 rgba(255,255,255,0.8) inset;
     }
     .ledger-col {
       padding: 36px 32px;
@@ -614,7 +650,7 @@
     }
     .dir-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: 1.6fr 1fr 1fr 1fr;
       gap: 16px;
     }
     .dir-card {
@@ -789,9 +825,7 @@
       <a href="3d_farm.html" data-nav-code="11" data-nav-name="3D风场"><i>11</i>3D风场</a>
       <a href="3d_surface.html" data-nav-code="12" data-nav-name="3D曲面"><i>12</i>3D曲面</a>
       <a href="3d_volume.html" data-nav-code="13" data-nav-name="3D体"><i>13</i>3D体</a>
-      <a href="interface.html" data-nav-code="14" data-nav-name="契约"><i>14</i>契约</a>
-      <a href="aerodynamic_demo.html" data-nav-code="15" data-nav-name="流线演示"><i>15</i>流线</a>
-      <a href="overview.html" data-nav-code="MAP" data-nav-name="系统总览"><i>MAP</i>总览</a>
+      <a href="interface.html" data-nav-code="14" data-nav-name="契约"><i>14</i>契约</a>      <a href="overview.html" data-nav-code="MAP" data-nav-name="系统总览"><i>MAP</i>总览</a>
     </div></div>
   </div>
 </nav>
@@ -1144,7 +1178,7 @@
           <div class="dir-card-link"><span>LAUNCH MODULE</span><span class="dir-card-arrow">→</span></div>
         </a>
       </div>
-      <div class="dir-grid" style="margin-top:16px;grid-template-columns:repeat(4, 1fr)">
+      <div class="dir-grid" style="margin-top:16px;grid-template-columns: 1.6fr 1fr 1fr 1fr">
         <a href="windrose.html" class="dir-card">
           <div>
             <div class="dir-card-idx">09 / WINDROSE & AEP</div>
@@ -1274,6 +1308,22 @@
     ripples.push({ x: e.clientX, y: e.clientY, r: 0, speed: 7.5, alpha: 0.55 });
   });
 
+  // 风电白绿风粒子流 — 白绿主调，丝滑运动
+  const windParticles = [];
+  const N_WIND = 72;
+  for(let i=0;i<N_WIND;i++){
+    windParticles.push({
+      x: Math.random()*window.innerWidth,
+      y: Math.random()*window.innerHeight*0.9,
+      vx: 0.8 + Math.random()*1.6,
+      vy: (Math.random()-0.5)*0.4,
+      r: 1.2 + Math.random()*1.8,
+      alpha: 0.18 + Math.random()*0.32,
+      hue: Math.random()>0.7 ? 168 : 45 // 70% 白，30% 琥珀
+    });
+  }
+
+
   let stopped = false;
   function render() {
     if (stopped) return;
@@ -1282,9 +1332,9 @@
 
     ctx.clearRect(0, 0, w, h);
 
-    // 绘制微弱 48px 计算网格 (纯正工科质感)
+    // 绘制微弱 48px 计算网格 (纯正工科质感) — 加浓以供毛玻璃透视
     const gridSize = 48;
-    ctx.strokeStyle = 'rgba(30, 41, 59, 0.055)';
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.11)';
     ctx.lineWidth = 1;
     for (let x = 0; x < w; x += gridSize) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
@@ -1293,26 +1343,51 @@
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
 
-    // 指尖接近时的网格十字发光 (CFD Proximity Lighting)
+    // 指尖接近时的网格十字发光 (CFD Proximity Lighting) — 加浓
     for (let x = 0; x < w; x += gridSize) {
       for (let y = 0; y < h; y += gridSize) {
         const dx = x - mouse.x, dy = y - mouse.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 130) {
-          const alpha = (1 - dist / 130) * 0.45;
+        if (dist < 160) {
+          const alpha = (1 - dist / 160) * 0.72;
           ctx.fillStyle = `rgba(30, 103, 92, ${alpha})`;
-          ctx.beginPath(); ctx.arc(x, y, 2.2, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(x, y, 3.0, 0, Math.PI * 2); ctx.fill();
         }
       }
     }
 
-    // 惯性墨绿光斑 (Damped Follower Spotlight · Light Theme Adaptive)
-    const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 280);
-    grad.addColorStop(0, 'rgba(30, 103, 92, 0.08)');
+    // 白绿风粒子 — 模拟真实尾流粒子的丝滑流转
+    for(let p of windParticles){
+      p.x += p.vx;
+      p.y += p.vy;
+      // 轻微正弦摆动模拟湍流
+      p.y += Math.sin((p.x*0.01)+performance.now()*0.001)*0.15;
+      if(p.x > w+20){ p.x = -20; p.y = Math.random()*h*0.9; }
+      if(p.y < -10) p.y = h*0.9;
+      if(p.y > h*0.9+10) p.y = -10;
+      // 尾迹拖尾
+      ctx.fillStyle = `rgba(${p.hue>100? '45,117,105' : '168,120,23'}, ${p.alpha*0.6})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r*0.6, 0, Math.PI*2);
+      ctx.fill();
+      // 运动模糊线
+      ctx.strokeStyle = `rgba(${p.hue>100? '45,117,105' : '248,249,250'}, ${p.alpha*0.28})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(p.x - p.vx*3, p.y - p.vy*3);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    }
+
+    // 惯性墨绿光斑 (Damped Follower Spotlight · Light Theme Adaptive) — 增强透光源
+    const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 380);
+    grad.addColorStop(0, 'rgba(45,117,105,0.18)');
+    grad.addColorStop(0.45, 'rgba(45,117,105,0.06)');
     grad.addColorStop(1, 'rgba(248, 249, 250, 0)');
     ctx.fillStyle = grad;
+    ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.arc(mouse.x, mouse.y, 280, 0, Math.PI * 2);
+    ctx.arc(mouse.x, mouse.y, 380, 0, Math.PI * 2);
     ctx.fill();
 
     // 点击动量压力声学涟漪 (波速阻尼衰减方程)
