@@ -157,9 +157,9 @@
       overflow: hidden;
       border-bottom: 1px solid var(--v-line);
       background:
-        radial-gradient(1200px 620px at 78% -12%, rgba(45,117,105,0.18), transparent 62%),
-        radial-gradient(900px 520px at -8% 28%, rgba(168,120,23,0.13), transparent 58%),
-        radial-gradient(860px 480px at 108% 76%, rgba(30,41,59,0.08), transparent 62%),
+        radial-gradient(1200px 620px at 78% -12%, rgba(45,117,105,0.28), transparent 62%),
+        radial-gradient(900px 520px at -8% 28%, rgba(168,120,23,0.22), transparent 58%),
+        radial-gradient(860px 480px at 108% 76%, rgba(30,41,59,0.12), transparent 62%),
         var(--v-bg);
     }
     #aero-bg-canvas {
@@ -299,14 +299,14 @@
     /* Hero 右侧：精密终端 — 真毛玻璃透光 (True Frosted Glass) */
     .terminal-panel {
       position: relative;
-      border: 1px solid rgba(255,255,255,0.82);
-      background: rgba(255,255,255,0.38);
-      -webkit-backdrop-filter: blur(28px) saturate(180%);
-      backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.92);
+      background: rgba(255,255,255,0.58);
+      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      backdrop-filter: blur(22px) saturate(180%);
       border-radius: 16px;
       overflow: hidden;
       box-shadow:
-        0 20px 56px rgba(30,41,59,0.14),
+        0 20px 56px rgba(30,41,59,0.18),
         0 2px 12px rgba(30,41,59,0.06),
         0 1px 0 rgba(255,255,255,0.92) inset,
         0 0 0 1px rgba(255,255,255,0.6) inset;
@@ -433,7 +433,7 @@
       gap: 12px;
       padding: 10px 0;
       align-items: center;
-      border-bottom: 1px solid rgba(30,41,59,0.08);
+      border-bottom: 1px solid rgba(30,41,59,0.12);
     }
     .pipeline-step:last-child { border-bottom: none; }
     .step-idx {
@@ -501,11 +501,11 @@
      */
     .ledger-strip {
       border: 1px solid rgba(255,255,255,0.68);
-      background: rgba(255,255,255,0.56);
+      background: rgba(255,255,255,0.68);
       -webkit-backdrop-filter: blur(16px);
       backdrop-filter: blur(16px);
       display: grid;
-      grid-template-columns: 1.6fr 1fr 1fr 1fr;
+      grid-template-columns: 1.8fr 1fr 1fr 1fr;
       margin: 0 0 32px 0;
       border-radius: 12px;
       overflow: hidden;
@@ -1310,15 +1310,15 @@
 
   // 风电白绿风粒子流 — 白绿主调，丝滑运动
   const windParticles = [];
-  const N_WIND = 72;
+  const N_WIND = 120;
   for(let i=0;i<N_WIND;i++){
     windParticles.push({
       x: Math.random()*window.innerWidth,
       y: Math.random()*window.innerHeight*0.9,
-      vx: 0.8 + Math.random()*1.6,
+      vx: 1.5 + Math.random()*2.5,
       vy: (Math.random()-0.5)*0.4,
-      r: 1.2 + Math.random()*1.8,
-      alpha: 0.18 + Math.random()*0.32,
+      r: 2.2 + Math.random()*2.8,
+      alpha: 0.42 + Math.random()*0.38,
       hue: Math.random()>0.7 ? 168 : 45 // 70% 白，30% 琥珀
     });
   }
@@ -1335,7 +1335,7 @@
     // 绘制微弱 48px 计算网格 (纯正工科质感) — 加浓以供毛玻璃透视
     const gridSize = 48;
     ctx.strokeStyle = 'rgba(30, 41, 59, 0.11)';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.8;
     for (let x = 0; x < w; x += gridSize) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
     }
@@ -1366,13 +1366,13 @@
       if(p.y < -10) p.y = h*0.9;
       if(p.y > h*0.9+10) p.y = -10;
       // 尾迹拖尾
-      ctx.fillStyle = `rgba(${p.hue>100? '45,117,105' : '168,120,23'}, ${p.alpha*0.6})`;
+      ctx.fillStyle = `rgba(${p.hue>100? '45,117,105' : '168,120,23'}, ${p.alpha*0.85})`;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r*0.6, 0, Math.PI*2);
       ctx.fill();
       // 运动模糊线
-      ctx.strokeStyle = `rgba(${p.hue>100? '45,117,105' : '248,249,250'}, ${p.alpha*0.28})`;
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(${p.hue>100? '45,117,105' : '248,249,250'}, ${p.alpha*0.55})`;
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
       ctx.moveTo(p.x - p.vx*3, p.y - p.vy*3);
       ctx.lineTo(p.x, p.y);
@@ -1381,7 +1381,7 @@
 
     // 惯性墨绿光斑 (Damped Follower Spotlight · Light Theme Adaptive) — 增强透光源
     const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 380);
-    grad.addColorStop(0, 'rgba(45,117,105,0.18)');
+    grad.addColorStop(0, 'rgba(45,117,105,0.28)');
     grad.addColorStop(0.45, 'rgba(45,117,105,0.06)');
     grad.addColorStop(1, 'rgba(248, 249, 250, 0)');
     ctx.fillStyle = grad;
