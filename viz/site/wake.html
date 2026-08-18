@@ -9,30 +9,30 @@
   <script src="assets/js/plotly-theme.js"></script>
   <style>
     /* 
-     * 彻彻底底对标  + Taste-Skill 浅色学术工作台设计系统 (Light Mode)
+     * 彻彻底底对标 Vercel + Taste-Skill 浅色学术工作台设计系统 (Light Mode)
      * 一体化科研主板容器 (.v-workbench-panel) ➕ 极细发丝网格 ➕ 等线/宋体黑分流 ➕ 零孤行与零横线灾难
      */
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
     :root {
-      --v-bg: #fafafa;          /*  Canvas - near-white */
-      --v-bg-soft: #ffffff;     /* Elevated */
-      --v-bg-subtle: #f6f9fc;   /* Secondary surface */
-      --v-panel: #ffffff;       /* Pure white card */
-      --v-panel-hover: #ffffff;
-      --v-ink: #171717;         /* Ink - near-black */
-      --v-body: #4d4d4d;        /* Body - standard paragraph */
-      --v-mute: #8f8f8f;        /* Mute - captions */
-      --v-faint: #a0a0a0;
-      --v-line: #ebebeb;        /* Hairline 1px */
-      --v-line-strong: #d4d4d4;
-      --v-teal: #1e675c;        /* White-green main accent retained */
-      --v-teal-bright: #1e675c;
-      --v-yellow: #7928ca;      /* Violet accent */
-      --v-rust: #ff0080;        /* Pink accent */
-      --v-mono: 'Geist Mono','DM Mono', ui-monospace, monospace;
-      --v-display: 'Geist','Space Grotesk', -apple-system, sans-serif;
-      --v-body-font: 'Geist','Manrope', -apple-system, sans-serif;
+      --v-bg: #f8f9fa;          /* 莫兰迪米白工程纸灰绿底 */
+      --v-bg-soft: #f1f3f5;     /* 面板亚光白灰 */
+      --v-bg-subtle: #e9ecef;   /* 分隔底灰 */
+      --v-panel: #ffffff;       /* 纯白几何板点 */
+      --v-panel-hover: #fcfdfe; /* 丝滑悬浮反光白 */
+      --v-ink: #1e293b;         /* 钛灰深黑墨水主字 */
+      --v-body: #334155;        /* 正文字色 */
+      --v-mute: #64748b;        /* 二级文字与注释 */
+      --v-faint: #94a3b8;       /* 辅助线及底标文本 */
+      --v-line: rgba(30, 41, 59, 0.11);
+      --v-line-strong: rgba(30, 41, 59, 0.22);
+      --v-teal: #2d7569;
+      --v-teal-bright: #1e675c; /* 高饱和深海钛绿高亮 */
+      --v-yellow: #a87817;      /* 暖琥珀金 */
+      --v-rust: #ad5038;        /* 铁砖红阶灰 */
+      --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", monospace;
+      --v-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC Black", "Songti SC", "STSong", "STZhongsong", "SimSun", "宋体-简", serif;
+      --v-body-font: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", sans-serif;
       color-scheme: light;
     }
 
@@ -94,7 +94,7 @@
       color: var(--v-teal-bright);
       padding: 3px 8px;
       border: 1px solid var(--v-line-strong);
-      border-radius: 6px;
+      border-radius: 3px;
       background: var(--v-bg-soft);
       font-weight: 700;
     }
@@ -142,7 +142,7 @@
     .v-workbench-panel {
       background: #ffffff;
       border: 1px solid var(--v-line-strong);
-      border-radius: 12px;
+      border-radius: 4px;
       overflow: hidden;
       margin-bottom: 36px;
     }
@@ -300,7 +300,7 @@
       padding: 8px 16px;
       background: var(--v-bg-soft);
       border: 1px solid var(--v-line-strong);
-      border-radius: 9999px;
+      border-radius: 3px;
       color: var(--v-ink);
       cursor: pointer;
       transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -328,8 +328,8 @@
     .v-plots-container {
       background: #ffffff;
       border: 1px solid var(--v-line-strong);
-      border-radius: 12px;
-      padding: 24px 24px;
+      border-radius: 4px;
+      padding: 28px 32px;
       margin-bottom: 48px;
     }
     .grid-plots {
