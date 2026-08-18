@@ -1,48 +1,59 @@
-/* Plotly light Morandi theme + 全局配色令牌 */
+/* 全站 Plotly 精密浅色主题：与尾流页灰阶和本地 Geist 字体同源。 */
 (function () {
-  // 同步 css/style.css :root 的设计令牌，供各页面统一引用
   window.WF = {
-    bg: "#f1ede6", plotBg: "#f6f3ec", card: "#fbfaf6",
-    txt: "#3b3f46", sub: "#73787f", grid: "#e2dccf", axis: "#b9b2a3",
-    blue: "#6b8cae", blueDeep: "#547394", blueSoft: "#9db1c7",
-    sage: "#8aa17a", sageDeep: "#6f8761",
-    clay: "#b08968", lavender: "#8e88a6", gold: "#c2a86b", rose: "#b98484"
+    bg: "#fafafa", plotBg: "#ffffff", card: "#ffffff",
+    txt: "#171717", sub: "#4d4d4d", grid: "#ebebeb", axis: "#a1a1a1",
+    blue: "#0070f3", blueDeep: "#0761d1", blueSoft: "#d3e5ff",
+    sage: "#66c2a4", sageDeep: "#276c55",
+    clay: "#ab570a", lavender: "#7928ca", gold: "#f5a623", rose: "#c50000"
   };
 
-  // 坐标轴/版式默认（浅底深字）
   window.PD = {
     paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: WF.plotBg,
-    font: { color: WF.txt, family: '"SF Pro Display","Inter",-apple-system,"PingFang SC","Noto Sans SC",sans-serif', size: 12 },
+    font: {
+      color: WF.txt,
+      family: '"Geist","DengXian","等线","PingFang SC","Microsoft YaHei",sans-serif',
+      size: 12
+    },
     margin: { l: 55, r: 20, t: 15, b: 45 },
-    legend: { orientation: "h", y: -0.18, x: 0, font: { size: 11, color: WF.sub }, bgcolor: "rgba(0,0,0,0)" },
-    hoverlabel: { bgcolor: WF.card, bordercolor: WF.axis, font: { color: WF.txt, size: 12 } }
+    legend: {
+      orientation: "h", y: -0.18, x: 0,
+      font: { size: 11, color: WF.sub }, bgcolor: "rgba(0,0,0,0)"
+    },
+    hoverlabel: {
+      bgcolor: "#171717", bordercolor: "#171717",
+      font: { color: "#ffffff", size: 12 }
+    }
   };
-  window.PAx = { color: WF.sub, gridcolor: WF.grid, linecolor: WF.axis, zerolinecolor: WF.axis, tickfont: { color: WF.sub, size: 11 }, title: { font: { color: WF.txt, size: 12 } } };
+  window.PAx = {
+    color: WF.sub, gridcolor: WF.grid, linecolor: WF.axis, zerolinecolor: WF.axis,
+    tickfont: { color: WF.sub, size: 11 }, title: { font: { color: WF.sub, size: 12 } }
+  };
 
-  // 连续色：米杏 → 雾蓝（用于速度场/热力，低饱和）
+  // 精密浅色蓝阶：用于非速度场的连续量。
   window.BlueSeq = [
-    [0, "#ece3d2"], [0.2, "#c7d2df"], [0.4, "#9fb6cc"],
-    [0.6, "#7d9ebb"], [0.8, "#5f85a8"], [1, "#466b8c"]
+    [0, "#f5f9ff"], [0.2, "#d3e5ff"], [0.4, "#9bc5ff"],
+    [0.6, "#5aa0f8"], [0.8, "#1877d8"], [1, "#0758a8"]
   ];
-  // 热力增益：浅陶 → 雾蓝 → 鼠尾草
   window.BlueSeqMid = [
-    [0, "#e7ddd0"], [0.5, "#9fb6cc"], [1, "#6f8761"]
+    [0, "#f5f9ff"], [0.5, "#8fc9ba"], [1, "#276c55"]
   ];
-  // 速度场云图：低速暖米 → 高速雾蓝（莫兰迪、投影可辨）
+
+  // ColorBrewer BuGn 9-class reversed。低速尾流用森林绿，高速清洁来流用浅薄荷。
   window.FieldSeq = [
-    [0, "#e8dfd0"], [0.25, "#cfc6b4"], [0.5, "#a9bdcf"],
-    [0.75, "#7d9ebb"], [1, "#547394"]
+    [0.000, "#00441b"], [0.125, "#006d2c"], [0.250, "#238b45"],
+    [0.375, "#41ae76"], [0.500, "#66c2a4"], [0.625, "#99d8c9"],
+    [0.750, "#ccece6"], [0.875, "#e5f5f9"], [1.000, "#f7fcfd"]
   ];
-  // 增益热力图：0% 浅米 → 中雾蓝 → 深雾蓝（纯正值顺序色阶，保证在白底上每一档都可见）
+
+  // 正增益为顺序量，使用白到深蓝；零值不会被误读成负值。
   window.GainSeq = [
-    [0, "#f0e9dc"], [0.25, "#c2d1e0"], [0.5, "#84a4c2"],
-    [0.75, "#547394"], [1, "#3a5470"]
+    [0, "#f5f9ff"], [0.25, "#d3e5ff"], [0.5, "#8bbcff"],
+    [0.75, "#3d8dea"], [1, "#0758a8"]
   ];
-  // 3D 体渲染蓝白色系：低速（尾流核心）乳白 → 高速背景深蓝
-  window.VolumeSeq = [
-    [0, "#f4f1ea"], [0.25, "#d6e0ea"], [0.5, "#a9c2d8"],
-    [0.75, "#6f93b5"], [1, "#3a5470"]
-  ];
+
+  // 体渲染沿用同一低饱和绿阶，避免二维、三维速度语义分裂。
+  window.VolumeSeq = window.FieldSeq.slice();
 
   WF.FieldSeq = window.FieldSeq;
   WF.GainSeq = window.GainSeq;
@@ -50,7 +61,6 @@
   WF.BlueSeqMid = window.BlueSeqMid;
   WF.VolumeSeq = window.VolumeSeq;
 
-  // 浅底深度合并工具
   function ml(o) {
     var b = JSON.parse(JSON.stringify({
       paper_bgcolor: PD.paper_bgcolor, plot_bgcolor: PD.plot_bgcolor,
@@ -60,15 +70,17 @@
     (function d(t, s) {
       for (var k in s) {
         if (typeof s[k] === "object" && s[k] && !Array.isArray(s[k])) {
-          t[k] = t[k] || {}; d(t[k], s[k]);
-        } else t[k] = s[k];
+          t[k] = t[k] || {};
+          d(t[k], s[k]);
+        } else {
+          t[k] = s[k];
+        }
       }
     })(b, o);
     return b;
   }
   window.ml = ml;
 
-  // pr(id, traces, layout, cfg) — 统一应用主题
   window.pr = function (id, tr, ly, cfg) {
     Plotly.newPlot(id, tr, ml(ly), Object.assign({
       responsive: true, displayModeBar: "hover",

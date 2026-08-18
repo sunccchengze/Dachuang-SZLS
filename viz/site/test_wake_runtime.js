@@ -98,6 +98,9 @@ assert(text('kGain') === '+8.13%', `+25° 增益错误：${text('kGain')}`);
 assert(text('causePill').includes('离散最优 +25°'), `最优状态文案错误：${text('causePill')}`);
 assert(latestPlot('fieldPlot').traces[0].z.length === 32, '速度场降采样行数应为 32');
 assert(latestPlot('fieldPlot').traces[0].z[0].length === 64, '速度场降采样列数应为 64');
+assert(latestPlot('fieldPlot').traces[0].colorscale[0][1] === '#00441b', '低速端应为森林绿');
+assert(latestPlot('fieldPlot').traces[0].colorscale.at(-1)[1] === '#f7fcfd', '高速端应为浅薄荷');
+assert(['fieldPlot', 'powerPlot', 'splitPlot'].every(id => latestPlot(id).layout.height === 330), '三张动态图高度应统一为 330px');
 assert(latestPlot('splitPlot').layout.legend.y === 1.18, '功率分解图例未处于顶部安全区');
 
 console.log('wake runtime: 0° and +25° data/plots passed');

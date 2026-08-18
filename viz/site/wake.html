@@ -504,6 +504,7 @@
       *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
     }
   </style>
+  <link rel="stylesheet" href="css/unified-glass.css">
 </head>
 <body>
 <nav class="t-nav">
@@ -615,8 +616,8 @@
         <div class="plot-name">轮毂高度水平速度场</div>
         <div class="plot-meta">128 × 64 原始网格 / 前端 64 × 32 降采样</div>
       </div>
-      <div class="plot-body"><div id="fieldPlot" style="height:460px"></div></div>
-      <div class="plot-caption">FLORIS 4.6.6 GCH，来流 8 m/s，湍流强度 6%。颜色表示绝对风速，风机位置和当前偏航角随滑块同步更新。</div>
+      <div class="plot-body"><div id="fieldPlot" style="height:330px"></div></div>
+      <div class="plot-caption">FLORIS 4.6.6 GCH，来流 8 m/s，湍流强度 6%。采用低饱和 BuGn 顺序色阶：低速尾流为森林绿，高速清洁来流逐步过渡至浅薄荷色。</div>
     </article>
 
     <div class="plot-pair">
@@ -625,7 +626,7 @@
           <div class="plot-name">两机总功率响应</div>
           <div class="plot-meta">P₁ + P₂</div>
         </div>
-        <div class="plot-body"><div id="powerPlot" style="height:300px"></div></div>
+        <div class="plot-body"><div id="powerPlot" style="height:330px"></div></div>
         <div class="plot-caption">总功率在 +25°达到离散峰值 2368.40 kW，相对 0°基准增加 8.13%。</div>
       </article>
       <article class="plot-card">
@@ -633,7 +634,7 @@
           <div class="plot-name">上游让利与下游回升</div>
           <div class="plot-meta">P₁ / P₂ 分解</div>
         </div>
-        <div class="plot-body"><div id="splitPlot" style="height:300px"></div></div>
+        <div class="plot-body"><div id="splitPlot" style="height:330px"></div></div>
         <div class="plot-caption">+25°时上游 P₁下降约 16.8%，下游 P₂上升约 108.4%，净效应为全场增益。</div>
       </article>
     </div>
@@ -689,6 +690,13 @@
   const sans = '"Geist","DengXian","等线","PingFang SC","Microsoft YaHei",sans-serif';
   const mono = '"Geist Mono","DengXian","等线","PingFang SC","Microsoft YaHei",monospace';
   const config = { responsive: true, displayModeBar: false };
+  // ColorBrewer BuGn 9-class reversed: low-speed wake is forest green, clean inflow is pale mint.
+  const fieldScale = [
+    [0.000, '#00441b'], [0.125, '#006d2c'], [0.250, '#238b45'],
+    [0.375, '#41ae76'], [0.500, '#66c2a4'], [0.625, '#99d8c9'],
+    [0.750, '#ccece6'], [0.875, '#e5f5f9'], [1.000, '#f7fcfd']
+  ];
+  const chartHeight = 330;
   const axis = {
     color: '#4d4d4d', gridcolor: '#ebebeb', linecolor: '#a1a1a1',
     zerolinecolor: '#a1a1a1', tickfont: { family: mono, size: 11, color: '#4d4d4d' },
@@ -776,7 +784,7 @@
       Plotly.react('fieldPlot', [
         {
           type: 'heatmap', x: field.x, y: field.y, z: field.u,
-          colorscale: 'Viridis', zmin: 4, zmax: 9,
+          colorscale: fieldScale, zmin: 4, zmax: 9,
           colorbar: { title: { text: 'm/s', side: 'right', font: { family: mono, size: 11 } }, thickness: 12, len: .78, x: 1.01 },
           hovertemplate: 'x=%{x:.0f} m<br>y=%{y:.0f} m<br>u=%{z:.2f} m/s<extra></extra>'
         },
@@ -788,8 +796,8 @@
           showlegend: false, hoverinfo: 'skip'
         }
       ], Object.assign({}, baseLayout, {
-        height: 460,
-        margin: { l: 58, r: 72, t: 22, b: 50 },
+        height: chartHeight,
+        margin: { l: 48, r: 54, t: 18, b: 46 },
         xaxis: Object.assign({}, axis, { title: { text: '顺风方向 x（m）', font: axis.title.font } }),
         yaxis: Object.assign({}, axis, { title: { text: '横向 y（m）', font: axis.title.font }, range: [-300, 300] })
       }), { responsive: true, displayModeBar: 'hover', modeBarButtonsToRemove: ['lasso2d', 'select2d'] });
@@ -810,8 +818,8 @@
         marker: { size: 11, color: '#171717', line: { color: '#fff', width: 2 } }
       }
     ], Object.assign({}, baseLayout, {
-      height: 300,
-      margin: { l: 58, r: 18, t: 42, b: 50 },
+      height: chartHeight,
+      margin: { l: 50, r: 14, t: 42, b: 46 },
       xaxis: Object.assign({}, axis, { title: { text: '上游偏航角 γ₁（°）', font: axis.title.font } }),
       yaxis: Object.assign({}, axis, { title: { text: '总功率（kW）', font: axis.title.font } }),
       legend: { orientation: 'h', y: 1.18, x: .5, xanchor: 'center', font: { family: sans, size: 11 } }
@@ -833,8 +841,8 @@
         line: { color: '#171717', width: 1, dash: 'dot' }, showlegend: false, hoverinfo: 'skip'
       }
     ], Object.assign({}, baseLayout, {
-      height: 300,
-      margin: { l: 58, r: 18, t: 42, b: 50 },
+      height: chartHeight,
+      margin: { l: 50, r: 14, t: 42, b: 46 },
       xaxis: Object.assign({}, axis, { title: { text: '上游偏航角 γ₁（°）', font: axis.title.font } }),
       yaxis: Object.assign({}, axis, { title: { text: '单机功率（kW）', font: axis.title.font } }),
       legend: { orientation: 'h', y: 1.18, x: .5, xanchor: 'center', font: { family: sans, size: 11 } }

@@ -99,6 +99,9 @@ def main():
             if not target.exists():
                 errors.append(f"{path.name} 的 {tag}[{attr}] 死链：{ref}")
 
+        if path.name in CORE_PAGES + ["index_v2.html"] and 'css/unified-glass.css' not in content:
+            errors.append(f"{path.name} 未加载全站精密玻璃母版")
+
         for text, reason in BANNED_TEXT.items():
             if text in content:
                 errors.append(f"{path.name} 含 {reason}：{text}")
@@ -161,12 +164,16 @@ def main():
             if not (path.parent / clean_ref(ref)).resolve().exists():
                 errors.append(f"{path.relative_to(SITE)} 的 url() 死链：{ref}")
 
-    # 尾流页必须保持“控制在上、动态图居中、Nature 图沉底”。
+    # 尾流页必须保持“控制在上、三张动态图同排、Nature 图沉底”。
     wake = (SITE / "wake.html").read_text(encoding="utf-8")
     order_tokens = ['id="yawSlider"', 'id="fieldPlot"', 'fig1_tandem_yaw.png']
     positions = [wake.find(token) for token in order_tokens]
     if any(p < 0 for p in positions) or positions != sorted(positions):
         errors.append(f"wake.html 动静态顺序错误：{dict(zip(order_tokens, positions))}")
+    glass_css = (SITE / "css" / "unified-glass.css").read_text(encoding="utf-8")
+    for token in ("grid-template-columns: repeat(3, minmax(0, 1fr))", "#00441b", "#f7fcfd"):
+        if token not in glass_css and token not in wake:
+            errors.append(f"尾流统一布局或绿色色阶缺失：{token}")
 
     # 依赖必须本地锁定。
     required_vendor = [

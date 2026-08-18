@@ -126,6 +126,7 @@
     .t-nav-links a.active i { color: var(--v-teal-bright); }
     @media (max-width: 640px) { .t-nav-row1 { padding: 12px 20px 10px; } }
   </style>
+  <link rel="stylesheet" href="css/unified-glass.css">
 </head>
 <body>
 
@@ -162,8 +163,8 @@
   <div class="v-pg-tag">13 / 3D VOLUME RENDERING · WAKE LOW-SPEED BUBBLE</div>
   <h1 class="v-pg-title">3D 尾流体渲染</h1>
   <p class="v-pg-sub">
-    真实三维尾流低速泡，蓝白色系等直面渲染，自动环绕动画展示尾流偏转；
-    偏航扫描循环播放 −30°→+30°，直观呈现尾流如何避开下游机组。
+    FLORIS 三维数值尾流采用森林绿至浅薄荷等值面渲染，自动环绕展示尾流偏转；
+    偏航扫描循环播放 −30°至 +30°，直观呈现低速核心如何移开下游机组。
   </p>
 </header>
 
@@ -183,7 +184,7 @@
       <button class="v-btn active" id="spinBtn" style="margin-left:auto">自动环绕</button>
     </div>
     <div id="plot3d" style="height:620px"></div>
-    <div class="plot-note">乳白–蓝色半透明区域为尾流低速泡（越白风速越低），白色圆环为风机转子扫掠面。默认开启自动环绕；可拖拽旋转、滚轮缩放。<b>偏航扫描</b>会循环播放 −30°→+30°，直观展示尾流随偏航偏转。</div>
+    <div class="plot-note">森林绿至浅薄荷半透明区域表示速度层级，深绿对应低速尾流核心；白色圆环为风机转子扫掠面。默认开启自动环绕，可拖拽旋转和滚轮缩放；偏航扫描会循环展示 −30°至 +30°的尾流偏转。</div>
   </div>
 </main>
 

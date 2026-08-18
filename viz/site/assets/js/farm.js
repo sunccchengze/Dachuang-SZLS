@@ -215,6 +215,10 @@ function buildFlowTexture(fd, zHeight) {
 
   const xMin = -200, xMax = 900;
   const yMin = -300, yMax = 300;
+  const flowStops = [
+    [0,68,27], [0,109,44], [35,139,69], [65,174,118], [102,194,164],
+    [153,216,201], [204,236,230], [229,245,249], [247,252,253]
+  ];
 
   for (let py = 0; py < H; py++) {
     // py=0 对应 yMax (+300), py=H-1 对应 yMin (-300)
@@ -224,22 +228,15 @@ function buildFlowTexture(fd, zHeight) {
       const uVal = sampleRealU(fd, xDown, yLat, zHeight);
       const idx = (py * W + px) * 4;
 
-      // 莫兰迪速度色阶：低速陶土(#b98484) -> 雾蓝(#6b8cae) -> 鼠尾草(#8aa17a)
+      // 与二维图同源的 ColorBrewer BuGn 反向顺序色阶：低速深绿，高速浅薄荷。
       const t = Math.max(0, Math.min(1, (uVal - 2.8) / 5.2));
-      let r, g, b, a;
-      if (t < 0.45) {
-        const k = t / 0.45;
-        r = Math.round(185 + (107 - 185) * k);
-        g = Math.round(132 + (140 - 132) * k);
-        b = Math.round(132 + (174 - 132) * k);
-        a = Math.round(220 - k * 30);
-      } else {
-        const k = (t - 0.45) / 0.55;
-        r = Math.round(107 + (138 - 107) * k);
-        g = Math.round(140 + (161 - 140) * k);
-        b = Math.round(174 + (122 - 174) * k);
-        a = Math.round(190 - k * 140);
-      }
+      const scaled = t * (flowStops.length - 1);
+      const lo = Math.min(flowStops.length - 2, Math.floor(scaled));
+      const mix = scaled - lo;
+      const r = Math.round(flowStops[lo][0] + (flowStops[lo + 1][0] - flowStops[lo][0]) * mix);
+      const g = Math.round(flowStops[lo][1] + (flowStops[lo + 1][1] - flowStops[lo][1]) * mix);
+      const b = Math.round(flowStops[lo][2] + (flowStops[lo + 1][2] - flowStops[lo][2]) * mix);
+      const a = Math.round(225 - t * 150);
       data[idx] = r; data[idx + 1] = g; data[idx + 2] = b; data[idx + 3] = a;
     }
   }
