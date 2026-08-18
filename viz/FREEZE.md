@@ -1,35 +1,57 @@
-# 网页彻底收工封板 — v1.0-freeze
+# 网页封板记录：v1.1-data-trust
 
-**分支**：`arena/019ff8da-wind-farm-viz`  
-**封板提交**：`fcaa5b9e` + FREEZE + dashboard删仪表 + Nature嵌入  
-**日期**：2026-08-16  
-**状态**：✅ 已通过双重质量门禁，冻结功能开发，只修崩溃级BUG
+**分支**：`arena/01a012f1-wind-farm-viz`
+**日期**：2026-08-18
+**状态**：功能冻结；后续只修渲染、布局、死链、数据契约和文字溢出问题。
+
+## 本轮封板范围
+
+- `af6d9b12`：PPO 真实 200 回合评测数据替换模拟轨迹和虚构五种子图。
+- `f81220ea`：四策略生成同源、3D 功率硬编码清除、死链修复、离线依赖和质量门禁升级。
+- `69e2b075`：尾流页精密浅色设计重构，保留动态在上、静态证据沉底。
+- `699927fc`：3D 策略几何与 FLORIS 数值速度场边界写清，几何扰动改为确定性。
 
 ## 质量门禁
-- ✅ 契约校验通过：data.js / data_3d.js 结构与数值一致。
-- ✅ 全站16页端到端质量终检 0 阻断错误, 0 优化警告
-- 导航17链，英雄区32px对齐，左侧空白/贴边/溢出/条带/仪表/排版不协调系统性修复
-- 仪表半圆白屏→上半圆→冗余删除，FIG.A全宽360px
-- Nature图 1fr1fr错位→全宽垂直栈等宽等边距，Swiss-grid 32px/28px
 
-## 已实现（16页+MAP）
-00首页毛玻璃0.48 blur16px，背景复原；01尾流/02优化/03求解偏航联动；04看板三功率曲线；05阵列王牌四阶梯；06热力/07风玫瑰/08POD 97.97%/09精度/10跟踪/11 3D风场/12 3D曲面/13 3D体/14契约/15流线/MAP总览；全部已嵌Nature出版级PDF
+```bash
+python3 site/check_contract.py
+python3 site/verify_all_pages.py
+```
 
-## 资产
-- site/ 18 HTML，assets/data.js + data_3d.js 13工况 + data_3d_real.js 5工况
-- figures_nature/ 17主+8扩展 Nature级 PDF/PNG/SVG+灰度，3.5in/7.2in，Okabe-Ito
-- site/assets/img/nature/ 35 PNG/PDF矢量
-- 建模与数据生成(1).docx 942KB 8图，FLORIS 4.6.6 GCH/CC，1224工况/模型
-- check_contract.py + verify_all_pages.py 绿灯
-- notebooks/nature_figures.ipynb
+封板结果：
 
-## 封板规则
-只修崩溃级BUG：数据缺失、JS报错、渲染失败、导航冲突、文字溢出。不加新页面。
-演示动线：index→wake(拖滑块)→optimization(25°最优)→array(独立贪心)→dashboard(三功率)→pod(97.97%)，离线可用
-下一步：PPT一鱼多吃、论文图故事线、软著
+- 源 CSV/JSON、`data.js`、`data_3d.js`、`data_3d_real.js` 同源通过。
+- 16 个现役页面及 `index_v2.html`、`slides_823.html` 资源检查通过。
+- 普通链接、CSS URL、JavaScript 语法、统一导航、离线依赖和已知伪数据扫描 0 错误、0 警告。
+- Plotly 2.35.2、Three.js 0.160.0、Geist 1.7.2 已存入仓库，核心站点断网可用。
+- 尾流页初始 0°与 +25°交互经 Node 运行桩复核：三幅 Plotly 图均创建，+25°得到 P₁=1459 kW、P₂=909 kW、Ptot=2368 kW、增益 +8.13%。
 
-## 贡献确权
-- 全组数据唯一可信口径（审计+契约）
-- 论文图工厂（17张可复现管线）
-- 答辩叙事与视觉母版+演示系统
-- 软著/竞赛载体（16页站）
+## 现役资产
+
+- `site/`：16 页产品导航，另含主页原型和组会 Web Deck。
+- `figures_nature/`：17 张科研图（主工厂 9 张、扩展 8 张），提供 PDF/PNG，部分另有 SVG/灰度版。
+- `20260810洪/extracted/ppo_eval_traces.json`：200 回合逐回合指标与真实代表轨迹。
+- `array_independent_result.json`：四策略总功率和四组九机功率。
+- `site/assets/vendor/`：本地 Plotly/Three.js；`site/assets/fonts/geist/`：本地字体与许可证。
+
+## 科研表达边界
+
+1. FLORIS 结果是数值模拟，不写成现场实测。
+2. `power_tracking.html` 的浏览器交互是双线性代理反向搜索，不写成浏览器 PPO 推理。
+3. PPO 当前只验证 seed 42 权重的 200 个测试回合，不声称五模型种子稳定性。
+4. 3×3 尾流包络是确定性策略示意；双机速度纹理读取 FLORIS 三维网格。
+5. 前两排 +30°策略增益按 `9934.99/8095.15` 同源公式取两位小数为 `22.73%`。
+
+## 演示主线
+
+`index → wake → optimization → array → dashboard → pod → 3d_farm`
+
+推荐现场动作：
+
+1. 在 `wake.html` 拖动 0°到 +25°，说明上游让利和下游回升。
+2. 在 `array.html` 切换四策略，落到 `[30,20,0]° / +24.04%`。
+3. 在 `3d_farm.html` 先展示九机策略，再切双机 FLORIS 数据，并主动说明辅助流管不是 CFD 等值面。
+
+## 冻结规则
+
+不新增页面，不恢复已删除的势流彩蛋，不增加无数据来源的指标、种子、速度场或经济收益。任何数字改动必须先修改源文件和生成脚本，再重建前端数据并通过两道门禁。
