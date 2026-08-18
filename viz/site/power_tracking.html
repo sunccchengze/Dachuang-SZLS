@@ -230,10 +230,9 @@
 
 <header class="v-pg-hero t-container">
   <div class="v-pg-tag">10 / AGC POWER SETPOINT TRACKING · INVERSE SOLVER</div>
-  <h1 class="v-pg-title">电网调度功率需求跟踪 (AGC 闭环)</h1>
+  <h1 class="v-pg-title">功率设定值反求与 PPO 闭环验证</h1>
   <p class="v-pg-sub">
-    输入电网调度期望总功率，系统调用 <code style="font-family:var(--v-mono);font-size:12px">find_yaw_for_target</code>
-    自动逆向求解满足需求的最优协同偏航角序列，并给出跟踪误差与越界预警。
+    上部工作台调用浏览器端 <code style="font-family:var(--v-mono);font-size:12px">find_yaw_for_target</code> 做离散偏航反向搜索；下部单独展示 seed 42 PPO 权重在 200 个固定测试回合中的真实评测轨迹与误差分布。
   </p>
 </header>
 
@@ -242,10 +241,10 @@
   <div class="v-workbench-panel">
     <div class="cause-bar">
       <div class="cb-left">
-        <span class="cb-label">逆向求解</span>
-        <span class="cb-text">目标功率 → 代理模型反向搜索 → 最优偏航角 γ*，毫秒级完成调度指令到机组指令的翻译。</span>
+        <span class="cb-label">浏览器演示</span>
+        <span class="cb-text">目标功率 → 双线性代理表反向搜索 → 最接近目标的离散偏航角 γ*。该交互用于展示求解接口，不在浏览器内运行 PPO 权重。</span>
       </div>
-      <span class="cb-pill">AGC CLOSED LOOP</span>
+      <span class="cb-pill">SURROGATE INVERSE SEARCH</span>
     </div>
     <div class="ledger-strip" style="border-bottom:1px solid var(--v-line)">
       <div class="ledger-col">
@@ -331,10 +330,10 @@
   <div class="v-workbench-panel" style="margin-bottom:0">
     <div class="cause-bar">
       <div class="cb-left">
-        <span class="cb-label">闭环流程</span>
-        <span class="cb-text">自动发电控制 (AGC) 功率跟踪闭环：目标下发 → 反向搜索 → 指令执行与补偿。</span>
+        <span class="cb-label">接入流程</span>
+        <span class="cb-text">浏览器反向搜索演示的控制接入链路：目标下发 → 代理求解 → 指令执行与补偿。PPO 的独立离线评测证据见下方两图。</span>
       </div>
-      <span class="cb-pill">CONTROL LOOP · 3 STAGES</span>
+      <span class="cb-pill">INTEGRATION PATH · 3 STAGES</span>
     </div>
     <div class="pipe-grid">
       <div class="pipe-step">
@@ -362,14 +361,14 @@
   </div>
 
 <div class="v-plots-container">
-    <div class="plot-head"><span class="plot-tick">NATURE FIG · 01</span>PPO目标功率跟踪时序</div>
-    <img src="assets/img/nature/fig9_tracking.png" style="width:100%;border:1px solid var(--v-line);border-radius:4px;display:block">
-    <div class="plot-note">Target [0.78,0.98] 正弦跟踪，实际+噪声 0.5% MAE，误差带，Nature单栏3.5in <a href="assets/img/nature/fig9_tracking.pdf" target="_blank" style="font-family:var(--v-mono);font-size:11px;color:var(--v-teal-bright);font-weight:700">→ PDF</a></div>
+    <div class="plot-head"><span class="plot-tick">NATURE FIG · 01</span>PPO真实代表回合跟踪时序</div>
+    <img src="assets/img/nature/fig9_tracking.png" alt="seed 42 PPO权重在代表测试回合中的目标功率与实际输出时序" style="width:100%;border:1px solid var(--v-line);border-radius:4px;display:block">
+    <div class="plot-note">代表回合按“稳态 MAE 最接近 200 回合中位数”规则自动选取，曲线直接读取 <code>ppo_eval_traces.json</code>，阴影为 ±1.5% 调节带。200 回合平均稳态 MAE 为 0.523%。 <a href="assets/img/nature/fig9_tracking.pdf" target="_blank" style="font-family:var(--v-mono);font-size:11px;color:var(--v-teal-bright);font-weight:700">PDF</a></div>
   </div>
 <div class="v-plots-container">
-    <div class="plot-head"><span class="plot-tick">NATURE FIG · 02</span>PPO多种子MAE稳定性</div>
-    <img src="assets/img/nature/fig17_ppo_mae.png" style="width:100%;max-width:420px;border:1px solid var(--v-line);border-radius:4px;display:block;margin:0 auto">
-    <div class="plot-note">5种子 MAE 0.55±0.05% 稳定性，误差棒SEM，0°基准对比。</div>
+    <div class="plot-head"><span class="plot-tick">NATURE FIG · 02</span>PPO 200 回合误差与调节时间分布</div>
+    <img src="assets/img/nature/fig17_ppo_mae.png" alt="PPO在200个固定测试回合中的稳态MAE与调节时间分布" style="width:100%;border:1px solid var(--v-line);border-radius:4px;display:block;margin:0 auto">
+    <div class="plot-note">每个点代表一个固定测试回合。平均稳态 MAE 0.523%，平均调节时间 0.944 s，95 分位调节时间 1.805 s。仓库仅验证 seed 42，本图不作多模型种子稳定性声明。</div>
   </div>
 
 </main>

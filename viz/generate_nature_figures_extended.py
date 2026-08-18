@@ -23,6 +23,8 @@ cases_multi = pd.read_csv('cases_multi.csv')
 cases_array = pd.read_csv('cases_array.csv')
 with open('array_independent_result.json') as f:
     arr = json.load(f)
+with open('20260810洪/extracted/ppo_eval_traces.json') as f:
+    ppo_eval = json.load(f)
 pod = np.load('pod_results/pod_data.npz')
 
 def add_labels(axes):
@@ -82,14 +84,12 @@ plt.close()
 
 # Fig14: POD coefficients vs yaw
 print("Fig14 POD coeff")
-coeff = pod['coefficients'] # shape (13,13) maybe? yaw x mode?
-# Actually coefficients shape (13,13) - for each snapshot, coeff per mode
-# yaw_angles shape 13
+# pod_analysis.py stores coefficients = diag(S) @ Vt, shape (mode, snapshot).
+coeff = pod['coefficients']
 yaws = pod['yaw_angles']
-# Plot first 2 coeffs vs yaw
 fig, ax = plt.subplots(figsize=(3.5,2.6), constrained_layout=True)
-ax.plot(yaws, coeff[:,0], marker='o', label='Coeff Mode0 (dipole)', color=PAL[0])
-ax.plot(yaws, coeff[:,1], marker='s', label='Coeff Mode1 (recovery)', color=PAL[2])
+ax.plot(yaws, coeff[0, :], marker='o', label='Coeff Mode0 (dipole)', color=PAL[0])
+ax.plot(yaws, coeff[1, :], marker='s', label='Coeff Mode1 (recovery)', color=PAL[2])
 ax.set_xlabel('Yaw (°)'); ax.set_ylabel('Coefficient')
 ax.legend(frameon=False, fontsize=6)
 ax.set_title('POD coeff vs yaw', fontsize=8)
@@ -123,25 +123,47 @@ fig, ax = plt.subplots(figsize=(3.5,2.8), constrained_layout=True)
 # Use total power
 ax.plot(cases_array['yaw_upstream'], cases_array['power_total'], marker='o', color=PAL[3], lw=1.2)
 ax.fill_between(cases_array['yaw_upstream'], cases_array['power_total'], 8095, color=PAL[3], alpha=0.15)
-ax.axvline(30, ls='--', color='#a87817', lw=0.8, label='Unified 30°')
-ax.axvline(10, ls='--', color=PAL[2], lw=0.8, alpha=0.5) # placeholder
+ax.axvline(30, ls='--', color='#a87817', lw=0.8, label='Unified optimum 30°')
 ax.set_xlabel('Unified yaw (°)'); ax.set_ylabel('3×3 total power (kW)')
 ax.set_title('Array unified yaw sweep', fontsize=8)
 ax.legend(frameon=False, fontsize=6)
 export_figure(fig, 'figures_nature/extended/fig16_array_sweep', formats=['pdf','png'], size_inches=(3.5,2.8), dpi=300)
 plt.close()
 
-# Fig17: Errorbar conceptual for PPO MAE
-print("Fig17 errorbar")
-fig, ax = plt.subplots(figsize=(3.5,2.6), constrained_layout=True)
-# Simulate 5 seeds MAE
-seeds = ['seed42','seed43','seed44','seed45','seed46']
-mae = [0.523, 0.61, 0.48, 0.55, 0.59]
-ax.errorbar([1]*len(mae), mae, yerr=0.05, fmt='o', color=PAL[3], ecolor='gray', capsize=3, ms=5, label='PPO tracking MAE')
-ax.set_xticks([]); ax.set_ylabel('MAE (%)')
-ax.set_title('PPO tracking stability (n=5 seeds)', fontsize=8)
-ax.text(1, 0.65, 'Mean 0.55±0.05%', ha='center', fontsize=7)
-export_figure(fig, 'figures_nature/extended/fig17_ppo_mae', formats=['pdf','png'], size_inches=(3.5,2.6), dpi=300)
+# Fig17: Audited 200-episode PPO evaluation distributions
+print("Fig17 audited PPO distributions")
+episodes = ppo_eval['episodes']
+summary = ppo_eval['summary']
+mae = np.asarray([r['steady_mae_pct'] for r in episodes])
+settle = np.asarray([r['settling_time_s'] for r in episodes])
+fig, axes = plt.subplots(1, 2, figsize=(7.2, 2.8), constrained_layout=True)
+for ax, values, ylabel, color in [
+    (axes[0], mae, 'Steady-state MAE (%)', '#0070f3'),
+    (axes[1], settle, 'Settling time (s)', '#E69F00'),
+]:
+    ax.boxplot(values, positions=[1], widths=0.28, patch_artist=True, showfliers=False,
+               boxprops={'facecolor':'white', 'edgecolor':'#4d4d4d', 'linewidth':0.8},
+               medianprops={'color':'#171717', 'linewidth':1.0},
+               whiskerprops={'color':'#888888', 'linewidth':0.7},
+               capprops={'color':'#888888', 'linewidth':0.7})
+    order = np.argsort(values)
+    jitter = np.linspace(-0.16, 0.16, len(values))
+    x = np.empty_like(jitter)
+    x[order] = 1 + jitter
+    ax.scatter(x, values, s=8, color=color, alpha=0.46, edgecolors='none')
+    ax.set_xlim(0.72, 1.28)
+    ax.set_xticks([1]); ax.set_xticklabels(['200 episodes'])
+    ax.set_ylabel(ylabel)
+axes[0].axhline(summary['steady_state_mae_pct'], color='#0070f3', ls='--', lw=0.8)
+axes[0].text(1.27, summary['steady_state_mae_pct'],
+             f" mean {summary['steady_state_mae_pct']:.3f}%", ha='right', va='bottom', fontsize=6)
+axes[1].axhline(summary['settling_time_p95_s'], color='#E69F00', ls='--', lw=0.8)
+axes[1].text(1.27, summary['settling_time_p95_s'],
+             f" p95 {summary['settling_time_p95_s']:.3f} s", ha='right', va='bottom', fontsize=6)
+axes[0].set_title('Tracking error distribution', fontsize=8)
+axes[1].set_title('Settling-time distribution', fontsize=8)
+add_labels(axes)
+export_figure(fig, 'figures_nature/extended/fig17_ppo_mae', formats=['pdf','png'], size_inches=(7.2,2.8), dpi=300)
 plt.close()
 
 print("Extended done")

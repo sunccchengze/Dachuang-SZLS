@@ -36,6 +36,8 @@ with open('optimizer_result.json') as f:
     opt = json.load(f)
 with open('array_independent_result.json') as f:
     arr_ind = json.load(f)
+with open('20260810洪/extracted/ppo_eval_traces.json') as f:
+    ppo_eval = json.load(f)
 
 # POD
 pod = np.load('pod_results/pod_data.npz')
@@ -287,20 +289,30 @@ export_figure(fig, 'figures_nature/fig8_main', formats=['pdf','png'], size_inche
 plt.close()
 
 # -------------------------------------------------
-# Fig9: Power tracking conceptual (PPO) - simulate tracking error
-print("[Fig9] Tracking conceptual")
-fig, ax = plt.subplots(figsize=(3.5, 2.6), constrained_layout=True)
-t = np.linspace(0, 20, 200)
-target = 0.78 + 0.2*np.sin(t*0.3) + 0.05*np.sin(t*1.2)
-actual = target + np.random.normal(0,0.005, len(t)) # MAE 0.5%
-ax.plot(t, target, color='gray', ls='--', lw=1, label='Target [0.78,0.98]')
-ax.plot(t, actual, color=PAL[3], lw=1.2, label='PPO tracked')
-ax.fill_between(t, target-0.005, target+0.005, color='gray', alpha=0.15)
-ax.set_xlabel('Time (s)'); ax.set_ylabel('Normalized power')
-ax.legend(frameon=False, fontsize=6)
-ax.set_title('PPO tracking MAE 0.523%', fontsize=8)
+# Fig9: Real PPO evaluation trajectory from the audited seed-42 checkpoint
+print("[Fig9] Audited PPO evaluation trajectory")
+rep = ppo_eval['representative_episode']
+summary = ppo_eval['summary']
+t = np.asarray(rep['time_s'])
+target = np.asarray(rep['power_target_kw'])
+actual = np.asarray(rep['power_actual_kw'])
+settle = float(rep['settling_time_s'])
+fig, ax = plt.subplots(figsize=(3.5, 2.8), constrained_layout=True)
+ax.fill_between(t, target * 0.985, target * 1.015, color='#94a3b8', alpha=0.18,
+                label='±1.5% settling band')
+ax.plot(t, target, color='#4d4d4d', ls='--', lw=1.0, label='Target power')
+ax.plot(t, actual, color='#0070f3', lw=1.3, label='PPO output')
+ax.axvline(settle, color='#f5a623', ls=':', lw=0.9,
+           label=f'Settling {settle:.1f} s')
+ax.set_xlabel('Time (s)')
+ax.set_ylabel('Power (kW)')
+ax.legend(frameon=False, fontsize=5.8, loc='best')
+ax.set_title(f"Audited PPO trajectory · episode {rep['episode']}", fontsize=8)
+ax.text(0.98, 0.62,
+        f"Representative rule: median episode MAE\n200-episode mean MAE {summary['steady_state_mae_pct']:.3f}%",
+        transform=ax.transAxes, ha='right', va='center', fontsize=5.5, color='#4d4d4d')
 add_labels([ax])
-export_figure(fig, 'figures_nature/fig9_tracking', formats=['pdf','png'], size_inches=(3.5,2.6), dpi=300)
+export_figure(fig, 'figures_nature/fig9_tracking', formats=['pdf','png'], size_inches=(3.5,2.8), dpi=300)
 plt.close()
 
 print("\nAll figures exported to figures_nature/")

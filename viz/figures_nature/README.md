@@ -29,7 +29,7 @@
 6. **fig6_array_flow**：3×3 阵列 baseline vs independent 流场对比，T1-T9 标记，展示走廊清除
 7. **fig7_windrose**：极坐标 8 m/s 最优增益 vs 风向，0°风向无增益，90°风向最大增益，viridis 映射
 8. **fig8_main**：4 面板综合主图 Nature 主刊 Figure 1 候选：a Tandem gain, b Array power, c POD cum, d Wake 0°
-9. **fig9_tracking**：PPO 目标功率跟踪概念，Target [0.78,0.98] 正弦 + 0.5% MAE，跟随误差带
+9. **fig9_tracking**：seed 42 PPO 权重的真实代表测试回合，代表回合按 200 回合中位 MAE 规则自动选择，绘制目标功率、实际输出、±1.5% 调节带与调节时间
 
 ### 扩展疯狂画图 8 张（figures_nature/extended/）
 10. **fig10_gain_box_strip**：箱线+stripplot 展示多风速下增益分布，n=4 风速 per yaw，拦截小样本均值柱错误
@@ -39,7 +39,7 @@
 14. **fig14_pod_coeff**：POD 系数随 yaw 变化，Mode0/1 随偏航线性/非线性
 15. **fig15_waterfall**：9 机独立策略增益瀑布，上游 -24% 让利，下游 +100%+ 回升
 16. **fig16_array_sweep**：统一偏航扫掠 3×3 总功率曲线，填色增益区间
-17. **fig17_ppo_mae**：PPO 5 种子 MAE 误差棒稳定性 0.55±0.05%
+17. **fig17_ppo_mae**：seed 42 PPO 权重在 200 个固定测试回合中的稳态 MAE 与调节时间分布；不作多模型种子稳定性声明
 
 所有图已按 Nature 单栏 3.5in / 双栏 7.2in 最终尺寸出图，PDF+PNG+SVG+灰度版，300 DPI，字号 6-9pt，Okabe-Ito 色盲安全，冗余编码（线型+marker），viridis/RdBu_r 感知均匀，禁用 rainbow/jet。
 
