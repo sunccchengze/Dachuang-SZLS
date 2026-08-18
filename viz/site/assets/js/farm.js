@@ -153,15 +153,15 @@ function makeTurbine() {
 }
 
 function makeWake(yawDeg=0, startX=0, startZ=0) {
-  // 真实科研尾流：基于FLORIS GCH实测扩张率 + 高斯亏损剖面 + 轻度湍流扰动，摆脱完美圆锥AI味
-  // 使用与真实流场相同的 loft 管状体，但数据来源为几何+物理混合，保留实时旋转能力
+  // 3×3 策略模式使用可复现的物理启发式包络：中心线由偏航几何关系给出，
+  // 外扩流管只承担控制策略示意，不冒充 fields_3d / fields_array 的数值速度场。
   const L = 950;
   const pts = extractWakeCenterline(startX, startX+L, startZ, yawDeg);
-  // 轻度湍流 meandering：给中心线加 0.5% 横向正弦扰动，模拟大气湍流导致的尾流摆动
+  // 确定性 meandering：用两组正弦扰动表达轻微摆动，刷新或切换策略时不随机漂移。
   pts.forEach((p,i)=>{
-    const jitter = Math.sin((p.x*0.008)+i*0.15)*3.5 + (Math.random()-0.5)*1.2;
+    const jitter = Math.sin((p.x*0.008)+i*0.15)*3.5 + Math.sin(p.x*0.021+i*0.37)*0.6;
     p.z += jitter;
-    p.y += (Math.random()-0.5)*1.0;
+    p.y += Math.sin(p.x*0.013+i*0.19)*0.5;
   });
   // 双层：外层宽缓边界层，内层核心亏损
   const outer = buildWakeLoft(pts, 58, 72, 0x7d9ebb, 0.16);

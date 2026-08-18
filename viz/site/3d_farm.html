@@ -192,8 +192,8 @@
   <div class="v-pg-tag">11 / THREE.JS WIND FARM · COOPERATIVE YAW SCENE</div>
   <h1 class="v-pg-title">3D 风电场协同偏航场景</h1>
   <p class="v-pg-sub">
-    九台风机协同偏航：转子实时旋转、半透明尾流随偏航偏转、按单机功率着色；
-    可切换至双机真实流场模式，渲染气动流线束、磨砂流管与 CFD 速度截面云图。
+    九台风机策略模式以确定性几何包络示意协同偏航，并按真实单机功率着色；
+    双机 FLORIS 数据模式读取三维速度网格生成水平截面，半透明流管仅作偏航中心线辅助。
   </p>
 </header>
 
@@ -201,8 +201,8 @@
   <div class="farm-card">
     <div class="farm-controls">
       <div class="farm-seg" id="viewSeg">
-        <button data-view="schematic" class="active">3×3 示意</button>
-        <button data-view="real">真实流场（双机）</button>
+        <button data-view="schematic" class="active">3×3 策略示意</button>
+        <button data-view="real">双机 FLORIS 数据</button>
       </div>
       <div id="modeSeg" class="farm-seg">
         <button data-mode="none" class="active">基准 0°</button>
@@ -226,7 +226,7 @@
       <div id="farmLoad" class="farm-load">正在加载 3D 场景…</div>
     </div>
     <div class="farm-kpis" id="farmKpis"></div>
-    <div class="plot-note" id="farmNote"><b>3×3 示意</b>：九机阵列与控制策略切换，工程尾流模型。切到 <b>真实流场（双机）</b>：基于 FLORIS 三维网格数据，渲染 <b>气动流线束、半透明磨砂流管与 2D/5D CFD 速度截面云图</b>，动态展示上游偏航如何让尾流避开下游机组并提升总功率。</div>
+    <div class="plot-note" id="farmNote"><b>3×3 策略示意</b>：九机功率与偏航角来自四策略数据契约，尾流包络为确定性物理启发式几何，不作为 CFD 数值场。切到 <b>双机 FLORIS 数据</b>：水平云图纹理由 <code>data_3d_real.js</code> 三维速度网格采样生成；半透明流管只标示偏航中心线与扩张方向，不冒充速度等值面。</div>
   </div>
 </main>
 
