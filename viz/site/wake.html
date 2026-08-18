@@ -3,412 +3,515 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="description" content="FLORIS 4.6.6 两机串列偏航尾流交互分析：拖动偏航角，联动查看速度场、上下游功率与全场增益。">
   <title>尾流交互分析 · 风电场偏航优化科研平台</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="assets/vendor/plotly/plotly-2.35.2.min.js"></script>
-  <script src="assets/js/plotly-theme.js"></script>
   <style>
-    /* 
-     * 彻彻底底对标 Vercel + Taste-Skill 浅色学术工作台设计系统 (Light Mode)
-     * 一体化科研主板容器 (.v-workbench-panel) ➕ 极细发丝网格 ➕ 等线/宋体黑分流 ➕ 零孤行与零横线灾难
-     */
-
     :root {
-      --v-bg: #f8f9fa;          /* 莫兰迪米白工程纸灰绿底 */
-      --v-bg-soft: #f1f3f5;     /* 面板亚光白灰 */
-      --v-bg-subtle: #e9ecef;   /* 分隔底灰 */
-      --v-panel: #ffffff;       /* 纯白几何板点 */
-      --v-panel-hover: #fcfdfe; /* 丝滑悬浮反光白 */
-      --v-ink: #1e293b;         /* 钛灰深黑墨水主字 */
-      --v-body: #334155;        /* 正文字色 */
-      --v-mute: #64748b;        /* 二级文字与注释 */
-      --v-faint: #94a3b8;       /* 辅助线及底标文本 */
-      --v-line: rgba(30, 41, 59, 0.11);
-      --v-line-strong: rgba(30, 41, 59, 0.22);
-      --v-teal: #2d7569;
-      --v-teal-bright: #1e675c; /* 高饱和深海钛绿高亮 */
-      --v-yellow: #a87817;      /* 暖琥珀金 */
-      --v-rust: #ad5038;        /* 铁砖红阶灰 */
-      --v-mono: 'DM Mono', ui-monospace, 'JetBrains Mono', Consolas, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", monospace;
-      --v-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Songti SC Black", "Songti SC", "STSong", "STZhongsong", "SimSun", "宋体-简", serif;
-      --v-body-font: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "DengXian", "等线", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --vc-primary: #171717;
+      --vc-on-primary: #ffffff;
+      --vc-ink: #171717;
+      --vc-body: #4d4d4d;
+      --vc-mute: #888888;
+      --vc-hairline: #ebebeb;
+      --vc-hairline-strong: #a1a1a1;
+      --vc-canvas: #ffffff;
+      --vc-canvas-soft: #fafafa;
+      --vc-canvas-soft-2: #f5f5f5;
+      --vc-link: #0070f3;
+      --vc-link-deep: #0761d1;
+      --vc-error: #ee0000;
+      --vc-error-soft: #f7d4d6;
+      --vc-warning: #f5a623;
+      --vc-warning-soft: #ffefcf;
+      --vc-violet: #7928ca;
+      --vc-cyan: #50e3c2;
+      --vc-pink: #ff0080;
+      --vc-develop-start: #007cf0;
+      --vc-develop-end: #00dfd8;
+      --vc-preview-start: #7928ca;
+      --vc-preview-end: #ff0080;
+      --vc-ship-start: #ff4d4d;
+      --vc-ship-end: #f9cb28;
+      --vc-sans: "Geist", "DengXian", "等线", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      --vc-serif: "Songti SC Black", "Songti SC", "STSong", "STZhongsong", "SimSun", "宋体-简", serif;
+      --vc-mono: "Geist Mono", "DengXian", "等线", "PingFang SC", "Microsoft YaHei", ui-monospace, monospace;
+      --vc-page: 1240px;
+      --vc-shadow-2: 0 0 0 1px rgba(0,0,0,.08) inset, 0 1px 1px rgba(0,0,0,.02), 0 2px 2px rgba(0,0,0,.04);
+      --vc-shadow-4: 0 0 0 1px rgba(0,0,0,.08) inset, 0 2px 2px rgba(0,0,0,.04), 0 8px 16px -4px rgba(0,0,0,.04);
       color-scheme: light;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
-      background: var(--v-bg);
-      color: var(--v-ink);
-      font-family: var(--v-body-font);
-      line-height: 1.6;
+      margin: 0;
+      background: var(--vc-canvas-soft);
+      color: var(--vc-ink);
+      font-family: var(--vc-sans);
+      font-size: 14px;
+      line-height: 1.5;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
     }
+    a { color: inherit; }
+    button, input { font: inherit; }
+    .num { font-family: var(--vc-mono); font-variant-numeric: tabular-nums; }
 
-    h1, h2, h3, h4, .sec-title, .l-title, .cb-label, .yaw-label {
-      font-family: var(--v-display);
-    }
-    body, p, li, td, th, span, div, a, button, .cb-text, .note, .t-footer, .stat-label, .kpi-delta, .l-details {
-      font-family: var(--v-body-font);
-    }
-    .num, .stat-number, .l-val, .yaw-badge, .cb-pill, .step-idx, .t-nav-badge {
-      font-family: var(--v-mono);
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* 极简工科导航栏 */
+    /* 项目统一双行导航，表面与交互采用精密灰阶。 */
     .t-nav {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--v-line);
-      height: 60px;
-      display: flex;
-      align-items: center;
+      height: auto;
+      display: block;
+      background: rgba(255,255,255,.92);
+      border-bottom: 1px solid var(--vc-hairline);
+      backdrop-filter: blur(16px) saturate(140%);
+      -webkit-backdrop-filter: blur(16px) saturate(140%);
     }
-    .t-nav-inner {
-      max-width: 1240px;
-      width: 100%;
+    .t-nav-inner { width: 100%; margin: 0; padding: 0; display: block; }
+    .t-nav-row1 {
+      max-width: var(--vc-page);
       margin: 0 auto;
-      padding: 0 32px;
+      padding: 13px 32px 11px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 16px;
     }
     .t-nav-brand {
-      font-family: var(--v-display);
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--v-ink);
-      letter-spacing: -0.3px;
       display: flex;
       align-items: center;
       gap: 12px;
+      color: var(--vc-ink);
+      text-decoration: none;
+      font-family: var(--vc-sans);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -.3px;
+      white-space: nowrap;
     }
     .t-nav-badge {
-      font-family: var(--v-mono);
-      font-size: 10.5px;
-      color: var(--v-teal-bright);
+      border: 1px solid var(--vc-hairline);
+      border-radius: 6px;
       padding: 3px 8px;
-      border: 1px solid var(--v-line-strong);
-      border-radius: 3px;
-      background: var(--v-bg-soft);
-      font-weight: 700;
+      background: var(--vc-canvas-soft);
+      color: var(--vc-body);
+      font-family: var(--vc-mono);
+      font-size: 10px;
+      font-weight: 400;
+      letter-spacing: 0;
     }
-
-    /* 容器控制 */
-    .t-container {
-      max-width: 1240px;
-      margin: 0 auto;
-      padding: 0 32px;
-    }
-
-    /* Hero：瑞士网格去 Emoji 页眉 (限宽 860px 杜绝副标题短孤行) */
-    .v-pg-hero {
-      padding-top: 44px; padding-bottom: 28px;
-      border-bottom: none;
-    }
-    .v-pg-tag {
-      font-family: var(--v-mono);
+    .t-nav-here {
+      color: var(--vc-mute);
+      font-family: var(--vc-mono);
       font-size: 11px;
-      font-weight: 700;
-      color: var(--v-yellow);
-      letter-spacing: 0.12em;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-    }
-    .v-pg-title {
-      font-size: clamp(28px, 3.8vw, 40px);
-      font-weight: 800;
-      letter-spacing: -0.8px;
-      color: var(--v-ink);
-      margin-bottom: 8px;
-    }
-    .v-pg-sub {
-      font-size: 14.5px;
-      color: var(--v-body);
-      max-width: 860px;
-      line-height: 1.6;
-    }
-
-    /* 
-     * 一体化科研主板容器 (.v-workbench-panel)
-     * 把说明条 (.cause-bar)、指标数据带 (.ledger-strip) 与偏航控件 (.yaw-controls) 融合进单一边界框
-     * 整个首屏水平分割线由 6 条精简降至 2 条，信息信噪比最高！
-     */
-    .v-workbench-panel {
-      background: #ffffff;
-      border: 1px solid var(--v-line-strong);
-      border-radius: 4px;
-      overflow: hidden;
-      margin-bottom: 36px;
-    }
-
-    /* 因果说明条 (内置于容器顶部，背景哑光浅白绿，严密单行不换行) */
-    .cause-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 16px 28px;
-      background: var(--v-bg-soft);
-      border-bottom: 1px solid var(--v-line);
-      flex-wrap: nowrap;
-      width: 100%;
-    }
-    .cb-left {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      flex: 1;
-      min-width: 0;
-    }
-    .cb-label {
-      font-family: var(--v-display) !important;
-      font-size: 11.5px !important;
-      font-weight: 750 !important;
-      color: #ffffff !important;
-      background: var(--v-teal-bright) !important;
-      padding: 5px 12px !important;
-      border-radius: 2px !important;
-      letter-spacing: 0.08em !important;
-      display: inline-block;
-      flex-shrink: 0;
+      font-weight: 400;
+      letter-spacing: 0;
       white-space: nowrap;
     }
-    .cb-text {
-      font-size: 13px;
-      color: var(--v-body);
-      line-height: 1.5;
-      flex: 1;
-      min-width: 0;
-      word-wrap: break-word;
-    }
-    .cb-pill {
-      font-family: var(--v-mono);
-      font-size: 12px;
-      font-weight: 700;
-      padding: 6px 14px;
-      border-radius: 2px;
-      border: 1px solid var(--v-line-strong);
-      background: #ffffff;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    /* 一体化横向精简数据带 (Academic Ledger Strip · 基础主色统一为钛黑色 #1e293b) */
-    .ledger-strip {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      border-bottom: 1px solid var(--v-line);
-      background: #ffffff;
-    }
-    .ledger-col {
-      padding: 28px 28px;
-      border-right: 1px solid var(--v-line);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      min-width: 0;
-      word-wrap: break-word;
-    }
-    .ledger-col:last-child { border-right: none; }
-    .l-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      font-family: var(--v-mono);
-      font-size: 10.5px;
-      color: var(--v-mute);
-      font-weight: 700;
-      letter-spacing: 0.05em;
-    }
-    .l-title {
-      font-size: 14.5px;
-      font-weight: 750;
-      color: var(--v-ink);
-      margin-bottom: 14px;
-      line-height: 1.35;
-    }
-    .l-val {
-      font-family: var(--v-mono);
-      font-weight: 750;
-      font-size: 38px;
-      line-height: 1;
-      color: var(--v-ink);
-      margin-bottom: 16px;
-      transition: color 0.25s;
-    }
-    .l-details {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding-top: 14px;
-      border-top: 1px solid var(--v-line);
-      font-size: 12px;
-      color: var(--v-body);
-    }
-
-    /* 偏航控件条 (集成在主板最下方，空间开阔舒适，下标严格规范为 γ₁) */
-    .yaw-controls {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 24px;
-      padding: 22px 28px;
-      background: #ffffff;
-    }
-    .yaw-slider-wrap {
-      flex: 1;
-      min-width: 280px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    #yawSlider {
-      flex: 1;
-      accent-color: var(--v-teal-bright);
-      cursor: pointer;
-    }
-    .yaw-badge {
-      font-family: var(--v-mono);
-      font-size: 14px;
-      font-weight: 700;
-      padding: 4px 12px;
-      border: 1px solid var(--v-line-strong);
-      border-radius: 2px;
-      background: var(--v-bg-soft);
-      color: var(--v-ink);
-      min-width: 52px;
-      text-align: center;
-    }
-    .yaw-quick {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    .v-btn {
-      font-family: var(--v-body-font);
-      font-size: 12.5px;
-      font-weight: 700;
-      padding: 8px 16px;
-      background: var(--v-bg-soft);
-      border: 1px solid var(--v-line-strong);
-      border-radius: 3px;
-      color: var(--v-ink);
-      cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .v-btn:hover {
-      background: var(--v-ink);
-      color: #fff;
-      border-color: var(--v-ink);
-      transform: translateY(-2px);
-    }
-    .v-btn:active {
-      transform: translateY(0) scale(0.98);
-    }
-    .v-btn:focus-visible {
-      outline: 2px solid var(--v-teal-bright);
-      outline-offset: 2px;
-    }
-    .v-btn.active {
-      background: var(--v-teal-bright);
-      color: #fff;
-      border-color: var(--v-teal-bright);
-    }
-
-    /* 图表视口卡 */
-    .v-plots-container {
-      background: #ffffff;
-      border: 1px solid var(--v-line-strong);
-      border-radius: 4px;
-      padding: 28px 32px;
-      margin-bottom: 48px;
-    }
-    .grid-plots {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr;
-      gap: 28px;
-      align-items: start; min-width: 0;}
-    .grid-plots > div { min-width: 0; }
-    .plot-note {
-      font-size: 12px;
-      color: var(--v-mute);
-      line-height: 1.6;
-      margin-top: 10px;
-    }
-
-    /* 严谨对称居中页脚 */
-    .t-footer {
-      border-top: 1px solid var(--v-line-strong);
-      padding: 60px 0;
-      margin-top: 80px;
-      font-size: 12.5px;
-      color: var(--v-body);
-      line-height: 1.8;
-      background: #ffffff;
-      text-align: center;
-    }
-    .footer-inner-centered {
-      max-width: 960px;
+    .t-nav-links { border-top: 1px solid var(--vc-hairline); }
+    .t-nav-links-in {
+      max-width: var(--vc-page);
       margin: 0 auto;
-      padding: 0 32px;
+      padding: 0 24px;
       display: flex;
-      flex-direction: column;
+      align-items: stretch;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .t-nav-links-in::-webkit-scrollbar { display: none; }
+    .t-nav-links a {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
+      padding: 9px 9px 8px;
+      border-bottom: 2px solid transparent;
+      color: var(--vc-body);
+      font-family: var(--vc-sans);
+      font-size: 12px;
+      font-weight: 400;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: color .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .t-nav-links a i {
+      color: var(--vc-mute);
+      font-family: var(--vc-mono);
+      font-size: 9.5px;
+      font-style: normal;
+      font-weight: 400;
+    }
+    .t-nav-links a:hover { color: var(--vc-ink); background: var(--vc-canvas-soft-2); }
+    .t-nav-links a.active { color: var(--vc-ink); border-bottom-color: var(--vc-ink); }
+    .t-nav-links a.active i { color: var(--vc-ink); }
+
+    /* Hero：彩色 mesh 是本页唯一装饰色场。 */
+    .wake-hero {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      min-height: 420px;
+      display: grid;
+      align-items: center;
+      background: var(--vc-canvas);
+      border-bottom: 1px solid var(--vc-hairline);
+    }
+    .wake-hero::before {
+      content: "";
+      position: absolute;
+      z-index: -2;
+      inset: -45% -8% 22% 34%;
+      background:
+        radial-gradient(circle at 18% 46%, rgba(0,124,240,.78), transparent 31%),
+        radial-gradient(circle at 42% 38%, rgba(0,223,216,.68), transparent 32%),
+        radial-gradient(circle at 62% 48%, rgba(121,40,202,.68), transparent 34%),
+        radial-gradient(circle at 78% 54%, rgba(255,0,128,.58), transparent 32%),
+        radial-gradient(circle at 88% 72%, rgba(249,203,40,.62), transparent 29%);
+      filter: blur(54px) saturate(125%);
+      opacity: .72;
+      transform: translateZ(0);
+    }
+    .wake-hero::after {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,.96) 39%, rgba(255,255,255,.42) 76%, rgba(255,255,255,.82) 100%);
+    }
+    .hero-inner {
+      width: 100%;
+      max-width: var(--vc-page);
+      margin: 0 auto;
+      padding: 72px 32px 80px;
+    }
+    .hero-eyebrow {
+      margin-bottom: 16px;
+      color: var(--vc-body);
+      font-family: var(--vc-mono);
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+    .hero-title {
+      max-width: 760px;
+      margin: 0;
+      color: var(--vc-ink);
+      font-family: var(--vc-serif);
+      font-size: clamp(38px, 5.2vw, 56px);
+      font-weight: 600;
+      line-height: 1.08;
+      letter-spacing: -2.4px;
+    }
+    .hero-lead {
+      max-width: 650px;
+      margin: 20px 0 0;
+      color: var(--vc-body);
+      font-size: 17px;
+      line-height: 1.65;
+    }
+    .hero-actions { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .hero-cta {
+      min-height: 48px;
+      padding: 0 22px;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      gap: 8px;
-    }
-    .footer-brand {
-      color: var(--v-ink);
-      font-weight: 750;
-      font-family: var(--v-display);
+      border: 1px solid var(--vc-primary);
+      border-radius: 100px;
+      background: var(--vc-primary);
+      color: var(--vc-on-primary);
       font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: transform .2s ease, background .2s ease;
     }
+    .hero-cta:hover { background: #000; }
+    .hero-cta:active { transform: scale(.98); }
+    .hero-cta:focus-visible { outline: 2px solid var(--vc-link); outline-offset: 3px; }
+
+    .page-shell { max-width: var(--vc-page); margin: 0 auto; padding: 64px 32px 0; }
+    .page-shell > section { padding: 0; }
+    .section-intro { margin-bottom: 24px; }
+    .section-kicker {
+      margin-bottom: 8px;
+      color: var(--vc-mute);
+      font-family: var(--vc-mono);
+      font-size: 12px;
+    }
+    .section-title {
+      margin: 0;
+      color: var(--vc-ink);
+      font-family: var(--vc-serif);
+      font-size: clamp(25px, 3vw, 32px);
+      font-weight: 600;
+      line-height: 1.25;
+      letter-spacing: -1.1px;
+      text-transform: none;
+    }
+    .section-copy { max-width: 760px; margin: 10px 0 0; color: var(--vc-body); font-size: 15px; }
+
+    /* 工作台：白色产品面板、发丝线、多层微阴影。 */
+    .workbench {
+      overflow: hidden;
+      margin-bottom: 64px;
+      border-radius: 12px;
+      background: var(--vc-canvas);
+      box-shadow: var(--vc-shadow-4);
+    }
+    .status-row {
+      min-height: 52px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--vc-hairline);
+      background: var(--vc-canvas-soft);
+    }
+    .status-copy { min-width: 0; color: var(--vc-body); font-size: 13px; }
+    .status-copy strong { color: var(--vc-ink); font-weight: 500; }
+    .status-badge {
+      flex: 0 0 auto;
+      max-width: 100%;
+      padding: 6px 12px;
+      border: 1px solid var(--vc-hairline);
+      border-radius: 999px;
+      background: var(--vc-canvas);
+      color: var(--vc-body);
+      font-family: var(--vc-mono);
+      font-size: 11px;
+      font-weight: 400;
+      white-space: nowrap;
+      transition: color .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-bottom: 1px solid var(--vc-hairline);
+    }
+    .metric {
+      min-width: 0;
+      padding: 28px 24px 24px;
+      border-right: 1px solid var(--vc-hairline);
+    }
+    .metric:last-child { border-right: 0; }
+    .metric-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 18px;
+      color: var(--vc-mute);
+      font-family: var(--vc-mono);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .metric-label { min-height: 40px; color: var(--vc-body); font-size: 14px; }
+    .metric-value {
+      margin-top: 8px;
+      color: var(--vc-ink);
+      font-family: var(--vc-mono);
+      font-size: clamp(30px, 3.2vw, 40px);
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: -1.5px;
+      font-variant-numeric: tabular-nums;
+    }
+    .metric-detail {
+      margin-top: 18px;
+      padding-top: 12px;
+      border-top: 1px solid var(--vc-hairline);
+      color: var(--vc-mute);
+      font-size: 12px;
+      min-height: 31px;
+    }
+    .control-row {
+      padding: 24px;
+      display: grid;
+      grid-template-columns: auto minmax(240px, 1fr) auto;
+      align-items: center;
+      gap: 24px;
+    }
+    .yaw-readout { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+    .yaw-name { color: var(--vc-ink); font-size: 14px; font-weight: 500; }
+    .yaw-value {
+      min-width: 62px;
+      padding: 7px 10px;
+      border: 1px solid var(--vc-hairline);
+      border-radius: 6px;
+      background: var(--vc-canvas-soft);
+      text-align: center;
+      font-family: var(--vc-mono);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+    input.yaw-range {
+      width: 100%;
+      height: 4px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--vc-primary) 0 50%, var(--vc-hairline) 50% 100%);
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+    input.yaw-range::-webkit-slider-thumb {
+      width: 18px;
+      height: 18px;
+      border: 4px solid var(--vc-canvas);
+      border-radius: 50%;
+      background: var(--vc-primary);
+      box-shadow: 0 0 0 1px var(--vc-primary);
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    input.yaw-range::-moz-range-thumb {
+      width: 10px;
+      height: 10px;
+      border: 4px solid var(--vc-canvas);
+      border-radius: 50%;
+      background: var(--vc-primary);
+      box-shadow: 0 0 0 1px var(--vc-primary);
+    }
+    input.yaw-range:focus-visible { outline: 2px solid var(--vc-link); outline-offset: 8px; }
+    .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .action-button {
+      min-height: 40px;
+      padding: 0 16px;
+      border: 1px solid var(--vc-hairline);
+      border-radius: 100px;
+      background: var(--vc-canvas);
+      color: var(--vc-ink);
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+    .action-button:hover { border-color: var(--vc-primary); }
+    .action-button.active { border-color: var(--vc-primary); background: var(--vc-primary); color: var(--vc-on-primary); }
+    .action-button:active { transform: scale(.98); }
+    .action-button:focus-visible { outline: 2px solid var(--vc-link); outline-offset: 2px; }
+
+    .dynamic-section { margin-bottom: 80px; }
+    .plot-card {
+      overflow: hidden;
+      border-radius: 12px;
+      background: var(--vc-canvas);
+      box-shadow: var(--vc-shadow-2);
+    }
+    .plot-card + .plot-card { margin-top: 20px; }
+    .plot-header {
+      min-height: 56px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--vc-hairline);
+    }
+    .plot-name { color: var(--vc-ink); font-size: 14px; font-weight: 500; }
+    .plot-meta { color: var(--vc-mute); font-family: var(--vc-mono); font-size: 11px; white-space: nowrap; }
+    .plot-body { padding: 8px 12px 0; min-width: 0; }
+    .plot-caption { padding: 14px 20px 18px; border-top: 1px solid var(--vc-hairline); color: var(--vc-body); font-size: 12px; line-height: 1.6; }
+    .plot-pair { margin-top: 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+
+    .evidence-section {
+      position: relative;
+      isolation: isolate;
+      padding: 80px 0 88px;
+    }
+    .evidence-section::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 100vw;
+      transform: translateX(-50%);
+      background: var(--vc-canvas);
+      border-top: 1px solid var(--vc-hairline);
+    }
+    .evidence-stack { display: grid; gap: 20px; margin-top: 28px; }
+    .evidence-card {
+      overflow: hidden;
+      border: 1px solid var(--vc-hairline);
+      border-radius: 12px;
+      background: var(--vc-canvas);
+      box-shadow: var(--vc-shadow-2);
+    }
+    .evidence-card img { display: block; width: 100%; height: auto; background: #fff; }
+    .evidence-caption {
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      border-top: 1px solid var(--vc-hairline);
+      color: var(--vc-body);
+      font-size: 12px;
+    }
+    .pdf-link { color: var(--vc-link); font-weight: 500; text-decoration: none; white-space: nowrap; }
+    .pdf-link:hover { color: var(--vc-link-deep); text-decoration: underline; }
+    .pdf-link:focus-visible { outline: 2px solid var(--vc-link); outline-offset: 2px; }
+
+    .wake-footer {
+      margin: 0;
+      padding: 56px 32px 64px;
+      border-top: 1px solid var(--vc-hairline);
+      background: var(--vc-canvas-soft);
+      color: var(--vc-body);
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+    .footer-inner { max-width: 960px; margin: 0 auto; }
+    .footer-title { margin-bottom: 10px; color: var(--vc-ink); font-family: var(--vc-serif); font-size: 15px; font-weight: 600; }
+    .footer-meta { margin-top: 12px; color: var(--vc-mute); font-family: var(--vc-mono); font-size: 10.5px; }
 
     @media (max-width: 1024px) {
-      .ledger-strip { grid-template-columns: repeat(2, 1fr); }
-      .ledger-col { border-bottom: 1px solid var(--v-line); }
-      .grid-plots { grid-template-columns: 1fr; min-width: 0;}
+      .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .metric:nth-child(2) { border-right: 0; }
+      .metric:nth-child(-n+2) { border-bottom: 1px solid var(--vc-hairline); }
+      .control-row { grid-template-columns: 1fr; gap: 20px; }
+      .quick-actions { justify-content: flex-start; }
+      .plot-pair { grid-template-columns: 1fr; }
     }
     @media (max-width: 640px) {
-      .ledger-strip { grid-template-columns: 1fr; }
-      .t-nav-inner, .t-container { padding: 0 20px; }
-      .v-plots-container { padding: 20px; }
-      .yaw-controls { flex-direction: column; align-items: flex-start; }
+      .t-nav-row1, .hero-inner, .page-shell { padding-left: 20px; padding-right: 20px; }
+      .t-nav-badge, .t-nav-here { display: none; }
+      .wake-hero { min-height: 380px; }
+      .hero-inner { padding-top: 56px; padding-bottom: 64px; }
+      .hero-title { letter-spacing: -1.4px; }
+      .metrics { grid-template-columns: 1fr; }
+      .metric { border-right: 0; border-bottom: 1px solid var(--vc-hairline); }
+      .metric:last-child { border-bottom: 0; }
+      .status-row { align-items: flex-start; flex-direction: column; }
+      .status-badge { white-space: normal; }
+      .control-row { padding: 20px; }
+      .quick-actions { width: 100%; }
+      .action-button { flex: 1 1 auto; }
+      .plot-header, .evidence-caption { align-items: flex-start; flex-direction: column; }
+      .plot-meta { white-space: normal; }
+      .evidence-section { padding-top: 64px; }
     }
-      /* ===== 统一双行导航模块条（系统级覆盖，全站同一套，杜绝指示冲突） ===== */
-    .t-nav { height: auto; }
-    .t-nav-inner { max-width: none; width: 100%; margin: 0; padding: 0; display: block; }
-    .t-nav-row1 { max-width: 1240px; margin: 0 auto; padding: 13px 32px 11px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
-    .t-nav-here { font-family: var(--v-mono); font-size: 11px; font-weight: 700; color: var(--v-mute); letter-spacing: 0.06em; white-space: nowrap; }
-    .t-nav-links { border-top: 1px solid var(--v-line); }
-    .t-nav-links-in { max-width: 1240px; margin: 0 auto; padding: 0 24px; display: flex; align-items: stretch; overflow-x: auto; scrollbar-width: none; }
-    .t-nav-links-in::-webkit-scrollbar { display: none; }
-    .t-nav-links a { font-family: var(--v-body-font); font-size: 12px; font-weight: 600; color: var(--v-mute); text-decoration: none; padding: 9px 9px 8px; white-space: nowrap; border-bottom: 2px solid transparent; display: inline-flex; gap: 6px; align-items: baseline; }
-    .t-nav-links a i { font-style: normal; font-family: var(--v-mono); font-size: 9.5px; font-weight: 700; color: var(--v-faint); letter-spacing: 0.05em; }
-    .t-nav-links a:hover { color: var(--v-ink); background: var(--v-bg-soft); }
-    .t-nav-links a.active { color: var(--v-teal-bright); border-bottom-color: var(--v-teal-bright); }
-    .t-nav-links a.active i { color: var(--v-teal-bright); }
-    @media (max-width: 640px) { .t-nav-row1 { padding: 12px 20px 10px; } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
+    }
   </style>
 </head>
 <body>
-
-<!-- 顶部工科导航条 -->
 <nav class="t-nav">
   <div class="t-nav-inner">
     <div class="t-nav-row1">
-      <a href="index.html" class="t-nav-brand" style="text-decoration:none;color:inherit">
+      <a href="index.html" class="t-nav-brand">
         <span>风电场偏航优化平台</span>
-        <span class="t-nav-badge">SUN CHENGZE · VISUALIZATION</span>
+        <span class="t-nav-badge">孙承泽 · 可视化与交互</span>
       </a>
       <span class="t-nav-here" id="tNavHere"></span>
     </div>
@@ -427,150 +530,146 @@
       <a href="3d_farm.html" data-nav-code="11" data-nav-name="3D风场"><i>11</i>3D风场</a>
       <a href="3d_surface.html" data-nav-code="12" data-nav-name="3D曲面"><i>12</i>3D曲面</a>
       <a href="3d_volume.html" data-nav-code="13" data-nav-name="3D体"><i>13</i>3D体</a>
-      <a href="interface.html" data-nav-code="14" data-nav-name="契约"><i>14</i>契约</a>      <a href="overview.html" data-nav-code="MAP" data-nav-name="系统总览"><i>MAP</i>总览</a>
+      <a href="interface.html" data-nav-code="14" data-nav-name="契约"><i>14</i>契约</a>
+      <a href="overview.html" data-nav-code="MAP" data-nav-name="系统总览"><i>MAP</i>总览</a>
     </div></div>
   </div>
 </nav>
 
-<!-- Hero 页眉 (限宽 860px，消除副标题折行短孤句) -->
-<header class="v-pg-hero t-container">
-  <div class="v-pg-tag">01 / INTERACTIVE WAKE DEFLECTION MODULE · FLORIS GCH</div>
-  <h1 class="v-pg-title">尾流交互分析与两机对流响应</h1>
-  <p class="v-pg-sub">
-    拖动上游偏航角滑块（-30° 至 +30°），实解水平气动切片云图、上游损失 -16.8% 与下游增额 +108.4% 间的非线性增益互换。
-  </p>
+<header class="wake-hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">尾流交互分析 / FLORIS 4.6.6 GCH / 8 m·s⁻¹</div>
+    <h1 class="hero-title">偏航让尾流离开下游转子。</h1>
+    <p class="hero-lead">拖动上游风机偏航角，观察低能尾流的横向偏移，以及上游让利与下游功率回升如何共同改变两机总出力。</p>
+    <div class="hero-actions">
+      <a class="hero-cta" href="#interactiveWorkbench">开始交互分析</a>
+    </div>
+  </div>
 </header>
 
-<main class="t-container">
-
-  <!-- 
-   * 一体化瑞士网格科研控制台 (.v-workbench-panel)
-   * 将原理条、指标带与控制条聚合入唯一的 1px 外框内，彻底消除不必要的水平杂线！
-   -->
-  <div class="v-workbench-panel">
-
-    <!-- 因果说明条 (严格在一行，文字 54 字，红框永不换行) -->
-    <div class="cause-bar">
-      <div class="cb-left">
-        <span class="cb-label">物理常识</span>
-        <span class="cb-text">上游主动偏航把低能尾流<b>侧向推离流道</b>；上游出电微降 <b>-16.8%</b>，换取下游干净迎流风速回升与功率<b>翻倍增至 +108.4%</b>，实现全场净增。</span>
-      </div>
-      <span class="cb-pill" id="causePill">当前 0°：尾流正对下游 (-0.0%)</span>
+<main class="page-shell">
+  <section id="interactiveWorkbench" aria-labelledby="workbenchTitle">
+    <div class="section-intro">
+      <div class="section-kicker">交互工作台</div>
+      <h2 class="section-title" id="workbenchTitle">一条滑块，读取四项功率响应。</h2>
+      <p class="section-copy">数据来自两台 NREL 5MW 风机的 5D 串列算例。偏航角范围为 -30°至 +30°，步长 5°；下游风机固定为 0°。</p>
     </div>
 
-    <!-- 4 列学术指标横向精简带 (.ledger-strip，主数据默认采用深黑墨字 var(--v-ink)) -->
-    <div class="ledger-strip">
-      <div class="ledger-col">
-        <div>
-          <div class="l-meta"><span>01 / UPSTREAM P1</span><span style="color:var(--v-mute)">ROTOR 1</span></div>
-          <div class="l-title">上游风机 P₁ 出电 (kW)</div>
-          <div class="l-val" id="kP1">1754</div>
-        </div>
-        <div class="l-details">
-          <div>相对自然对风 0° 基准</div>
-          <div id="dP1" style="font-family:var(--v-mono);font-weight:700;color:var(--v-mute)">0 kW (+0.0%)</div>
-        </div>
+    <div class="workbench">
+      <div class="status-row">
+        <div class="status-copy"><strong>物理关系：</strong>上游主动偏航会降低自身迎风投影，同时把低能尾流侧向推离下游转子。全场收益取决于两者的净效应。</div>
+        <div class="status-badge" id="causePill" aria-live="polite">当前 0°：尾流正对下游</div>
       </div>
 
-      <div class="ledger-col">
-        <div>
-          <div class="l-meta"><span>02 / DOWNSTREAM P2</span><span style="color:var(--v-yellow)">AERO RELIEF</span></div>
-          <div class="l-title">下游风机 P₂ 出电 (kW)</div>
-          <div class="l-val" id="kP2">436</div>
-        </div>
-        <div class="l-details">
-          <div>相对自然对风 0° 基准</div>
-          <div id="dP2" style="font-family:var(--v-mono);font-weight:700;color:var(--v-mute)">0 kW (+0.0%)</div>
-        </div>
+      <div class="metrics">
+        <article class="metric">
+          <div class="metric-meta"><span>上游风机</span><span>P₁ / kW</span></div>
+          <div class="metric-label">主动偏航后的上游出力</div>
+          <div class="metric-value" id="kP1">1754</div>
+          <div class="metric-detail" id="dP1">相对 0°：0 kW（0.0%）</div>
+        </article>
+        <article class="metric">
+          <div class="metric-meta"><span>下游风机</span><span>P₂ / kW</span></div>
+          <div class="metric-label">尾流避让后的下游出力</div>
+          <div class="metric-value" id="kP2">436</div>
+          <div class="metric-detail" id="dP2">相对 0°：0 kW（0.0%）</div>
+        </article>
+        <article class="metric">
+          <div class="metric-meta"><span>串列系统</span><span>P<sub>tot</sub> / kW</span></div>
+          <div class="metric-label">两台风机总出力</div>
+          <div class="metric-value" id="kPtot">2190</div>
+          <div class="metric-detail" id="dPtot">相对 0°：0 kW（0.0%）</div>
+        </article>
+        <article class="metric">
+          <div class="metric-meta"><span>相对收益</span><span>ΔP / %</span></div>
+          <div class="metric-label">相对自然对风基准的增益</div>
+          <div class="metric-value" id="kGain">0.00%</div>
+          <div class="metric-detail" id="dOpt">离散最优 +25°：+8.13%</div>
+        </article>
       </div>
 
-      <div class="ledger-col">
-        <div>
-          <div class="l-meta"><span>03 / TOTAL POWER</span><span style="color:var(--v-teal-bright)">SYSTEM SUM</span></div>
-          <div class="l-title">两机串列总出电 (kW)</div>
-          <div class="l-val" id="kPtot">2190</div>
+      <div class="control-row">
+        <div class="yaw-readout">
+          <span class="yaw-name">上游偏航角 γ₁</span>
+          <output class="yaw-value" id="yawBadge" for="yawSlider">0°</output>
         </div>
-        <div class="l-details">
-          <div>相对自然对风 0° 基准</div>
-          <div id="dPtot" style="font-family:var(--v-mono);font-weight:700;color:var(--v-mute)">0 kW (+0.0%)</div>
-        </div>
-      </div>
-
-      <div class="ledger-col">
-        <div>
-          <div class="l-meta"><span>04 / RELATIVE GAIN</span><span style="color:var(--v-rust)">OPTIMAL +25°</span></div>
-          <div class="l-title">相对 0° 基准增幅比</div>
-          <div class="l-val" id="kGain">0.0%</div>
-        </div>
-        <div class="l-details">
-          <div>两台最优增幅锚点</div>
-          <div id="dOpt" style="font-family:var(--v-mono);font-weight:700">最优 +25° · +8.13%</div>
+        <input class="yaw-range" type="range" id="yawSlider" min="-30" max="30" value="0" step="5" aria-label="上游风机偏航角">
+        <div class="quick-actions">
+          <button class="action-button active" id="btnZero" type="button">0° 基准</button>
+          <button class="action-button" id="btnOpt" type="button">+25° 最优</button>
+          <button class="action-button" id="btnPlay" type="button" aria-pressed="false">自动扫描</button>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- 偏航控件条 (下标精准订正为 γ₁，空间匀称舒适) -->
-    <div class="yaw-controls">
-      <div style="display:flex;align-items:center;gap:12px">
-        <span class="yaw-label" style="font-size:16px;font-weight:750;color:var(--v-ink)">上游风机偏航角 &gamma;<sub>1</sub></span>
-        <span class="yaw-badge" id="yawBadge">0°</span>
-      </div>
-      <div class="yaw-slider-wrap">
-        <input type="range" id="yawSlider" min="-30" max="30" value="0" step="5" style="width:100%">
-      </div>
-      <div class="yaw-quick">
-        <button class="v-btn active" id="btnZero">0° 基准</button>
-        <button class="v-btn" id="btnOpt">+25° 最优</button>
-        <button class="v-btn" id="btnPlay">自动扫描</button>
-      </div>
+  <section class="dynamic-section" aria-labelledby="dynamicTitle">
+    <div class="section-intro">
+      <div class="section-kicker">动态图表</div>
+      <h2 class="section-title" id="dynamicTitle">先看尾流位置，再看功率净收益。</h2>
+      <p class="section-copy">速度场和功率曲线读取同一工况索引。蓝色标记表示离散最优点，黑色标记表示当前滑块工作点。</p>
     </div>
 
-  </div>
+    <article class="plot-card">
+      <div class="plot-header">
+        <div class="plot-name">轮毂高度水平速度场</div>
+        <div class="plot-meta">128 × 64 原始网格 / 前端 64 × 32 降采样</div>
+      </div>
+      <div class="plot-body"><div id="fieldPlot" style="height:460px"></div></div>
+      <div class="plot-caption">FLORIS 4.6.6 GCH，来流 8 m/s，湍流强度 6%。颜色表示绝对风速，风机位置和当前偏航角随滑块同步更新。</div>
+    </article>
 
-  <!-- 图表视口卡 (.v-plots-container，图例居顶安全区 y=1.18 杜绝底部文字重叠) -->
-  
-  
-
-<div class="v-plots-container">
-    <div class="grid-plots">
-      <div>
-        <div id="fieldPlot" style="height:420px"></div>
-        <div class="plot-note">
-          水平尾流速度切片（FLORIS 4.6.6 GCH 模型，8 m/s 来流）。暖红金=高速清洁来流，蓝色=低能尾流核心；拖动滑块时观察尾流轨迹线横向偏移。
+    <div class="plot-pair">
+      <article class="plot-card">
+        <div class="plot-header">
+          <div class="plot-name">两机总功率响应</div>
+          <div class="plot-meta">P₁ + P₂</div>
         </div>
-      </div>
-      <div>
-        <div id="powerPlot" style="height:205px"></div>
-        <div id="splitPlot" style="height:205px;margin-top:10px"></div>
-        <div class="plot-note">
-          上图：全场总电量 vs 上游偏航角，金点=当前工作点，绿点=最优；下图：P₁ / P₂ 功率交错消长分解曲线。
+        <div class="plot-body"><div id="powerPlot" style="height:300px"></div></div>
+        <div class="plot-caption">总功率在 +25°达到离散峰值 2368.40 kW，相对 0°基准增加 8.13%。</div>
+      </article>
+      <article class="plot-card">
+        <div class="plot-header">
+          <div class="plot-name">上游让利与下游回升</div>
+          <div class="plot-meta">P₁ / P₂ 分解</div>
         </div>
-      </div>
+        <div class="plot-body"><div id="splitPlot" style="height:300px"></div></div>
+        <div class="plot-caption">+25°时上游 P₁下降约 16.8%，下游 P₂上升约 108.4%，净效应为全场增益。</div>
+      </article>
     </div>
-  </div>
+  </section>
 
-<div class="v-plots-container" style="border:1px solid rgba(30,41,59,0.18); background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,249,250,0.9));">
-    <div class="plot-head"><span class="plot-tick">NATURE FIG</span>串列偏航出版图 — P1/P2/Ptot权衡 + 0° vs 25°流场 · PDF矢量</div>
-    <div style="display:grid; gap:18px;">
-      <img src="assets/img/nature/fig1_tandem_yaw.png" style="width:100%;border:1px solid var(--v-line);border-radius:4px">
-      <img src="assets/img/nature/fig4_wake_contour.png" style="width:100%;border:1px solid var(--v-line);border-radius:4px">
-      <div class="plot-note">Nature单栏3.5in矢量，上游-16.8%让利下游+108.4%暴增，全场+8.13%，流场尾流横向偏转放行物理 <a href="assets/img/nature/fig4_wake_contour.pdf" target="_blank">→ PDF</a></div>
+  <section class="evidence-section" aria-labelledby="evidenceTitle">
+    <div class="section-intro">
+      <div class="section-kicker">静态出版证据</div>
+      <h2 class="section-title" id="evidenceTitle">交互结论由同源出版图复核。</h2>
+      <p class="section-copy">以下图片由仓库中的 CSV 与 NPZ 数据生成。PDF 保留矢量文字和曲线，可用于组会、论文草稿与软著材料。</p>
     </div>
-  </div>
-
+    <div class="evidence-stack">
+      <figure class="evidence-card">
+        <img src="assets/img/nature/fig1_tandem_yaw.png" alt="两机串列中P1、P2、总功率与偏航角的关系">
+        <figcaption class="evidence-caption">
+          <span>两机功率权衡：上游让利、下游回升与全场最优点。</span>
+          <a class="pdf-link" href="assets/img/nature/fig1_tandem_yaw.pdf" target="_blank" rel="noopener">打开矢量 PDF</a>
+        </figcaption>
+      </figure>
+      <figure class="evidence-card">
+        <img src="assets/img/nature/fig4_wake_contour.png" alt="0度基准与25度最优偏航速度场对比">
+        <figcaption class="evidence-caption">
+          <span>0°与 +25°速度场对照：低速尾流横向移开下游转子。</span>
+          <a class="pdf-link" href="assets/img/nature/fig4_wake_contour.pdf" target="_blank" rel="noopener">打开矢量 PDF</a>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
 </main>
 
-<!-- 页脚 (百分百居中对称，严密确权) -->
-<footer class="t-footer">
-  <div class="footer-inner-centered">
-    <div class="footer-brand" style="margin-bottom:6px">西安交通大学 · 能源与动力工程学院 · 大学生创新训练项目团队</div>
-    <div style="line-height:1.8;color:var(--v-body);font-size:12.5px;margin-bottom:12px">
-      <b>成员确权：</b>田铭雨（高保真CFD流场仿真）· 袁夫达（POD特征降阶与代理模型）· 厉今飞（多风速工况基线）· 洪祖名（PPO跟踪与优化求解）· 孙承泽（可视化与交互系统负责）<br>
-      <b>指导教师：</b>李良星 副教授 ｜ 审计自检脚本：<code>check_contract.py</code> (100% Exit Code 0 绿灯)
-    </div>
-    <div style="font-family:var(--v-mono);font-size:11px;color:var(--v-mute);letter-spacing:0.06em">
-      <span>SWISS INTERNATIONAL TYPOGRAPHIC STYLE · EDGE INFERENCE · REGULAR GRID INTERPOLATOR</span>
-    </div>
+<footer class="wake-footer">
+  <div class="footer-inner">
+    <div class="footer-title">西安交通大学 · 能源与动力工程学院 · 大学生创新训练项目团队</div>
+    <div>田铭雨（高保真 CFD 流场仿真）· 袁夫达（POD 降阶与代理模型）· 厉今飞（多工况基线）· 洪祖名（PPO 跟踪与优化）· 孙承泽（可视化与交互系统）</div>
+    <div>指导教师：李良星 副教授</div>
+    <div class="footer-meta">数据：cases.csv / fields/*.npz　模型：FLORIS 4.6.6 GCH　门禁：check_contract.py</div>
   </div>
 </footer>
 
@@ -578,146 +677,197 @@
 <script src="assets/data_3d.js"></script>
 <script src="assets/js/interp.js"></script>
 <script>
-(function(){
-  const W = window.WIND_DATA, S = window.SURROGATE, D3 = window.WIND_3D_DATA;
-  const m = W.multi, i8 = m.wind_speeds.indexOf(8);
-  const slider = document.getElementById('yawSlider'), badge = document.getElementById('yawBadge');
-  const optYaw = m.yaw_angles[m.ptot[i8].indexOf(Math.max(...m.ptot[i8]))];
-  document.getElementById('dOpt').textContent = '最优 +' + optYaw + '° · +8.13%';
+(function () {
+  const W = window.WIND_DATA;
+  const S = window.SURROGATE;
+  const D3 = window.WIND_3D_DATA;
+  const multi = W.multi;
+  const speedIndex = multi.wind_speeds.indexOf(8);
+  const slider = document.getElementById('yawSlider');
+  const badge = document.getElementById('yawBadge');
+  const playButton = document.getElementById('btnPlay');
+  const sans = '"Geist","DengXian","等线","PingFang SC","Microsoft YaHei",sans-serif';
+  const mono = '"Geist Mono","DengXian","等线","PingFang SC","Microsoft YaHei",monospace';
+  const config = { responsive: true, displayModeBar: false };
+  const axis = {
+    color: '#4d4d4d', gridcolor: '#ebebeb', linecolor: '#a1a1a1',
+    zerolinecolor: '#a1a1a1', tickfont: { family: mono, size: 11, color: '#4d4d4d' },
+    title: { font: { family: sans, size: 12, color: '#4d4d4d' } }
+  };
+  const baseLayout = {
+    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: '#ffffff',
+    font: { family: sans, size: 12, color: '#171717' },
+    hoverlabel: { bgcolor: '#171717', bordercolor: '#171717', font: { color: '#ffffff', family: sans, size: 12 } }
+  };
 
-  let playTimer = null, playing = false;
+  const optPower = Math.max(...multi.ptot[speedIndex]);
+  const optYaw = multi.yaw_angles[multi.ptot[speedIndex].indexOf(optPower)];
+  let timer = null;
+  let playing = false;
 
-  function fmtDelta(cur, base){
-    const d = cur - base, pct = base > 0 ? (100 * d / base) : 0;
-    const sign = d > 0 ? '+' : '';
-    return { text: sign + Math.round(d) + ' kW (' + sign + pct.toFixed(1) + '%)', up: d > 0.5, down: d < -0.5 };
+  function signed(value, digits) {
+    if (Math.abs(value) < Math.pow(10, -digits) / 2) return value.toFixed(digits);
+    return (value > 0 ? '+' : '') + value.toFixed(digits);
   }
-  function setDelta(el, cur, base){
-    const r = fmtDelta(cur, base);
-    el.textContent = r.text;
-    el.style.color = r.up ? 'var(--v-teal-bright)' : r.down ? 'var(--v-rust)' : 'var(--v-mute)';
+
+  function setDelta(id, current, baseline) {
+    const delta = current - baseline;
+    const percent = baseline ? delta / baseline * 100 : 0;
+    const el = document.getElementById(id);
+    el.textContent = `相对 0°：${signed(delta, 0)} kW（${signed(percent, 1)}%）`;
+    el.style.color = delta > .5 ? '#0070f3' : delta < -.5 ? '#ee0000' : '#888888';
   }
 
-  function render(){
-    const yaw = parseInt(slider.value);
-    badge.textContent = (yaw >= 0 ? '+' : '') + yaw + '°';
+  function updateRangeFill(yaw) {
+    const progress = (yaw + 30) / 60 * 100;
+    slider.style.background = `linear-gradient(90deg,#171717 0 ${progress}%,#ebebeb ${progress}% 100%)`;
+  }
+
+  function render() {
+    const yaw = Number(slider.value);
+    const current = S.predict_power(yaw, 8);
+    const baseline = S.predict_power(0, 8);
+    const gain = (current.ptot - baseline.ptot) / baseline.ptot * 100;
+
+    badge.value = `${yaw > 0 ? '+' : ''}${yaw}°`;
+    badge.textContent = badge.value;
+    updateRangeFill(yaw);
     document.getElementById('btnZero').classList.toggle('active', yaw === 0);
     document.getElementById('btnOpt').classList.toggle('active', yaw === optYaw);
 
-    const pred = S.predict_power(yaw, 8);
-    const base = S.predict_power(0, 8);
-    const gain = ((pred.ptot - base.ptot) / base.ptot * 100);
+    document.getElementById('kP1').textContent = Math.round(current.p1);
+    document.getElementById('kP2').textContent = Math.round(current.p2);
+    document.getElementById('kPtot').textContent = Math.round(current.ptot);
+    document.getElementById('kGain').textContent = `${gain > 0 ? '+' : ''}${gain.toFixed(2)}%`;
+    document.getElementById('kP1').style.color = yaw === 0 ? '#171717' : '#ee0000';
+    document.getElementById('kP2').style.color = yaw === 0 ? '#171717' : '#0070f3';
+    document.getElementById('kPtot').style.color = gain > .5 ? '#0070f3' : '#171717';
+    document.getElementById('kGain').style.color = gain > .5 ? '#0070f3' : gain < -.5 ? '#ee0000' : '#171717';
+    setDelta('dP1', current.p1, baseline.p1);
+    setDelta('dP2', current.p2, baseline.p2);
+    setDelta('dPtot', current.ptot, baseline.ptot);
+    document.getElementById('dOpt').textContent = `离散最优 +${optYaw}°：+${((optPower - baseline.ptot) / baseline.ptot * 100).toFixed(2)}%`;
 
-    document.getElementById('kP1').textContent = Math.round(pred.p1);
-    document.getElementById('kP2').textContent = Math.round(pred.p2);
-    document.getElementById('kPtot').textContent = Math.round(pred.ptot);
-    
-    const gEl = document.getElementById('kGain');
-    gEl.textContent = (gain >= 0 && yaw !== 0 ? '+' : '') + gain.toFixed(2) + '%';
-    gEl.style.color = gain > 0.5 ? 'var(--v-teal-bright)' : gain < -0.5 ? 'var(--v-rust)' : 'var(--v-ink)';
-    
-    // 基础主数视觉规范：在自然对风 0° 时统一呈现权威碳黑色；发生优化偏航时显示专色
-    document.getElementById('kP1').style.color = yaw === 0 ? 'var(--v-ink)' : 'var(--v-ink)';
-    document.getElementById('kP2').style.color = yaw === 0 ? 'var(--v-ink)' : 'var(--v-yellow)';
-    document.getElementById('kPtot').style.color = yaw === 0 ? 'var(--v-ink)' : 'var(--v-teal-bright)';
-
-    setDelta(document.getElementById('dP1'), pred.p1, base.p1);
-    setDelta(document.getElementById('dP2'), pred.p2, base.p2);
-    setDelta(document.getElementById('dPtot'), pred.ptot, base.ptot);
-
-    // 因果提示条实时响应
-    const pill = document.getElementById('causePill');
-    if(yaw === 0){
-      pill.textContent = '当前 0°：尾流正对下游 (-0.0%)';
-      pill.style.background = 'rgba(30,41,59,0.06)'; pill.style.color = 'var(--v-ink)';
-    } else if(yaw === optYaw){
-      pill.textContent = '最优 +' + yaw + '°：增益 +' + gain.toFixed(2) + '%';
-      pill.style.background = 'rgba(30, 103, 92, 0.14)'; pill.style.color = 'var(--v-teal-bright)';
-    } else if(gain > 0){
-      pill.textContent = '偏航 ' + (yaw >= 0 ? '+' : '') + yaw + '°：增益 +' + gain.toFixed(2) + '%';
-      pill.style.background = 'rgba(30, 103, 92, 0.08)'; pill.style.color = 'var(--v-teal-bright)';
+    const status = document.getElementById('causePill');
+    if (yaw === 0) {
+      status.textContent = '当前 0°：尾流正对下游';
+      status.style.background = '#ffffff';
+      status.style.borderColor = '#ebebeb';
+      status.style.color = '#4d4d4d';
+    } else if (yaw === optYaw) {
+      status.textContent = `离散最优 +${yaw}°：总功率 +${gain.toFixed(2)}%`;
+      status.style.background = '#d3e5ff';
+      status.style.borderColor = '#0070f3';
+      status.style.color = '#0761d1';
+    } else if (gain > 0) {
+      status.textContent = `偏航 ${yaw > 0 ? '+' : ''}${yaw}°：总功率 +${gain.toFixed(2)}%`;
+      status.style.background = '#d3e5ff';
+      status.style.borderColor = '#0070f3';
+      status.style.color = '#0761d1';
     } else {
-      pill.textContent = '偏航 ' + yaw + '°：增益 ' + gain.toFixed(2) + '% (已过最优)';
-      pill.style.background = 'rgba(173, 80, 56, 0.12)'; pill.style.color = 'var(--v-rust)';
+      status.textContent = `偏航 ${yaw > 0 ? '+' : ''}${yaw}°：总功率 ${gain.toFixed(2)}%`;
+      status.style.background = '#f7d4d6';
+      status.style.borderColor = '#ee0000';
+      status.style.color = '#c50000';
     }
 
-    // 1. 绘制水平流速云图
-    const f2d = D3 && D3.fields_2d && D3.fields_2d[String(yaw)];
-    const optVal = m.ptot[i8][m.yaw_angles.indexOf(optYaw)];
-    if(f2d){
-      Plotly.react('fieldPlot', [{
-        type: 'heatmap', x: f2d.x, y: f2d.y, z: f2d.u,
-        colorscale: window.FieldSeq, zmin: 4, zmax: 9,
-        colorbar: { title: { text: 'm/s', side: 'right' }, thickness: 12, len: 0.8, x: 1.02 },
-        hovertemplate: 'x:%{x:.0f}m y:%{y:.0f}m u:%{z:.2f} m/s<extra></extra>'
-      }, {
-        type: 'scatter', x: [0, 630], y: [0, 0], mode: 'markers+text',
-        marker: { size: 14, color: ['#4d6884', '#1e675c'], symbol: 'triangle-up', line: { color: '#ffffff', width: 2 } },
-        text: ['  风机1 γ₁=' + yaw + '°', '  风机2 (0°)'], textposition: 'middle right',
-        textfont: { size: 11, color: '#1e293b' }, showlegend: false
-      }, {
-        type: 'scatter', x: [680], y: [yaw * 1.25], mode: 'markers',
-        marker: { size: 15, symbol: 'arrow-right', color: '#a87817', line: { color: '#ffffff', width: 1.5 } },
-        showlegend: false, hoverinfo: 'skip'
-      }], {
-        xaxis: { title: '顺风方向 x (m)' },
-        yaxis: { title: '横向 y (m)', range: [-300, 300] },
-        height: 420, margin: { l: 50, r: 60, t: 20, b: 45 },
-        paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
-      }, { responsive: true, displayModeBar: 'hover', modeBarButtonsToRemove: ['lasso2d', 'select2d'] });
+    const field = D3 && D3.fields_2d && D3.fields_2d[String(yaw)];
+    if (field) {
+      Plotly.react('fieldPlot', [
+        {
+          type: 'heatmap', x: field.x, y: field.y, z: field.u,
+          colorscale: 'Viridis', zmin: 4, zmax: 9,
+          colorbar: { title: { text: 'm/s', side: 'right', font: { family: mono, size: 11 } }, thickness: 12, len: .78, x: 1.01 },
+          hovertemplate: 'x=%{x:.0f} m<br>y=%{y:.0f} m<br>u=%{z:.2f} m/s<extra></extra>'
+        },
+        {
+          type: 'scatter', x: [0, 630], y: [0, 0], mode: 'markers+text',
+          marker: { size: 14, symbol: 'triangle-up', color: ['#171717', '#0070f3'], line: { color: '#fff', width: 2 } },
+          text: [`风机 1　γ₁=${yaw > 0 ? '+' : ''}${yaw}°`, '风机 2　0°'],
+          textposition: 'top center', textfont: { family: sans, size: 11, color: '#171717' },
+          showlegend: false, hoverinfo: 'skip'
+        }
+      ], Object.assign({}, baseLayout, {
+        height: 460,
+        margin: { l: 58, r: 72, t: 22, b: 50 },
+        xaxis: Object.assign({}, axis, { title: { text: '顺风方向 x（m）', font: axis.title.font } }),
+        yaxis: Object.assign({}, axis, { title: { text: '横向 y（m）', font: axis.title.font }, range: [-300, 300] })
+      }), { responsive: true, displayModeBar: 'hover', modeBarButtonsToRemove: ['lasso2d', 'select2d'] });
     }
 
-    // 2. 总电量曲线图
-    Plotly.react('powerPlot', [{
-      x: m.yaw_angles, y: m.ptot[i8], mode: 'lines', name: '总功率',
-      line: { color: '#1e675c', width: 2.5 }, fill: 'tozeroy', fillcolor: 'rgba(30, 103, 92, 0.08)'
-    }, {
-      x: [optYaw], y: [optVal], mode: 'markers', name: '最优',
-      marker: { size: 12, color: '#2d7569', symbol: 'circle', line: { color: '#ffffff', width: 2 } }
-    }, {
-      x: [yaw], y: [pred.ptot], mode: 'markers+text', name: '当前',
-      marker: { size: 13, color: '#a87817', line: { color: '#ffffff', width: 2 } },
-      text: ['  ' + (yaw >= 0 ? '+' : '') + yaw + '°'], textposition: 'middle right', textfont: { size: 11, color: '#1e293b' }
-    }], {
-      xaxis: { title: '上游偏航角 γ₁ (°)' },
-      yaxis: { title: '总电量 (kW)' },
-      height: 205, margin: { l: 50, r: 15, t: 15, b: 40 }, showlegend: false,
-      paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
-    }, { responsive: true, displayModeBar: false });
+    Plotly.react('powerPlot', [
+      {
+        x: multi.yaw_angles, y: multi.ptot[speedIndex], mode: 'lines', name: '总功率',
+        line: { color: '#171717', width: 2.3 },
+        hovertemplate: '偏航 %{x:.0f}°<br>总功率 %{y:.1f} kW<extra></extra>'
+      },
+      {
+        x: [optYaw], y: [optPower], mode: 'markers', name: '离散最优',
+        marker: { size: 12, color: '#0070f3', line: { color: '#fff', width: 2 } }
+      },
+      {
+        x: [yaw], y: [current.ptot], mode: 'markers', name: '当前工作点',
+        marker: { size: 11, color: '#171717', line: { color: '#fff', width: 2 } }
+      }
+    ], Object.assign({}, baseLayout, {
+      height: 300,
+      margin: { l: 58, r: 18, t: 42, b: 50 },
+      xaxis: Object.assign({}, axis, { title: { text: '上游偏航角 γ₁（°）', font: axis.title.font } }),
+      yaxis: Object.assign({}, axis, { title: { text: '总功率（kW）', font: axis.title.font } }),
+      legend: { orientation: 'h', y: 1.18, x: .5, xanchor: 'center', font: { family: sans, size: 11 } }
+    }), config);
 
-    // 3. P1 / P2 功率消长表列 (图例放置在上方安全区域 y=1.18，零文字重叠)
-    Plotly.react('splitPlot', [{
-      x: m.yaw_angles, y: m.p1[i8], mode: 'lines', name: '上游 P₁',
-      line: { color: '#64748b', width: 2 }
-    }, {
-      x: m.yaw_angles, y: m.p2[i8], mode: 'lines', name: '下游 P₂',
-      line: { color: '#1e675c', width: 2 }
-    }, {
-      x: [yaw, yaw], y: [0, Math.max(...m.p1[i8], ...m.p2[i8]) * 1.05], mode: 'lines',
-      line: { color: '#a87817', width: 1.5, dash: 'dot' }, showlegend: false, hoverinfo: 'skip'
-    }], {
-      xaxis: { title: '上游偏航角 γ₁ (°)' },
-      yaxis: { title: '单机 (kW)' },
-      height: 205, margin: { l: 50, r: 15, t: 32, b: 40 },
-      legend: { orientation: 'h', y: 1.18, x: 0.5, xanchor: 'center', font: { size: 11 } },
-      paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)'
-    }, { responsive: true, displayModeBar: false });
+    Plotly.react('splitPlot', [
+      {
+        x: multi.yaw_angles, y: multi.p1[speedIndex], mode: 'lines', name: '上游 P₁',
+        line: { color: '#ee0000', width: 2.1 },
+        hovertemplate: 'P₁ %{y:.1f} kW<extra></extra>'
+      },
+      {
+        x: multi.yaw_angles, y: multi.p2[speedIndex], mode: 'lines', name: '下游 P₂',
+        line: { color: '#0070f3', width: 2.1 },
+        hovertemplate: 'P₂ %{y:.1f} kW<extra></extra>'
+      },
+      {
+        x: [yaw, yaw], y: [0, Math.max(...multi.p1[speedIndex]) * 1.05], mode: 'lines',
+        line: { color: '#171717', width: 1, dash: 'dot' }, showlegend: false, hoverinfo: 'skip'
+      }
+    ], Object.assign({}, baseLayout, {
+      height: 300,
+      margin: { l: 58, r: 18, t: 42, b: 50 },
+      xaxis: Object.assign({}, axis, { title: { text: '上游偏航角 γ₁（°）', font: axis.title.font } }),
+      yaxis: Object.assign({}, axis, { title: { text: '单机功率（kW）', font: axis.title.font } }),
+      legend: { orientation: 'h', y: 1.18, x: .5, xanchor: 'center', font: { family: sans, size: 11 } }
+    }), config);
   }
 
-  slider.oninput = render;
-  document.getElementById('btnZero').onclick = () => { slider.value = 0; render(); };
-  document.getElementById('btnOpt').onclick = () => { slider.value = optYaw; render(); };
-  document.getElementById('btnPlay').onclick = function(){
-    if(playing){
-      clearInterval(playTimer); playing = false;
-      this.textContent = '自动扫描'; this.classList.remove('active'); return;
-    }
-    playing = true; this.textContent = '暂停扫描'; this.classList.add('active');
-    playTimer = setInterval(() => {
-      let v = parseInt(slider.value) + 5; if(v > 30) v = -30;
-      slider.value = v; render();
-    }, 450);
-  };
+  function stopScan() {
+    if (timer) window.clearInterval(timer);
+    timer = null;
+    playing = false;
+    playButton.textContent = '自动扫描';
+    playButton.classList.remove('active');
+    playButton.setAttribute('aria-pressed', 'false');
+  }
+
+  slider.addEventListener('input', render);
+  document.getElementById('btnZero').addEventListener('click', function () { slider.value = '0'; render(); });
+  document.getElementById('btnOpt').addEventListener('click', function () { slider.value = String(optYaw); render(); });
+  playButton.addEventListener('click', function () {
+    if (playing) { stopScan(); return; }
+    playing = true;
+    playButton.textContent = '暂停扫描';
+    playButton.classList.add('active');
+    playButton.setAttribute('aria-pressed', 'true');
+    timer = window.setInterval(function () {
+      let next = Number(slider.value) + 5;
+      if (next > 30) next = -30;
+      slider.value = String(next);
+      render();
+    }, 600);
+  });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) stopScan(); });
+  window.addEventListener('pagehide', stopScan);
 
   render();
 })();
