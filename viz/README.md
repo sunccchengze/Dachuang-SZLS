@@ -104,6 +104,6 @@ python site/benchmark_solver.py     # solver 页算法对比表复跑口径
 
 ## 仓库治理
 
-- 工作分支：`arena/019feacd-wind-farm-viz`（Cloudflare Pages 生产分支同此）；历史基线 `arena/019fe42f-wind-farm-viz`；**永不 merge 到 `main`**。
-- 交接与计划：`HANDOFF.md`、`14_DAYS_MASTER_PLAN.md`、`.learnings/`（更正/错误/特性/审计四类记忆）。
+- 当前固定工作分支：`arena/01a012f1-wind-farm-viz`；历史会话分支只作追溯；**永不 merge 到 `main`**。Cloudflare Pages 的生产分支需在控制台单独核对，不以旧文档中的分支名为准。
+- 当前交接以 `HANDOFF_NEXT_AGENT.md` 和 `FREEZE.md` 为准；`HANDOFF.md` 与 `.learnings/SESSION_ARCHIVE_20260810.md` 是历史记录。
 - 提交约定：小步、单主题、每个 diff 可追溯到实证来源；任何数字改动必须附复算路径。

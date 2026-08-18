@@ -24,7 +24,7 @@ python3 site/verify_all_pages.py
 - 16 个现役页面及 `index_v2.html`、`slides_823.html` 资源检查通过。
 - 普通链接、CSS URL、JavaScript 语法、统一导航、离线依赖和已知伪数据扫描 0 错误、0 警告。
 - Plotly 2.35.2、Three.js 0.160.0、Geist 1.7.2 已存入仓库，核心站点断网可用。
-- 尾流页初始 0°与 +25°交互经 Node 运行桩复核：三幅 Plotly 图均创建，+25°得到 P₁=1459 kW、P₂=909 kW、Ptot=2368 kW、增益 +8.13%。
+- `site/test_wake_runtime.js` 已接入全站门禁：加载真实 `data.js/data_3d.js` 并执行尾流页内联脚本；0°与 +25°均创建三幅 Plotly 图，+25°得到 P₁=1459 kW、P₂=909 kW、Ptot=2368 kW、增益 +8.13%。
 
 ## 现役资产
 

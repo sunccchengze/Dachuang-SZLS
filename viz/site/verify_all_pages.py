@@ -143,6 +143,13 @@ def main():
         if issue:
             errors.append(issue)
 
+    # 尾流页真实数据与内联脚本运行桩：验证 0°、+25°、三幅 Plotly 调用和图例安全区。
+    wake_runtime = subprocess.run(
+        ["node", str(SITE / "test_wake_runtime.js")], capture_output=True, text=True
+    )
+    if wake_runtime.returncode:
+        errors.append("wake.html 运行桩失败：" + (wake_runtime.stderr.strip() or wake_runtime.stdout.strip()))
+
     # CSS 的 url() 资源与远程 @import。
     for path in sorted((SITE / "css").glob("*.css")):
         content = path.read_text(encoding="utf-8")

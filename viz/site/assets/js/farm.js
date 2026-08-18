@@ -1,4 +1,4 @@
-// 3D 风电场：9 台风机 3x3 阵列，转子旋转、尾流锥随偏航偏转、按功率着色、自动环绕。
+// 3D 风电场：9 台风机 3x3 阵列，转子旋转、策略辅助包络随偏航偏转、按功率着色、自动环绕。
 // 坐标：x 顺风（来流从 -x 吹向 +x），y 竖直，z 横向。布局与 generate_array_data.py 一致。
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -175,13 +175,13 @@ function makeWake(yawDeg=0, startX=0, startZ=0) {
 
 const turbines = [], wakes = [];
 
-// ---------- 真实流场（双机 fields_3d：轮毂高度水平流场云图 + 地面流场投影 + 物理风机） ----------
+// ---------- 双机 FLORIS 数据模式：三维速度网格采样 + 辅助中心线包络 + 几何风机 ----------
 const REAL = window.WIND_3D_REAL || {};
 const realYaws = Object.keys(REAL).sort((a, b) => parseFloat(a) - parseFloat(b));
 let realGroup = new THREE.Group(); realGroup.visible = false; scene.add(realGroup);
 let realTurbines = [];
 
-// 三线性插值采样真实 3D 速度场
+// 三线性插值采样 FLORIS 三维数值速度场
 function sampleRealU(fd, x, y, z) {
   const xs = fd.x, ys = fd.y, zs = fd.z, u = fd.u;
   const nx = xs.length, ny = zs.length, nz = ys.length;
@@ -251,7 +251,7 @@ function buildFlowTexture(fd, zHeight) {
   return tex;
 }
 
-// 提取平滑真实尾流中心线与膨胀流管
+// 根据偏航几何关系构建辅助中心线；该线不是从速度场反演得到
 function extractWakeCenterline(startX, endX, startLat, yawDeg) {
   const hubH = 90;
   const pts = [];
@@ -388,7 +388,7 @@ function buildRealFlow(yawKey) {
     groundPlane.position.set(350, 1.5, 0);
     realGroup.add(groundPlane);
 
-    // 4. 两台真实风机机组
+    // 4. 与双机数值算例对应的几何风机
     [0, 630].forEach((px, ti) => {
       const t = makeTurbine(); t.group.position.set(px, 0, 0);
       t.yawGroup.rotation.y = (ti === 0 ? yawRad : 0);
@@ -407,7 +407,7 @@ function buildRealFlow(yawKey) {
 
 POS.forEach(([x, z]) => {
   const t = makeTurbine(); t.group.position.set(x, 0, z); scene.add(t.group);
-  // 真实科研尾流：初始按0°生成，带轻度湍流 meandering，非完美圆锥
+  // 策略辅助包络：初始按 0° 生成，确定性摆动只帮助观察控制方向
   const w = makeWake(0, x, z); scene.add(w);
   turbines.push(t); wakes.push(w);
   // 塔底功率灯
@@ -426,7 +426,7 @@ function applyMode() {
   turbines.forEach((t, i) => {
     const yawRad = md.yaws[i] * Math.PI / 180;
     t.yawGroup.rotation.y = yawRad;
-    // 重建尾流以匹配新偏航角的真实偏转中心线+湍流摆动，摆脱完美圆锥AI味
+    // 按新偏航角重建确定性策略辅助包络，不作为 CFD 等值面
     const [x, z] = POS[i];
     const oldW = wakes[i];
     scene.remove(oldW);
@@ -460,7 +460,7 @@ function applyReal() {
   buildRealFlow(realYaw);
   if (realTurbines[0]) realTurbines[0].yawGroup.rotation.y = parseFloat(realYaw) * Math.PI / 180;
   if (realTurbines[1]) realTurbines[1].yawGroup.rotation.y = 0;
-  // 用真实两机功率（来自 cases_multi 8m/s）
+  // 使用 cases_multi.csv 导出的 8 m/s 双机 FLORIS 数值功率
   const m = window.WIND_DATA.multi, i8 = m.wind_speeds.indexOf(8);
   const j = m.yaw_angles.indexOf(parseFloat(realYaw));
   const p1 = m.p1[i8][j], p2 = m.p2[i8][j], ptot = m.ptot[i8][j];

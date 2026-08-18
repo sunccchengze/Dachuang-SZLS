@@ -81,8 +81,8 @@ Corrections, insights, and knowledge gaps captured during development.
 - **Status**: verified
 - **Category**: correction
 - **Trigger**: user_explicit_request
-- **Context**: 部署分支改绑 arena/019feacd-wind-farm-viz 时用户明确禁令
-- **Correct Approach**: 一切工作只在 arena/019feacd-wind-farm-viz 上 commit/push；永不执行 merge/rebase/push 到 main；Cloudflare Pages 生产分支由用户绑定 019feacd；019fe42f 作为历史基线保留，仅可合入其资产，不回写。
+- **Context**: 2026-08-10 曾改绑历史部署分支；Arena 会话分支会随交接变化，但“永不写入 main”不变。
+- **Correct Approach**: 当前工作只在 Arena 指定的固定分支 `arena/01a012f1-wind-farm-viz` 上 commit/push；永不 merge 或 push 到 `main`。历史分支名只用于追溯，Cloudflare Pages 生产分支必须在控制台另行核对。
 
 ---
 

@@ -1,7 +1,7 @@
-# 会话断点存档 · 2026-08-10（PPO 复现工程暂停点）
+# 会话历史存档 · 2026-08-10（PPO 复现工程旧暂停点）
 
-> 用途：本会话被用户主动暂停于此。恢复工作时以此文件为唯一真相入口。
-> 分支纪律不变：只推 `arena/019feacd-wind-farm-viz`，永不 merge main。
+> 本文件只记录 2026-08-10 的历史过程，不再是恢复入口。当前状态以根目录 `HANDOFF_NEXT_AGENT.md` 与 `FREEZE.md` 为准。
+> 当前固定分支为 `arena/01a012f1-wind-farm-viz`；永不 merge 或 push 到 `main`。
 
 ## 一、已完成且已推送（commit 链 44dacabd → b6a17de8 → 54a6631c）
 

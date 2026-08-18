@@ -15,7 +15,7 @@ python3 -m http.server 8000 --directory site
 
 | 字段 | 值 |
 |---|---|
-| 生产分支 | `arena/019feacd-wind-farm-viz`（2026-08-10 起；019fe42f 为历史基线，永不回写/并 main） |
+| 生产分支 | 在 Cloudflare Pages 控制台核对并绑定当前交付分支；本次固定开发分支为 `arena/01a012f1-wind-farm-viz`，永不并入 `main` |
 | 框架预设 | None |
 | 构建命令 | 留空 |
 | 构建输出目录 | `site` |
@@ -48,11 +48,12 @@ npx wrangler pages deploy site --project-name wind-farm-viz
    - `predict_power(yaw, U)` 返回 `{p1, p2, ptot, outOfRange, reasons}`
    - `find_yaw_for_target(target, U)` 返回 `{yaw, ptot, error, base, outOfRange, reasons}`
 4. **更新来源与边界说明**：在对应页面的图注、方法说明和可信域提示中同步修改数据来源，不使用全站悬浮状态条遮挡导航。
-5. **契约自检（必跑）**：
+5. **双重质量门禁（必跑）**：
    ```bash
    python3 site/check_contract.py
+   python3 site/verify_all_pages.py
    ```
-   校验 data.js/data_3d.js 的字段、形状、功率非负、`ptot≈p1+p2`、增益公式一致性。退出码非 0 时先修正再部署。
+   前者校验源 CSV/JSON 与 `data.js/data_3d*.js` 同源；后者检查页面资源、导航、JavaScript、离线依赖，并调用 `test_wake_runtime.js` 实跑尾流页 0°和 +25°交互。任一退出码非 0 时禁止部署。
 
 > 数据来源与边界按页面就近标注：FLORIS 结果明确写为数值模拟，浏览器代理明确写为双线性插值；风速 6–12 m/s、偏航 ±30°为当前可信域，越界目标由交互区就地提示。
 
@@ -60,4 +61,4 @@ npx wrangler pages deploy site --project-name wind-farm-viz
 - `predict_power(yaw_angle, U_inf) -> {p1,p2,ptot}` kW —— 见 `assets/js/interp.js`
 - `find_yaw_for_target(target_power, U_inf) -> {yaw,ptot,error,base}`
 
-当前为 FLORIS 工程尾流模型占位；待袁夫达（NN 代理）/厉今飞（基线）/洪祖名（优化）提供真实结果后，按上述步骤替换即可。
+当前现役基线为 FLORIS 4.6.6 GCH 数值模拟数据，浏览器功率接口为双线性插值；PPO 权重评测作为独立证据链展示。后续收到更高保真 CFD、NN 代理或新优化结果时，按同一契约重建前端数据，不把数值模拟写成现场实测。
