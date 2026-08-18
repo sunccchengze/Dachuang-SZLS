@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>3D 体渲染 · 风电场偏航优化科研平台</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="assets/vendor/plotly/plotly-2.35.2.min.js"></script>
   <script src="assets/js/plotly-theme.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
     :root {
       --v-bg: #f8f9fa;
@@ -173,7 +172,7 @@
     <div class="ctl-bar">
       <span class="ctl-label">偏航角</span>
       <select id="yawSel" class="v-select"></select>
-      <button class="v-btn" id="sweepBtn">▶ 偏航扫描</button>
+      <button class="v-btn" id="sweepBtn">偏航扫描</button>
       <span class="ctl-label" style="margin-left:6px">风速阈值</span>
       <input type="range" id="threshR" min="4.5" max="8.0" value="6.5" step="0.1" style="width:140px">
       <span class="yaw-badge" id="threshV">6.5 m/s</span>
@@ -181,7 +180,7 @@
       <input type="range" id="opacR" min="0.1" max="0.9" value="0.55" step="0.05" style="width:100px">
       <label><input type="checkbox" id="chkSlices" checked> 截面</label>
       <label><input type="checkbox" id="chkTurbines" checked> 风机</label>
-      <button class="v-btn active" id="spinBtn" style="margin-left:auto">⟳ 自动环绕</button>
+      <button class="v-btn active" id="spinBtn" style="margin-left:auto">自动环绕</button>
     </div>
     <div id="plot3d" style="height:620px"></div>
     <div class="plot-note">乳白–蓝色半透明区域为尾流低速泡（越白风速越低），白色圆环为风机转子扫掠面。默认开启自动环绕；可拖拽旋转、滚轮缩放。<b>偏航扫描</b>会循环播放 −30°→+30°，直观展示尾流随偏航偏转。</div>
@@ -317,7 +316,7 @@
   function setSpin(on){
     spinning = on;
     document.getElementById('spinBtn').classList.toggle('active', on);
-    document.getElementById('spinBtn').textContent = on ? '⏸ 暂停环绕' : '⟳ 自动环绕';
+    document.getElementById('spinBtn').textContent = on ? '暂停环绕' : '自动环绕';
     if (on && !rafId) spinLoop();
     else if (!on && rafId) { cancelAnimationFrame(rafId); rafId = null; }
   }
@@ -325,7 +324,7 @@
   const sweepBtn = document.getElementById('sweepBtn');
   function startSweep(){
     if (sweepTimer) { stopSweep(); return; }
-    sweepBtn.textContent = '⏸ 停止扫描'; sweepBtn.classList.add('active');
+    sweepBtn.textContent = '停止扫描'; sweepBtn.classList.add('active');
     setSpin(false);
     const threshold = parseFloat(threshR.value);
     const opacity = parseFloat(document.getElementById('opacR').value);
@@ -346,7 +345,7 @@
   }
   function stopSweep(){
     if (sweepTimer) { clearInterval(sweepTimer); sweepTimer = null; }
-    sweepBtn.textContent = '▶ 偏航扫描'; sweepBtn.classList.remove('active');
+    sweepBtn.textContent = '偏航扫描'; sweepBtn.classList.remove('active');
     render();
   }
 

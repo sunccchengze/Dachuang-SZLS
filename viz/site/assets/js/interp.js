@@ -1,8 +1,8 @@
 // 浏览器内插值（对应仓库 surrogate_model.py 的 predict_power / find_yaw_for_target）
 // 纯表格双线性插值，无需任何后端。未来替换真实模型时只改这两个函数体即可。
 //
-// 数据可信域取自 window.WF_DATA_CONFIG（data-source.js 定义）；超出范围时返回值里
-// 带 outOfRange 标志与越界说明，调用方可据此在 UI 提示"外推结果，仅供参考"。
+// 可信域优先读取可选的 window.WF_DATA_CONFIG；未配置时直接采用 data.js 的
+// 风速与偏航网格边界。越界时返回 outOfRange 与原因，供页面就地提示。
 (function () {
   var W = window.WIND_DATA;
   var lerp = function (a, b, t) { return a + (b - a) * t; };

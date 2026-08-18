@@ -1,134 +1,124 @@
-from floris import FlorisModel
+"""重建 3×3 阵列四策略数据契约。
+
+输出 ``array_independent_result.json``，包含基准、第一排统一偏航、前两排接力偏航
+和逐排贪心四组总功率及逐机功率。脚本与 ``site/array.html``、
+``site/assets/js/farm.js`` 共用同一份 JSON，禁止在前端另写近似功率。
+"""
+import json
 from pathlib import Path
+
 import floris
 import numpy as np
 import pandas as pd
-import os
+from floris import FlorisModel
 
-print("=" * 40)
-print("3×3 阵列独立偏航优化")
-print("=" * 40)
-
-floris_dir = Path(floris.__file__).parent
-config_path = floris_dir / "default_inputs.yaml"
-fmodel = FlorisModel(str(config_path))
-
+ROOT = Path(__file__).parent
 D = 126.0
-layout_x = [row * 5 * D for row in range(3) for col in range(3)]
-layout_y  = [(col - 1) * 3 * D for row in range(3) for col in range(3)]
+LAYOUT_X = [row * 5 * D for row in range(3) for _col in range(3)]
+LAYOUT_Y = [(col - 1) * 3 * D for _row in range(3) for col in range(3)]
+YAW_CANDIDATES = np.arange(-30, 31, 5, dtype=float)
 
-fmodel.set(
-    layout_x=layout_x,
-    layout_y=layout_y,
+model = FlorisModel(str(Path(floris.__file__).parent / "default_inputs.yaml"))
+model.set(
+    layout_x=LAYOUT_X,
+    layout_y=LAYOUT_Y,
     wind_directions=[270.0],
     wind_speeds=[8.0],
     turbulence_intensities=[0.06],
 )
 
-yaw_candidates = np.arange(-30, 31, 5)
 
-# ===== 贪心逐排优化 =====
-# 原理：从上游到下游逐排优化，每排固定后优化下一排
-# 这比"全部统一偏航"更接近真实协同控制
+def evaluate(yaws):
+    """运行一组九机偏航角，返回 (总功率kW, 九机功率kW)。"""
+    model.set(yaw_angles=np.asarray([yaws], dtype=float))
+    model.run()
+    powers = model.get_turbine_powers()[0] / 1000.0
+    return float(powers.sum()), powers
 
-print("\n开始贪心逐排优化...")
-best_yaws = [0.0] * 9   # 初始全部0°
 
-for target_row in range(3):
-    print(f"\n优化第 {target_row+1} 排...")
-    best_power = -1
-    best_yaw_for_row = 0.0
+def greedy_by_row():
+    """从上游到下游逐排固定，每排在 13 个离散角中搜索。"""
+    best_yaws = np.zeros(9, dtype=float)
+    for row in range(3):
+        best_total = -np.inf
+        best_yaw = 0.0
+        for candidate in YAW_CANDIDATES:
+            trial = best_yaws.copy()
+            trial[row * 3:(row + 1) * 3] = candidate
+            total, _powers = evaluate(trial)
+            if total > best_total:
+                best_total = total
+                best_yaw = float(candidate)
+        best_yaws[row * 3:(row + 1) * 3] = best_yaw
+        print(f"第 {row + 1} 排固定为 {best_yaw:+.0f}°，当前总功率 {best_total:.2f} kW")
+    return best_yaws
 
-    for yaw in yaw_candidates:
-        # 当前排设置候选偏航，其他排保持已优化的值
-        trial_yaws = best_yaws.copy()
-        for col in range(3):
-            trial_yaws[target_row * 3 + col] = float(yaw)
 
-        fmodel.set(yaw_angles=np.array([trial_yaws]))
-        fmodel.run()
-        powers = fmodel.get_turbine_powers()[0] / 1000
-        total  = powers.sum()
+def rounded(values):
+    return [round(float(v), 2) for v in values]
 
-        if total > best_power:
-            best_power = total
-            best_yaw_for_row = float(yaw)
 
-    # 固定当前排的最优偏航
-    for col in range(3):
-        best_yaws[target_row * 3 + col] = best_yaw_for_row
+def main():
+    print("=" * 52)
+    print("3×3 阵列四策略同源重建")
+    print("=" * 52)
 
-    print(f"  第 {target_row+1} 排最优偏航：{best_yaw_for_row:+.0f}°  "
-          f"当前总功率：{best_power:.0f} kW")
+    greedy_yaws = greedy_by_row()
 
-# ===== 计算最终结果 =====
-fmodel.set(yaw_angles=np.array([best_yaws]))
-fmodel.run()
-final_powers = fmodel.get_turbine_powers()[0] / 1000
+    sweep = pd.read_csv(ROOT / "cases_array.csv")
+    best_unified = sweep.loc[sweep["power_total"].idxmax()]
+    unified_yaw = float(best_unified["yaw_upstream"])
 
-# 基准（全部0°）
-fmodel.set(yaw_angles=np.array([[0.0]*9]))
-fmodel.run()
-baseline_powers = fmodel.get_turbine_powers()[0] / 1000
-baseline_total  = baseline_powers.sum()
-final_total     = final_powers.sum()
-gain            = (final_total - baseline_total) / baseline_total * 100
+    yaws_none = np.zeros(9)
+    yaws_unified = np.array([unified_yaw] * 3 + [0.0] * 6)
+    yaws_row2_30 = np.array([unified_yaw] * 6 + [0.0] * 3)
 
-print(f"\n===== 贪心优化结果 =====")
-print(f"各排最优偏航角：")
-for row in range(3):
-    yaw = best_yaws[row * 3]
-    print(f"  第 {row+1} 排：{yaw:+.0f}°")
-print(f"基准总功率（全0°）：{baseline_total:.0f} kW")
-print(f"独立优化总功率：{final_total:.0f} kW")
-print(f"功率提升：{gain:.1f}%")
+    p_none, powers_none = evaluate(yaws_none)
+    p_unified, powers_unified = evaluate(yaws_unified)
+    p_row2_30, powers_row2_30 = evaluate(yaws_row2_30)
+    p_independent, powers_independent = evaluate(greedy_yaws)
 
-# ===== 对比三种策略 =====
-print("\n===== 三种策略对比 =====")
+    def gain(power):
+        return (power - p_none) / p_none * 100.0
 
-# 策略1：无偏航
-fmodel.set(yaw_angles=np.array([[0.0]*9]))
-fmodel.run()
-p_none = fmodel.get_turbine_powers()[0].sum() / 1000
+    result = {
+        "greedy_yaws": [float(v) for v in greedy_yaws],
+        "greedy_row_yaws": [float(greedy_yaws[i * 3]) for i in range(3)],
+        "row2_30_yaws": [unified_yaw, unified_yaw, 0.0],
+        "power_none": round(p_none, 2),
+        "power_unified": round(p_unified, 2),
+        "power_row2_30": round(p_row2_30, 2),
+        "power_independent": round(p_independent, 2),
+        "unified_yaw": unified_yaw,
+        "gain_unified_pct": round(gain(p_unified), 2),
+        "gain_row2_30_pct": round(gain(p_row2_30), 2),
+        "gain_independent_pct": round(gain(p_independent), 2),
+        "turbine_powers_none": rounded(powers_none),
+        "turbine_powers_independent": rounded(powers_independent),
+        "turbine_powers_unified": rounded(powers_unified),
+        "turbine_powers_row2_30": rounded(powers_row2_30),
+    }
 
-# 策略2：统一偏航（从cases_array.csv读取最优）
-df_array = pd.read_csv("cases_array.csv")
-best_unified = df_array.loc[df_array["power_total"].idxmax()]
-unified_yaw  = float(best_unified["yaw_upstream"])
-unified_yaws = [unified_yaw]*3 + [0.0]*6
-fmodel.set(yaw_angles=np.array([unified_yaws]))
-fmodel.run()
-p_unified = fmodel.get_turbine_powers()[0].sum() / 1000
+    # 审计锚点：配置、布局或 FLORIS 版本漂移时立即失败。
+    assert abs(result["power_none"] - 8095.15) < 1.0
+    assert abs(result["power_unified"] - 9299.05) < 1.0
+    assert abs(result["power_row2_30"] - 9934.99) < 1.0
+    assert abs(result["power_independent"] - 10041.46) < 1.0
+    assert result["greedy_row_yaws"] == [30.0, 20.0, 0.0]
 
-# 策略3：独立优化
-p_independent = final_total
+    output = ROOT / "array_independent_result.json"
+    output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
-strategies = {
-    "无偏航（基准）":   p_none,
-    f"统一偏航（{unified_yaw:+.0f}°）": p_unified,
-    "逐排独立优化":     p_independent,
-}
+    print("\n四策略结果：")
+    for name, power in [
+        ("全部 0°", p_none),
+        ("第一排 +30°", p_unified),
+        ("前两排 +30°", p_row2_30),
+        ("逐排贪心 [30,20,0]°", p_independent),
+    ]:
+        print(f"  {name:<24} {power:9.2f} kW  {gain(power):+6.2f}%")
+    print(f"\n已写入 {output}")
 
-for name, power in strategies.items():
-    gain_vs_base = (power - p_none) / p_none * 100
-    print(f"  {name}：{power:.0f} kW  ({gain_vs_base:+.1f}%)")
 
-# ===== 保存结果 =====
-result = {
-    "greedy_yaws":        best_yaws,
-    "greedy_row_yaws":    [best_yaws[i*3] for i in range(3)],
-    "power_none":         round(float(p_none), 2),
-    "power_unified":      round(float(p_unified), 2),
-    "power_independent":  round(float(p_independent), 2),
-    "unified_yaw":        float(unified_yaw),
-    "gain_unified_pct":   round((p_unified - p_none) / p_none * 100, 2),
-    "gain_independent_pct": round((p_independent - p_none) / p_none * 100, 2),
-    "turbine_powers_none":        [round(float(p), 2) for p in baseline_powers],
-    "turbine_powers_independent": [round(float(p), 2) for p in final_powers],
-}
-
-import json
-with open("array_independent_result.json", "w") as f:
-    json.dump(result, f, indent=2)
-
-print(f"\n✅ array_independent_result.json 已保存")
+if __name__ == "__main__":
+    main()

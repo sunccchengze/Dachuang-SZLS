@@ -13,7 +13,7 @@ for (let r = 0; r < 3; r++)
 // 基准: 9台0° | 统一前排偏航: 第一排偏航30°,其余6台固定0° | 独立偏航: 前排30°,中排20°,后排0°
 const MODES = {
   none:        { yaws: POS.map(() => 0), pwr: A.turbine_powers_none, total: A.power_none, label: '基准 0° (无协同)' },
-  unified:     { yaws: POS.map((p, i) => i < 3 ? A.unified_yaw : 0), pwr: A.turbine_powers_none.map((p, i) => i < 3 ? 1460 : (i < 6 ? 920 : 660)), total: A.power_unified, label: '统一前排 +' + A.unified_yaw + '°' },
+  unified:     { yaws: POS.map((_p, i) => i < 3 ? A.unified_yaw : 0), pwr: A.turbine_powers_unified, total: A.power_unified, label: '第一排统一 +' + A.unified_yaw + '°' },
   independent: { yaws: A.greedy_yaws, pwr: A.turbine_powers_independent, total: A.power_independent, label: '独立逐排偏航 (推荐)' }
 };
 

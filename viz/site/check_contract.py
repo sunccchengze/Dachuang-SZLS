@@ -12,12 +12,14 @@
 
 退出码 0 表示全部通过，非 0 表示有错误（适合接入 CI / 部署前检查）。
 """
+import csv
 import json
 import os
 import re
 import sys
 
 SITE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(SITE)
 ASSETS = os.path.join(SITE, "assets")
 ERRORS = []
 WARNINGS = []
@@ -262,14 +264,106 @@ def check_3d(d3):
                 warn(f"heatmap 增益范围异常: {lo:.1f}% ~ {hi:.1f}%")
 
 
+def _csv_rows(name):
+    with open(os.path.join(ROOT, name), newline="", encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
+
+
+def _close(a, b, tol=0.005):
+    return is_num(a) and abs(float(a) - float(b)) <= tol
+
+
+def check_source_sync(d):
+    """确认前端 data.js 与根目录 CSV/JSON 源文件逐工况同源。"""
+    multi = d.get("multi", {})
+    speeds, yaws = multi.get("wind_speeds", []), multi.get("yaw_angles", [])
+    for row in _csv_rows("cases_multi.csv"):
+        u, yaw = float(row["U_inf"]), float(row["yaw_1"])
+        if u not in speeds or yaw not in yaws:
+            err(f"data.js 缺 cases_multi 工况 U={u}, yaw={yaw}")
+            continue
+        i, j = speeds.index(u), yaws.index(yaw)
+        for key, column in (("p1", "power_1"), ("p2", "power_2"),
+                            ("ptot", "power_total"), ("gain", "gain_pct")):
+            if not _close(multi[key][i][j], float(row[column])):
+                err(f"data.js multi.{key} 未同步 {column} @ U={u},yaw={yaw}")
+
+    single = d.get("single", {})
+    syaws = single.get("yaw_angles", [])
+    for row in _csv_rows("cases.csv"):
+        yaw = float(row["yaw_1"])
+        if yaw not in syaws:
+            err(f"data.js single 缺 yaw={yaw}")
+            continue
+        j = syaws.index(yaw)
+        for key, column in (("p1", "power_1"), ("p2", "power_2"), ("ptot", "power_total")):
+            if not _close(single[key][j], float(row[column])):
+                err(f"data.js single.{key} 未同步 {column} @ yaw={yaw}")
+
+    array = d.get("array", {})
+    ayaws = array.get("yaw_upstream", [])
+    for row in _csv_rows("cases_array.csv"):
+        yaw = float(row["yaw_upstream"])
+        if yaw not in ayaws:
+            err(f"data.js array 缺 yaw={yaw}")
+            continue
+        i = ayaws.index(yaw)
+        source_powers = [float(row[f"power_{k}"]) for k in range(1, 10)]
+        if any(not _close(a, b) for a, b in zip(array["powers"][i], source_powers)):
+            err(f"data.js array.powers 未同步 cases_array.csv @ yaw={yaw}")
+        if not _close(array["total"][i], float(row["power_total"])):
+            err(f"data.js array.total 未同步 cases_array.csv @ yaw={yaw}")
+        if not _close(array["gain"][i], float(row["gain_pct"])):
+            err(f"data.js array.gain 未同步 cases_array.csv @ yaw={yaw}")
+
+    for source, key in (("optimizer_result.json", "opt"),
+                        ("array_independent_result.json", "array_opt")):
+        with open(os.path.join(ROOT, source), encoding="utf-8") as fh:
+            expected = json.load(fh)
+        if d.get(key) != expected:
+            err(f"data.js {key} 与 {source} 不同源，请重跑 site/build_data.py")
+
+
+def check_real_3d(real, d3):
+    """检查 Three.js 使用的精简三维数据结构，并与 data_3d.js 工况集合对齐。"""
+    if not isinstance(real, dict) or not real:
+        err("data_3d_real.js 为空或不是对象")
+        return
+    standard = d3.get("fields_3d", {}) if d3 else {}
+    if set(real) != set(standard):
+        err(f"data_3d_real.js 工况键与 data_3d.js 不一致：{sorted(real)} vs {sorted(standard)}")
+    for key, fd in real.items():
+        x, y, z, u = fd.get("x"), fd.get("y"), fd.get("z"), fd.get("u")
+        if not (x and y and z and u):
+            err(f"data_3d_real[{key}] 缺 x/y/z/u")
+            continue
+        bad = (len(u) != len(z) or
+               any(not isinstance(layer, list) or len(layer) != len(y) for layer in u) or
+               any(not isinstance(row, list) or len(row) != len(x)
+                   for layer in u for row in layer))
+        if bad:
+            err(f"data_3d_real[{key}] u 形状应为 ({len(z)},{len(y)},{len(x)})")
+            continue
+        flat = [value for layer in u for row in layer for value in row]
+        if any(value is not None and not is_num(value) for value in flat):
+            err(f"data_3d_real[{key}] 含非法速度值")
+        finite = [value for value in flat if value is not None]
+        if finite and min(finite) < -1.0:
+            err(f"data_3d_real[{key}] 出现明显负速度 {min(finite)} m/s")
+
+
 def main():
     d = load_window_js("data.js", "WIND_DATA")
     if d is not None:
         check_multi(d)
         check_scalars(d)
+        check_source_sync(d)
     d3 = load_window_js("data_3d.js", "WIND_3D_DATA")
     if d3 is not None:
         check_3d(d3)
+    real = load_window_js("data_3d_real.js", "WIND_3D_REAL")
+    if real is not None:
+        check_real_3d(real, d3)
 
     print("=" * 60)
     if WARNINGS:
@@ -283,7 +377,7 @@ def main():
         print("=" * 60)
         print("契约校验失败，请修正后再部署/展示。")
         sys.exit(1)
-    print("✅ 契约校验通过：data.js / data_3d.js 结构与数值一致。")
+    print("✅ 契约校验通过：源 CSV/JSON、data.js、data_3d.js 与 data_3d_real.js 同源一致。")
     if WARNINGS:
         print(f"   （有 {len(WARNINGS)} 条警告，建议人工确认）")
     print("=" * 60)

@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>3D 尾流曲面 · 风电场偏航优化科研平台</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="assets/vendor/plotly/plotly-2.35.2.min.js"></script>
   <script src="assets/js/plotly-theme.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
     :root {
       --v-bg: #f8f9fa;
@@ -188,7 +187,7 @@
       </select>
       <label><input type="checkbox" id="chkContour" checked> 底部投影</label>
       <label><input type="checkbox" id="chkTurbines" checked> 风机标记</label>
-      <button class="v-btn active" id="spinBtn" style="margin-left:auto">⟳ 自动环绕</button>
+      <button class="v-btn active" id="spinBtn" style="margin-left:auto">自动环绕</button>
     </div>
     <div id="plot3d" style="height:580px"></div>
     <div class="plot-note">三维速度曲面（取探针高度层）。默认自动环绕；拖拽旋转、滚轮缩放。尾流在下游形成低速凹陷，偏航使其横向偏移。</div>
@@ -297,7 +296,7 @@
     spinning = on;
     const b = document.getElementById('spinBtn');
     b.classList.toggle('active', on);
-    b.textContent = on ? '⏸ 暂停环绕' : '⟳ 自动环绕';
+    b.textContent = on ? '暂停环绕' : '自动环绕';
     if (on && !rafId) spinLoop();
     else if (!on && rafId) { cancelAnimationFrame(rafId); rafId = null; }
   }

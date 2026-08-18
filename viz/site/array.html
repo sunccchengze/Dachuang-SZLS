@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>3×3 阵列协同优化 · 风电场偏航优化科研平台</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="assets/vendor/plotly/plotly-2.35.2.min.js"></script>
   <script src="assets/js/plotly-theme.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
     :root {
       --v-bg: #f8f9fa;
@@ -406,9 +405,9 @@
       gain: A.gain_row2_30_pct,
       yaws: [30, 30, 30, 30, 30, 30, 0, 0, 0],
       pwr: A.turbine_powers_row2_30,
-      badge: '双排接力偏转 · 增益 +22.72%',
+      badge: `双排接力偏转 · 增益 +${A.gain_row2_30_pct.toFixed(2)}%`,
       badgeCol: 'var(--v-teal-bright)',
-      desc: '<b>前两排接力偏航（+30° / +30° / 0°）</b>：第一排和第二排全部偏航 +30°，第三排保持 0°。Row 2 继续主动偏转尾流虽让自身单机微降至 766~798 kW/台，却为下游清洗出顺畅流道，使 Row 3 单机骤升至 <b>1171~1195 kW</b>，全场总功率升至 <b>9935 kW (+22.72%)</b>。'
+      desc: `<b>前两排接力偏航（+30° / +30° / 0°）</b>：第一排和第二排全部偏航 +30°，第三排保持 0°。Row 2 继续主动偏转尾流虽让自身单机微降至 766~798 kW/台，却为下游清洗出顺畅流道，使 Row 3 单机骤升至 <b>1171~1195 kW</b>，全场总功率升至 <b>${Math.round(A.power_row2_30)} kW (+${A.gain_row2_30_pct.toFixed(2)}%)</b>。`
     },
     independent: {
       name: '独立贪心偏航 (推荐)',

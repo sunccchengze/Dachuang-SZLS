@@ -5,14 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>尾流交互分析 · 风电场偏航优化科研平台</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="assets/vendor/plotly/plotly-2.35.2.min.js"></script>
   <script src="assets/js/plotly-theme.js"></script>
   <style>
     /* 
      * 彻彻底底对标 Vercel + Taste-Skill 浅色学术工作台设计系统 (Light Mode)
      * 一体化科研主板容器 (.v-workbench-panel) ➕ 极细发丝网格 ➕ 等线/宋体黑分流 ➕ 零孤行与零横线灾难
      */
-    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
     :root {
       --v-bg: #f8f9fa;          /* 莫兰迪米白工程纸灰绿底 */
@@ -522,7 +521,7 @@
       <div class="yaw-quick">
         <button class="v-btn active" id="btnZero">0° 基准</button>
         <button class="v-btn" id="btnOpt">+25° 最优</button>
-        <button class="v-btn" id="btnPlay">▶ 自动扫描</button>
+        <button class="v-btn" id="btnPlay">自动扫描</button>
       </div>
     </div>
 
@@ -632,7 +631,7 @@
       pill.textContent = '当前 0°：尾流正对下游 (-0.0%)';
       pill.style.background = 'rgba(30,41,59,0.06)'; pill.style.color = 'var(--v-ink)';
     } else if(yaw === optYaw){
-      pill.textContent = '✓ 最优 +' + yaw + '°：增益 +' + gain.toFixed(2) + '%';
+      pill.textContent = '最优 +' + yaw + '°：增益 +' + gain.toFixed(2) + '%';
       pill.style.background = 'rgba(30, 103, 92, 0.14)'; pill.style.color = 'var(--v-teal-bright)';
     } else if(gain > 0){
       pill.textContent = '偏航 ' + (yaw >= 0 ? '+' : '') + yaw + '°：增益 +' + gain.toFixed(2) + '%';
@@ -711,9 +710,9 @@
   document.getElementById('btnPlay').onclick = function(){
     if(playing){
       clearInterval(playTimer); playing = false;
-      this.textContent = '▶ 自动扫描'; this.classList.remove('active'); return;
+      this.textContent = '自动扫描'; this.classList.remove('active'); return;
     }
-    playing = true; this.textContent = '⏸ 暂停扫描'; this.classList.add('active');
+    playing = true; this.textContent = '暂停扫描'; this.classList.add('active');
     playTimer = setInterval(() => {
       let v = parseInt(slider.value) + 5; if(v > 30) v = -30;
       slider.value = v; render();

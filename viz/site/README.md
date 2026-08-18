@@ -1,6 +1,6 @@
 # 风电场偏航优化可视化 · 静态站点
 
-纯静态、零后端的偏航优化可视化演示系统（替代原 Streamlit 版本，Streamlit 根目录版本保留作本地工具），可直接部署到 Cloudflare Pages。
+纯静态、零后端的偏航优化可视化演示系统（替代原 Streamlit 版本，Streamlit 根目录版本保留作本地工具），可直接部署到 Cloudflare Pages。Plotly 2.35.2、Three.js 0.160.0 和 Geist 字体均锁定在 `assets/vendor/` / `assets/fonts/`，核心演示断网可用。
 
 ## 本地预览
 ```bash
@@ -47,14 +47,14 @@ npx wrangler pages deploy site --project-name wind-farm-viz
 3. **替换代理模型**（可选）：只改 `assets/js/interp.js` 中 `predict_power` / `find_yaw_for_target` 的函数体，保持返回字段兼容：
    - `predict_power(yaw, U)` 返回 `{p1, p2, ptot, outOfRange, reasons}`
    - `find_yaw_for_target(target, U)` 返回 `{yaw, ptot, error, base, outOfRange, reasons}`
-4. **更新数据状态条**：改 `assets/js/data-source.js` 顶部 `CONFIG`（`maturity` 改为 `"provisional"`/`"validated"`，更新来源说明）；已验证正式发布时可设 `hidden: true` 关闭状态条。
+4. **更新来源与边界说明**：在对应页面的图注、方法说明和可信域提示中同步修改数据来源，不使用全站悬浮状态条遮挡导航。
 5. **契约自检（必跑）**：
    ```bash
    python3 site/check_contract.py
    ```
    校验 data.js/data_3d.js 的字段、形状、功率非负、`ptot≈p1+p2`、增益公式一致性。退出码非 0 时先修正再部署。
 
-> 所有页面顶部有统一"数据状态条"，明确标注当前是 FLORIS 模拟占位、代理模型类型，避免答辩时被误认为实测数据；超出可信域（风速 6–12 m/s、偏航 ±30°）会显示外推提示。
+> 数据来源与边界按页面就近标注：FLORIS 结果明确写为数值模拟，浏览器代理明确写为双线性插值；风速 6–12 m/s、偏航 ±30°为当前可信域，越界目标由交互区就地提示。
 
 ## 接口契约
 - `predict_power(yaw_angle, U_inf) -> {p1,p2,ptot}` kW —— 见 `assets/js/interp.js`

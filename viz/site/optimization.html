@@ -6,14 +6,13 @@
   <title>偏航优化结果 · 风电场偏航优化科研平台</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/wake.css">
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="assets/vendor/plotly/plotly-2.35.2.min.js"></script>
   <script src="assets/js/plotly-theme.js"></script>
   <style>
     /* 
      * 彻彻底底对标 Vercel + Taste-Skill 浅色学术工作台设计系统 (Light Mode)
      * 极细发丝强线 (1px Line) ➕ 学术精简数据带 (Academic Ledger Strip) ➕ 极致等线/宋体黑分流
      */
-    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
     :root {
       --v-bg: #f8f9fa;          /* 莫兰迪米白工程纸灰绿底 */
@@ -525,7 +524,7 @@
       <div class="yaw-quick">
         <button class="v-btn" id="btnBase">0° 自然对风</button>
         <button class="v-btn active" id="btnBest">+25° 最优推荐</button>
-        <button class="v-btn" id="btnScanPlay">▶ 扫描对比动画</button>
+        <button class="v-btn" id="btnScanPlay">扫描对比动画</button>
       </div>
     </div>
 
@@ -773,9 +772,9 @@
   btnScanPlay.onclick = function(){
     if(playing){
       clearInterval(playTimer); playing = false;
-      this.textContent = '▶ 扫描对比动画'; this.classList.remove('active'); return;
+      this.textContent = '扫描对比动画'; this.classList.remove('active'); return;
     }
-    playing = true; this.textContent = '⏸ 暂停扫描'; this.classList.add('active');
+    playing = true; this.textContent = '暂停扫描'; this.classList.add('active');
     playTimer = setInterval(() => {
       let v = parseInt(sl.value) + 5; if(v > 30) v = -30;
       sl.value = v; render();
