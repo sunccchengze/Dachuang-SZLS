@@ -54,6 +54,13 @@ body {
 
 ::selection { background: rgba(39,108,85,.18); color: var(--shell-ink); }
 
+/* 首页主标题两行只用颜色区分，字体统一为全站宋体标题栈。 */
+.hero-title,
+.hero-title .hl,
+.hero-title .hero-title-sub {
+  font-family: var(--shell-serif) !important;
+}
+
 /* 双行导航保持全站信息架构，只统一材质和字阶。 */
 .t-nav {
   background: rgba(255,255,255,.78) !important;

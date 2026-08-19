@@ -176,6 +176,21 @@ def main():
         if token not in glass_css and token not in wake:
             errors.append(f"尾流统一布局或绿色色阶缺失：{token}")
 
+    # 首页主标题两行只以颜色区分，必须共用全站宋体标题栈。
+    for name in ("index.html", "index_v2.html"):
+        homepage = (SITE / name).read_text(encoding="utf-8")
+        if '--v-display: "Songti SC Black"' not in homepage:
+            errors.append(f"{name} 主标题变量未使用 Songti SC Black 字体栈")
+        if not re.search(
+            r"\.hero-title span\.hl\s*\{[^}]*font-family:\s*var\(--v-display\)",
+            homepage,
+            re.S,
+        ):
+            errors.append(f"{name} 蓝色主标题行未继承统一标题字体")
+    for token in (".hero-title .hl", "font-family: var(--shell-serif) !important"):
+        if token not in glass_css:
+            errors.append(f"首页主标题共享字体覆盖缺失：{token}")
+
     # 逐页审计全部 Nature 出版证据：桌面同页横排、统一图窗等高，窄屏再响应式回落。
     nature_layouts = {
         "wake.html": (2, 2),
