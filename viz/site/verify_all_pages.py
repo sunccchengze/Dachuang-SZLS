@@ -6,8 +6,10 @@
 内联/外部 JavaScript 语法、离线依赖、已删除模块残留、已知伪数据和关键页面
 的“控制在上、动态图居中、Nature 静态证据沉底”顺序。
 """
+from collections import Counter
 from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import unquote
 import re
 import subprocess
 import sys
@@ -44,9 +46,19 @@ class RefParser(HTMLParser):
     def __init__(self):
         super().__init__()
         self.refs = []
+        self.ids = []
+        self.accessibility_issues = []
 
     def handle_starttag(self, tag, attrs):
         attr = dict(attrs)
+        if "id" in attr:
+            self.ids.append(attr["id"])
+        if tag == "img" and not attr.get("alt", "").strip():
+            self.accessibility_issues.append(f"img 缺少非空 alt：{attr.get('src', '<unknown>')}")
+        if tag == "iframe" and not attr.get("title", "").strip():
+            self.accessibility_issues.append(f"iframe 缺少 title：{attr.get('src', '<unknown>')}")
+        if tag == "a" and attr.get("target") == "_blank" and "noopener" not in attr.get("rel", "").split():
+            self.accessibility_issues.append(f"target=_blank 缺少 rel=noopener：{attr.get('href', '<unknown>')}")
         for key in ("href", "src", "poster"):
             if key in attr:
                 self.refs.append((tag, key, attr[key]))
@@ -90,7 +102,32 @@ def main():
         content = path.read_text(encoding="utf-8")
         parser = RefParser()
         parser.feed(content)
+        duplicate_ids = sorted(key for key, count in Counter(parser.ids).items() if count > 1)
+        if duplicate_ids:
+            errors.append(f"{path.name} 含重复 id：{duplicate_ids}")
+        for issue in parser.accessibility_issues:
+            errors.append(f"{path.name} 可访问性错误：{issue}")
+        required_metadata = {
+            '<html lang="zh-CN">': "html lang=zh-CN",
+            'name="viewport"': "viewport",
+            'charset="UTF-8"': "UTF-8 charset",
+        }
+        for token, label in required_metadata.items():
+            if token not in content:
+                errors.append(f"{path.name} 缺少页面元数据：{label}")
+        if not re.search(r"<title>\s*\S.*?</title>", content, re.S | re.I):
+            errors.append(f"{path.name} 缺少非空 title")
         for tag, attr, ref in parser.refs:
+            if attr == "href" and "#" in ref and not ref.startswith(
+                ("http://", "https://", "mailto:", "javascript:")
+            ):
+                base, fragment = ref.split("#", 1)
+                fragment = unquote(fragment)
+                target = (path.parent / (clean_ref(base) or path.name)).resolve()
+                if fragment and target.suffix.lower() in {".html", ".htm"} and target.exists():
+                    target_ids = set(re.findall(r'\bid=["\']([^"\']+)["\']', target.read_text(encoding="utf-8")))
+                    if fragment not in target_ids:
+                        errors.append(f"{path.name} 的页内锚点失效：{ref}")
             if is_ignored_ref(ref):
                 continue
             if ref.startswith(("http://", "https://")):
@@ -147,12 +184,15 @@ def main():
         if issue:
             errors.append(issue)
 
-    # 尾流页真实数据与内联脚本运行桩：验证 0°、+25°、三幅 Plotly 调用和图例安全区。
-    wake_runtime = subprocess.run(
-        ["node", str(SITE / "test_wake_runtime.js")], capture_output=True, text=True
+    # 关键交互运行桩：首页数字风洞鼠标耦合，以及尾流 0°/+25° 数据与三幅 Plotly 图。
+    runtime_checks = (
+        ("首页数字风洞", SITE / "test_home_runtime.js"),
+        ("尾流交互", SITE / "test_wake_runtime.js"),
     )
-    if wake_runtime.returncode:
-        errors.append("wake.html 运行桩失败：" + (wake_runtime.stderr.strip() or wake_runtime.stdout.strip()))
+    for label, script in runtime_checks:
+        runtime = subprocess.run(["node", str(script)], capture_output=True, text=True)
+        if runtime.returncode:
+            errors.append(f"{label}运行桩失败：" + (runtime.stderr.strip() or runtime.stdout.strip()))
 
     # CSS 的 url() 资源与远程 @import。
     for path in sorted((SITE / "css").glob("*.css")):
@@ -268,6 +308,18 @@ def main():
         if retired_asset.exists():
             errors.append(f"下线页面专用站点副本仍存在：{retired_asset.relative_to(ROOT)}")
 
+    # 已无页面消费的旧卡片图表、背景探测和样式文件不得重新进入发布包。
+    obsolete_frontend_files = (
+        SITE / "assets/js/app.js",
+        SITE / "assets/js/bg-video.js",
+        SITE / "assets/js/charts.js",
+        SITE / "css/dashboard.css",
+        SITE / "css/media.css",
+    )
+    for obsolete in obsolete_frontend_files:
+        if obsolete.exists():
+            errors.append(f"发布包仍含无入口旧前端文件：{obsolete.relative_to(ROOT)}")
+
     # 模型验证主图收窄、残差证据放大，并由统计卡填满等高内容区。
     model_page = (SITE / "model.html").read_text(encoding="utf-8")
     for token in (
@@ -297,6 +349,22 @@ def main():
     for path in required_vendor:
         if not path.exists() or path.stat().st_size == 0:
             errors.append(f"缺少本地离线依赖：{path.relative_to(ROOT)}")
+
+    # Cloudflare Pages 基础安全响应头与固定版本依赖缓存策略。
+    headers_path = SITE / "_headers"
+    if not headers_path.exists():
+        errors.append("缺少 Cloudflare Pages 安全响应头文件：site/_headers")
+    else:
+        headers = headers_path.read_text(encoding="utf-8")
+        for token in (
+            "X-Content-Type-Options: nosniff",
+            "Referrer-Policy: strict-origin-when-cross-origin",
+            "Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+            "X-Frame-Options: SAMEORIGIN",
+            "Cache-Control: public, max-age=31536000, immutable",
+        ):
+            if token not in headers:
+                errors.append(f"site/_headers 缺少安全或缓存规则：{token}")
 
     print(f"扫描完成：{len(errors)} 个阻断错误，{len(warnings)} 个警告。")
     for message in warnings:

@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>风电场偏航优化平台 · 科研工作台系统</title>
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/media.css">
   <link rel="stylesheet" href="css/home.css">
   <style>
     /* 
@@ -678,6 +677,16 @@
       font-weight: 700;
       letter-spacing: 0.05em;
     }
+    .viewport-live-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: #72c7aa;
+      box-shadow: 0 0 0 4px rgba(114,199,170,.14);
+      vertical-align: 1px;
+    }
     .viewport-foot {
       display: flex;
       justify-content: space-between;
@@ -1112,7 +1121,7 @@
       </video>
       <div class="viewport-overlay">
         <div class="viewport-head">
-          <span>● DIGITAL TWIN ROTOR STRUCTURAL MONITORING</span>
+          <span><i class="viewport-live-dot" aria-hidden="true"></i>DIGITAL TWIN ROTOR STRUCTURAL MONITORING</span>
           <span>NACELLE, GEARBOX & MAIN SHAFT WIREFRAME VIEW</span>
         </div>
         <div class="viewport-foot">
