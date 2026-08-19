@@ -1,10 +1,10 @@
 # 风电场偏航优化可视化 · 静态站点
 
-纯静态、零后端的偏航优化可视化演示系统（替代原 Streamlit 版本，Streamlit 根目录版本保留作本地工具），可直接部署到 Cloudflare Pages。Plotly 2.35.2、Three.js 0.160.0 和 Geist 字体均锁定在 `assets/vendor/` / `assets/fonts/`，核心演示断网可用。
+纯静态、零后端的偏航优化可视化演示系统，已于 2026-08-19 完成 `v1.3-final` 封板。Plotly 2.35.2、Three.js 0.160.0 和 Geist 字体均锁定在 `assets/vendor/` / `assets/fonts/`，核心演示断网可用；后续不再继续视觉改版。
 
 ## 本地预览
 ```bash
-python3 -m http.server 8000 --directory site
+python3 -m http.server 8000 --bind 0.0.0.0 --directory site
 # 浏览器打开 http://localhost:8000
 ```
 
@@ -62,7 +62,10 @@ npx wrangler pages deploy site --project-name wind-farm-viz
    python3 site/check_contract.py
    python3 site/verify_all_pages.py
    ```
-   前者校验源 CSV/JSON 与 `data.js/data_3d*.js` 同源；后者检查页面资源、导航、JavaScript、离线依赖，并调用 `test_wake_runtime.js` 实跑尾流页 0°和 +25°交互。任一退出码非 0 时禁止部署。
+   前者校验源 CSV/JSON 与 `data.js/data_3d*.js` 同源；后者检查页面资源、导航、锚点、可访问性、JavaScript、离线依赖、安全响应头，并调用 `test_home_runtime.js` 与 `test_wake_runtime.js` 实跑首页数字风洞和尾流 0°/+25°交互。任一退出码非 0 时禁止部署。
+
+- Cloudflare Pages 基础安全响应头与 vendor/font 长缓存规则位于 `site/_headers`。
+- 全站无第三方运行时请求、分析脚本、Cookie、密钥或后端服务。
 
 > 数据来源与边界按页面就近标注：FLORIS 结果明确写为数值模拟，浏览器代理明确写为双线性插值；风速 6–12 m/s、偏航 ±30°为当前可信域，越界目标由交互区就地提示。
 

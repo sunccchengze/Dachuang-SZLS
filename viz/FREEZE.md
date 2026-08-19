@@ -1,65 +1,74 @@
-# 网页封板记录：v1.2-unified-glass
+# 网页最终封板记录：v1.3-final
 
-**分支**：`arena/01a012f1-wind-farm-viz`
-**日期**：2026-08-18
-**状态**：功能冻结；后续只修渲染、布局、死链、数据契约和文字溢出问题。
+**固定分支**：`arena/01a012f1-wind-farm-viz`
+**封板日期**：2026-08-19（Asia/Shanghai）
+**最终代码审计基线**：`21a385e1 chore(site): harden final release checks and assets`
+**状态**：**FINAL / 功能与视觉全部冻结**。
 
-## 本轮封板范围
+## 最终交付
 
-- `af6d9b12`：PPO 真实 200 回合评测数据替换模拟轨迹和虚构五种子图。
-- `f81220ea`：四策略生成同源、3D 功率硬编码清除、死链修复、离线依赖和质量门禁升级。
-- `69e2b075`：尾流页精密浅色设计重构，保留动态在上、静态证据沉底。
-- `699927fc`：3D 策略几何与 FLORIS 数值速度场边界写清，几何扰动改为确定性。
+- `site/` 为现役 15 页纯静态站，导航连续为 `00–13 + MAP`；另含同步首页原型和组会 Web Deck。
+- 风玫瑰网页、站内入口、前端导出与专用站点图片副本已删除；根目录 CSV、生成脚本和科研图继续留档。
+- 首页首屏采用浅色动态数字风洞：3×3 Canvas 风机、尾流、节点标注、鼠标耦合偏航、空间视差、全屏浅薄荷跟随光晕和点击涟漪。
+- 首页所有动态数值均来自现有审计指标；结构场景不生成无来源功率。
+- 全站 Hero、导航、字体、浅色玻璃和 1240px 网格统一；标题使用 Songti SC Black 栈，正文使用等线回退。
+- 尾流三张动态图桌面同排同高；Nature 出版证据在 7 个页面按 2/3/4 张等高横排并响应式回落。
+- Dashboard FIG.C/FIG.D 等高；模型精度 FIG.A/FIG.B 为 40%/60%；阵列四图、POD 三图均完成横排。
+- 连续速度场使用 ColorBrewer BuGn 反向顺序色阶。
+- Plotly 2.35.2、Three.js 0.160.0、Geist 1.7.2 全部本地化，核心演示断网可用。
 
-## v1.2 视觉统一增量
-
-- 15 个现役页面与 `index_v2.html` 统一加载 `css/unified-glass.css`，继承尾流页的精密灰阶、Geist 字阶、发丝线和适度透明材质。
-- 玻璃只覆盖 Hero、一级工作台与主要图表容器，嵌套指标和表格保持平面。
-- 尾流页三张动态图在桌面端左中右同高排成一行，1100px 以下单列回退；静态出版证据区改为浅灰绿，不再切换刺眼纯白。
-- 7 个含 Nature 出版证据的页面统一采用等高横排：桌面按 2/3/4 图同排，平板最多两列、手机单列，单图证据居中收束。
-- 二维与三维速度场改用 ColorBrewer BuGn 反向顺序色阶，低速深绿、高速浅薄荷。
-
-## 质量门禁
+## 最终门禁
 
 ```bash
 python3 site/check_contract.py
 python3 site/verify_all_pages.py
 ```
 
-封板结果：
+验收结果：
 
-- 源 CSV/JSON、`data.js`、`data_3d.js`、`data_3d_real.js` 同源通过。
-- 15 个现役页面及 `index_v2.html`、`slides_823.html` 资源检查通过。
-- 普通链接、CSS URL、JavaScript 语法、统一导航、离线依赖和已知伪数据扫描 0 错误、0 警告。
-- Plotly 2.35.2、Three.js 0.160.0、Geist 1.7.2 已存入仓库，核心站点断网可用。
-- `site/test_wake_runtime.js` 已接入全站门禁：加载真实 `data.js/data_3d.js` 并执行尾流页内联脚本；0°与 +25°均创建三幅 Plotly 图，+25°得到 P₁=1459 kW、P₂=909 kW、Ptot=2368 kW、增益 +8.13%。
+| 检查项 | 最终结果 |
+|---|---|
+| 源 CSV/JSON 与 `data.js/data_3d*.js` 契约 | 通过 |
+| 15 个现役页面及附加页面 | 0 阻断错误，0 警告 |
+| 首页数字风洞运行桩 | 九机、鼠标耦合、偏航、移动重绘通过 |
+| 尾流运行桩 | 0°/+25°数据与三幅 Plotly 通过 |
+| HTML/CSS/JS/Python 语法 | 通过 |
+| 普通链接、CSS URL、页内锚点、重复 ID | 通过 |
+| alt、title、viewport、noopener | 通过 |
+| HTTP 冒烟 | 71 个现役路由 200；8 个下线路由 404 |
+| `site/build_data.py` 幂等性 | 前后哈希一致 |
+| PNG/PDF/WOFF2/MP4 文件签名 | 通过 |
+| PPTX ZIP 结构 | 通过 |
+| Cloudflare `_headers` | 安全头和固定依赖缓存规则齐全 |
+| Git diff whitespace | 通过 |
 
-## 现役资产
+根目录 `check_csv.py`、`check_fields.py` 需要 requirements 中的 pandas/matplotlib，当前沙箱未安装，未列入静态站发布门禁；纯标准库契约检查已覆盖发布数据同源性。
 
-- `site/`：15 页产品导航，另含主页原型和组会 Web Deck。
-- `figures_nature/`：17 张科研图（主工厂 9 张、扩展 8 张），提供 PDF/PNG，部分另有 SVG/灰度版。
-- `20260810洪/extracted/ppo_eval_traces.json`：200 回合逐回合指标与真实代表轨迹。
-- `array_independent_result.json`：四策略总功率和四组九机功率。
-- `site/assets/vendor/`：本地 Plotly/Three.js；`site/assets/fonts/geist/`：本地字体与许可证。
+## 科研边界
 
-## 科研表达边界
+1. FLORIS 是数值模拟，不写成现场实测。
+2. `bg.mp4` 是风机数字孪生/线框结构运行示意，不是九机尾流实录。
+3. 首页 Canvas 和 Three.js 包络是结构/策略示意，不冒充 CFD 等值面。
+4. 浏览器功率反求是双线性代理搜索，不写成浏览器内 PPO 推理。
+5. PPO 只声明 seed 42 的 200 个固定测试回合。
+6. 模型精度页使用交付图源，不承诺仓内完整重训 XGBoost。
+7. 风玫瑰研究数据继续留档，但不属于现役网页产品。
 
-1. FLORIS 结果是数值模拟，不写成现场实测。
-2. `power_tracking.html` 的浏览器交互是双线性代理反向搜索，不写成浏览器 PPO 推理。
-3. PPO 当前只验证 seed 42 权重的 200 个测试回合，不声称五模型种子稳定性。
-4. 3×3 尾流包络是确定性策略示意；双机速度纹理读取 FLORIS 三维网格。
-5. 前两排 +30°策略增益按 `9934.99/8095.15` 同源公式取两位小数为 `22.73%`。
+## 部署冻结
 
-## 演示主线
+- Cloudflare Pages 输出目录：`site`；无构建命令、无环境变量、无后端。
+- `site/_headers` 已配置基础安全响应头。
+- 全站无第三方运行时请求、分析脚本、Cookie 或密钥。
+- 本地预览：`python3 -m http.server 8000 --bind 0.0.0.0 --directory site`。
 
-`index → wake → optimization → array → dashboard → pod → 3d_farm`
+## 变更禁令
 
-推荐现场动作：
+用户已确认当前视觉效果为最终版本：
 
-1. 在 `wake.html` 拖动 0°到 +25°，说明上游让利和下游回升。
-2. 在 `array.html` 切换四策略，落到 `[30,20,0]° / +24.04%`。
-3. 在 `3d_farm.html` 先展示九机策略，再切双机 FLORIS 数据，并主动说明辅助流管不是 CFD 等值面。
+- 不新增页面，不恢复风玫瑰网页，不再进行视觉重构。
+- 不以历史原型覆盖 `index.html`。
+- 不重新引入已清理的旧前端脚本和样式。
+- 不添加无数据来源的动态值或科研结论。
+- 只允许修复明确的运行错误、死链、数据错误、安全问题或文字溢出；修复后必须重跑全部门禁。
 
-## 冻结规则
-
-不新增页面，不恢复已删除的势流彩蛋，不增加无数据来源的指标、种子、速度场或经济收益。任何数字改动必须先修改源文件和生成脚本，再重建前端数据并通过两道门禁。
+最终维护入口为 `HANDOFF_NEXT_AGENT.md`；历史过程仅在 Git 与 `.learnings/` 中追溯。

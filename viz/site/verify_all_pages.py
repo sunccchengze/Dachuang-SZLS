@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """静态站质量门禁。
 
-覆盖 15 个现役页面及站内附加 HTML，检查本地资源、普通超链接、统一导航、
-内联/外部 JavaScript 语法、离线依赖、已删除模块残留、已知伪数据和关键页面
-的“控制在上、动态图居中、Nature 静态证据沉底”顺序。
+覆盖 15 个现役页面及站内附加 HTML，检查本地资源、链接/锚点、重复 ID、
+基础可访问性、统一导航、JavaScript 语法、关键交互运行桩、离线依赖、安全头、
+已删除模块残留、已知伪数据和关键页面的最终布局契约。
 """
 from collections import Counter
 from html.parser import HTMLParser

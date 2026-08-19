@@ -4,13 +4,15 @@
 可视化与交互系统模块负责人：孙承泽 ｜ 指导教师：李良星 副教授
 团队成员：田铭雨（CFD 仿真）· 袁夫达（降阶与代理模型）· 厉今飞（基线数据）· 洪祖名（优化与 PPO）
 
+> **最终封板**：网页于 2026-08-19 完成 `v1.3-final` 验收。现役 15 页不再继续视觉改版；最终维护边界见 `HANDOFF_NEXT_AGENT.md` 与 `FREEZE.md`。
+
 ---
 
 ## 两个形态
 
 | 形态 | 状态 | 入口 |
 |---|---|---|
-| 纯静态演示系统（`site/`，15 页） | **现役产品**，Cloudflare Pages 部署 | https://wind-farm-viz.pages.dev/ |
+| 纯静态演示系统（`site/`，15 页） | **最终封板产品**，Cloudflare Pages 部署 | https://wind-farm-viz.pages.dev/ |
 | Streamlit 应用（`app.py` + `pages/`，10 页） | 留档本地工具，离线探索与答辩断网备胎 | 本地 `streamlit run app.py` |
 
 静态站零后端：数据经构建脚本注入 `assets/data*.js`，浏览器内双线性插值（`assets/js/interp.js`），Plotly.js / three.js 出图。
@@ -19,7 +21,7 @@
 
 | 页面 | 文件 | 一句话 |
 |---|---|---|
-| 主页 | `index.html` | 项目入口、KPI、偏航原理图 |
+| 主页 | `index.html` | 鼠标耦合 3×3 数字风洞、项目入口与审计 KPI |
 | 尾流分析 | `wake.html` | 偏航角滑块联动尾流云图与功率 |
 | 优化结果 | `optimization.html` | 0° vs +25° 对比，含速度场与功率分解 |
 | 优化求解器 | `solver.html` | 任意风速实时搜索最优偏航角，算法开销对比表（实测） |
@@ -40,8 +42,12 @@
 ## 快速开始
 
 ```bash
-# 静态站本地预览(零依赖)
-python3 -m http.server 8000 --directory site
+# 静态站本地预览（零依赖）
+python3 -m http.server 8000 --bind 0.0.0.0 --directory site
+
+# 最终部署门禁（任一失败均禁止部署）
+python3 site/check_contract.py
+python3 site/verify_all_pages.py
 
 # Streamlit 留档工具
 pip install -r requirements.txt
@@ -83,7 +89,7 @@ python site/benchmark_solver.py     # solver 页算法对比表复跑口径
 - Python（留档）：`predict_power(yaw_angle, U_inf) -> (p1, p2)` kW
 - JS（静态站 `assets/js/interp.js`）：`predict_power(yaw, U) -> {p1, p2, ptot, outOfRange, reasons}`，可信域 6~12 m/s、±30°，越界自动提示
 
-## 当前数据口径（2026-08-10 审计定版）
+## 当前数据口径（2026-08-19 最终封板复核）
 
 | 项 | 口径 |
 |---|---|
@@ -95,7 +101,7 @@ python site/benchmark_solver.py     # solver 页算法对比表复跑口径
 | 风玫瑰（两台串列） | 仅 270° 正对扇区有收益；等权 ΔAEP +0.51%，西风 30% 示例 +1.97% |
 | 风玫瑰（3×3 阵列） | 12 风向双通道贪心（7536 次求解）：8 扇区非零——轴向 90°/270° +24.0% 级、列轴 0°/180° +21.6%、晶格对角 60°/120°/240°/300° +10.7~11.3%；等权 ΔAEP +8.86%，西风 30% 示例 +11.37%（8 m/s 口径） |
 | PPO 闭环 | 200 独立测试回合实测稳态 MAE = 0.523% (< 1.2%)、平均调节时间 = 0.944 s (~0.8 s)、稳态零抖动（4 维契约权重 55 KB） |
-| 待补全 | XGBoost 精度（图表 png 已有，原始压缩包资产待补） |
+| 模型精度证据边界 | XGBoost 交付图源已纳入网页；原始训练压缩包未纳入仓库，因此不承诺仓内完整重训 |
 
 数据来源、可信域和假设直接写入对应页面的图注与边界说明；全部数字的复算口径见 `.learnings/AUDIT_20260810.md`（审计台账）。
 
@@ -106,5 +112,5 @@ python site/benchmark_solver.py     # solver 页算法对比表复跑口径
 ## 仓库治理
 
 - 当前固定工作分支：`arena/01a012f1-wind-farm-viz`；历史会话分支只作追溯；**永不 merge 到 `main`**。Cloudflare Pages 的生产分支需在控制台单独核对，不以旧文档中的分支名为准。
-- 当前交接以 `HANDOFF_NEXT_AGENT.md` 和 `FREEZE.md` 为准；`HANDOFF.md` 与 `.learnings/SESSION_ARCHIVE_20260810.md` 是历史记录。
-- 提交约定：小步、单主题、每个 diff 可追溯到实证来源；任何数字改动必须附复算路径。
+- 网页已最终冻结；当前交接以 `HANDOFF_NEXT_AGENT.md` 和 `FREEZE.md` 为准，`HANDOFF.md` 与 `.learnings/SESSION_ARCHIVE_20260810.md` 仅作历史索引。
+- 后续只允许修复明确运行错误、死链、数据错误、安全问题或文字溢出；任何数字改动必须附复算路径并重跑两道门禁。
