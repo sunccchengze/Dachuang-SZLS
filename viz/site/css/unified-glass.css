@@ -87,7 +87,12 @@ body {
 .t-nav-links a.active { color: var(--shell-ink) !important; border-bottom-color: var(--shell-ink) !important; }
 .t-nav-links a.active i { color: var(--shell-ink) !important; }
 
-.t-container { max-width: 1240px !important; }
+.t-container {
+  max-width: 1240px !important;
+  margin: 0 auto !important;
+  padding-left: 32px;
+  padding-right: 32px;
+}
 
 /* 子页 Hero：少量透明感和一处低饱和 mesh，不把玻璃铺满全页。 */
 .v-pg-hero {

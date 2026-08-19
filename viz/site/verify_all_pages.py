@@ -222,9 +222,12 @@ def main():
         if token not in model_page:
             errors.append(f"model.html FIG.A/FIG.B 协调比例样式缺失：{token}")
 
-    # 尾流页标题必须复用其余子页的统一玻璃 Hero。
+    # 尾流页标题必须复用其余子页的统一玻璃 Hero，并与 1240px 正文网格居中对齐。
     if '<header class="v-pg-hero t-container">' not in wake or 'class="wake-hero"' in wake:
         errors.append("wake.html 大标题区域未与其余子页统一")
+    for token in ("margin: 0 auto !important", "padding-left: 32px", "padding-right: 32px"):
+        if token not in glass_css:
+            errors.append(f"统一 Hero 容器未与正文网格居中对齐：{token}")
 
     # 依赖必须本地锁定。
     required_vendor = [
