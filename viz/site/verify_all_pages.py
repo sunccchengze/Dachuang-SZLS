@@ -187,6 +187,17 @@ def main():
             re.S,
         ):
             errors.append(f"{name} 蓝色主标题行未继承统一标题字体")
+        for token in (
+            "rgba(138,214,190,0.24)",
+            "rgba(194,232,216,0.34)",
+            "rgba(140,211,188,0.20)",
+            "'104,176,151' : '128,183,168'",
+        ):
+            if token not in homepage:
+                errors.append(f"{name} 缺少清新薄荷 Hero 光效：{token}")
+        for stale_tone in ("168,120,23", "168, 120, 23", "45,117,105", "45, 117, 105"):
+            if stale_tone in homepage:
+                errors.append(f"{name} 仍含偏褐或过暗的旧 Hero 光效：{stale_tone}")
     for token in (".hero-title .hl", "font-family: var(--shell-serif) !important"):
         if token not in glass_css:
             errors.append(f"首页主标题共享字体覆盖缺失：{token}")
