@@ -10,7 +10,7 @@ python3 -m http.server 8000 --directory site
 
 ## 视觉母版
 
-- `css/unified-glass.css` 是 16 个现役页面与首页原型共用的精密浅色母版：`#fafafa/#ffffff/#171717` 灰阶、本地 Geist、发丝线和克制玻璃材质。
+- `css/unified-glass.css` 是 15 个现役页面与首页原型共用的精密浅色母版：`#fafafa/#ffffff/#171717` 灰阶、本地 Geist、发丝线和克制玻璃材质。
 - 玻璃只用于 Hero、一级工作台和主要图表外壳；数据格、表格与图内区域保持平面，避免全站泛滥透明卡片。
 - 连续速度场使用 ColorBrewer `BuGn` 九级顺序色的反向版本：低速尾流为森林绿，高速清洁来流为浅薄荷。二维和三维速度图共用该语义。
 - `wake.html` 在桌面端把三张动态图压成左、中、右同高一行；1100px 以下回落为单列，保证坐标和图例可读。

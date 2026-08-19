@@ -283,14 +283,13 @@
       <a href="dashboard.html" data-nav-code="04" data-nav-name="看板"><i>04</i>看板</a>
       <a href="array.html" data-nav-code="05" data-nav-name="阵列"><i>05</i>阵列</a>
       <a href="heatmap.html" data-nav-code="06" data-nav-name="热力"><i>06</i>热力</a>
-      <a href="windrose.html" data-nav-code="07" data-nav-name="风玫瑰"><i>07</i>风玫瑰</a>
-      <a href="pod.html" data-nav-code="08" data-nav-name="POD"><i>08</i>POD</a>
-      <a href="model.html" data-nav-code="09" data-nav-name="精度"><i>09</i>精度</a>
-      <a href="power_tracking.html" data-nav-code="10" data-nav-name="跟踪"><i>10</i>跟踪</a>
-      <a href="3d_farm.html" data-nav-code="11" data-nav-name="3D风场"><i>11</i>3D风场</a>
-      <a href="3d_surface.html" data-nav-code="12" data-nav-name="3D曲面"><i>12</i>3D曲面</a>
-      <a href="3d_volume.html" data-nav-code="13" data-nav-name="3D体"><i>13</i>3D体</a>
-      <a href="interface.html" data-nav-code="14" data-nav-name="契约"><i>14</i>契约</a>      <a href="overview.html" data-nav-code="MAP" data-nav-name="系统总览"><i>MAP</i>总览</a>
+      <a href="pod.html" data-nav-code="07" data-nav-name="POD"><i>07</i>POD</a>
+      <a href="model.html" data-nav-code="08" data-nav-name="精度"><i>08</i>精度</a>
+      <a href="power_tracking.html" data-nav-code="09" data-nav-name="跟踪"><i>09</i>跟踪</a>
+      <a href="3d_farm.html" data-nav-code="10" data-nav-name="3D风场"><i>10</i>3D风场</a>
+      <a href="3d_surface.html" data-nav-code="11" data-nav-name="3D曲面"><i>11</i>3D曲面</a>
+      <a href="3d_volume.html" data-nav-code="12" data-nav-name="3D体"><i>12</i>3D体</a>
+      <a href="interface.html" data-nav-code="13" data-nav-name="契约"><i>13</i>契约</a>      <a href="overview.html" data-nav-code="MAP" data-nav-name="系统总览"><i>MAP</i>总览</a>
     </div></div>
   </div>
 </nav>
@@ -299,7 +298,7 @@
   <div class="v-pg-tag">MODULE MAP · SYSTEM OVERVIEW · DATA LEDGER</div>
   <h1 class="v-pg-title">项目架构与数据总览</h1>
   <p class="v-pg-sub">
-    大创项目全景技术路线、十六个可视化模块目录、多风速工况基线与双机功率分解；全部数值由仓内
+    大创项目全景技术路线、十五个可视化模块目录、多风速工况基线与双机功率分解；全部数值由仓内
     <code style="font-family:var(--v-mono);font-size:12px">data.js / data_3d.js</code> 实时读取，与契约校验脚本同源。
   </p>
 </header>
@@ -402,7 +401,7 @@
   </div>
 
   <!-- 模块目录 -->
-  <h2 class="sec-title">十六个可视化模块目录</h2>
+  <h2 class="sec-title">十五个可视化模块目录</h2>
   <div class="sec-sub">纯静态边缘渲染，全部模块可在无后端环境直接打开；编号 00–03 为组会主讲主线，其余为支撑与扩展模块。</div>
   <div class="mod-grid">
     <a class="mod-cell" href="index.html">
@@ -440,43 +439,38 @@
       <span class="mod-name">热力矩阵</span>
       <span class="mod-desc">偏航 × 风速增益矩阵与 3D 曲面</span>
     </a>
-    <a class="mod-cell" href="windrose.html">
-      <div class="mod-top"><span class="mod-idx">MOD 07</span><span class="mod-flag">数据</span></div>
-      <span class="mod-name">风玫瑰与 AEP</span>
-      <span class="mod-desc">12 风向实扫描与年发电量折算</span>
-    </a>
     <a class="mod-cell" href="pod.html">
-      <div class="mod-top"><span class="mod-idx">MOD 08</span><span class="mod-flag">降阶</span></div>
+      <div class="mod-top"><span class="mod-idx">MOD 07</span><span class="mod-flag">降阶</span></div>
       <span class="mod-name">POD 降阶分析</span>
       <span class="mod-desc">模态能量分解与毫秒级重构</span>
     </a>
     <a class="mod-cell" href="model.html">
-      <div class="mod-top"><span class="mod-idx">MOD 09</span><span class="mod-flag">验证</span></div>
+      <div class="mod-top"><span class="mod-idx">MOD 08</span><span class="mod-flag">验证</span></div>
       <span class="mod-name">模型精度验证</span>
       <span class="mod-desc">代理模型 R² / MAE 与架构对比</span>
     </a>
     <a class="mod-cell" href="power_tracking.html">
-      <div class="mod-top"><span class="mod-idx">MOD 10</span><span class="mod-flag">控制</span></div>
+      <div class="mod-top"><span class="mod-idx">MOD 09</span><span class="mod-flag">控制</span></div>
       <span class="mod-name">功率需求跟踪</span>
       <span class="mod-desc">AGC 目标功率逆向偏航求解</span>
     </a>
     <a class="mod-cell" href="3d_farm.html">
-      <div class="mod-top"><span class="mod-idx">MOD 11</span><span class="mod-flag">3D</span></div>
+      <div class="mod-top"><span class="mod-idx">MOD 10</span><span class="mod-flag">3D</span></div>
       <span class="mod-name">3D 风电场</span>
       <span class="mod-desc">Three.js 九机协同与真实流场</span>
     </a>
     <a class="mod-cell" href="3d_surface.html">
-      <div class="mod-top"><span class="mod-idx">MOD 12</span><span class="mod-flag">3D</span></div>
+      <div class="mod-top"><span class="mod-idx">MOD 11</span><span class="mod-flag">3D</span></div>
       <span class="mod-name">3D 尾流曲面</span>
       <span class="mod-desc">三维速度曲面与高度切片探针</span>
     </a>
     <a class="mod-cell" href="3d_volume.html">
-      <div class="mod-top"><span class="mod-idx">MOD 13</span><span class="mod-flag">3D</span></div>
+      <div class="mod-top"><span class="mod-idx">MOD 12</span><span class="mod-flag">3D</span></div>
       <span class="mod-name">3D 体渲染</span>
       <span class="mod-desc">尾流低速泡等直面与偏航扫描</span>
     </a>
     <a class="mod-cell" href="interface.html">
-      <div class="mod-top"><span class="mod-idx">MOD 14</span><span class="mod-flag">协作</span></div>
+      <div class="mod-top"><span class="mod-idx">MOD 13</span><span class="mod-flag">协作</span></div>
       <span class="mod-name">数据接口契约</span>
       <span class="mod-desc">团队交付链路与 API 规范固化</span>
     </a>

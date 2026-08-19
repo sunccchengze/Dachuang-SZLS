@@ -189,7 +189,7 @@ def create_deck():
         "1. 田铭雨（高保真 CFD 网格仿真）：\n   输出 OpenFOAM / SOWFA 真值流场与三维切片",
         "2. 袁夫达（POD 降阶与代理模型）：\n   主导模态提取，打通实时推理特征矩阵",
         "3. 洪祖名（PPO 连续功率跟踪优化）：\n   主导闭环强化学习控制与多机参数优化",
-        "4. 孙承泽（本汇报人 · 可视化与交互）：\n   统筹全系 16 个莫兰迪工科子网页研发，首创纯静态插值推理与全时段协同呈现！"
+        "4. 孙承泽（本汇报人 · 可视化与交互）：\n   统筹全系 15 个莫兰迪工科子网页研发，首创纯静态插值推理与全时段协同呈现！"
     ]
     for pt_str in team_points:
         pt_item = tf_team.add_paragraph()
@@ -527,7 +527,7 @@ def create_deck():
     col_w11 = Inches(3.6)
     lefts11 = [Inches(0.8), Inches(4.8), Inches(8.8)]
     titles11 = [
-        "16页莫兰迪静态工作台\nWEB VISUALIZATION",
+        "15页莫兰迪静态工作台\nWEB VISUALIZATION",
         "PS顶刊图与PPT网格体系\nPS / PPT STANDARDS",
         "全站诚信自检与规划\nINTEGRITY & VISION"
     ]

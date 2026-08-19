@@ -59,15 +59,4 @@
   }
   renderArray();
 
-  // ---- 04 风玫瑰 ----
-  function renderRose(){
-    const map={};W.windrose_opt.forEach(r=>{(map[r.wind_direction]=map[r.wind_direction]||[]).push(r.gain_pct);});
-    const angles=Object.keys(map).map(Number).sort((a,b)=>a-b);
-    const values=angles.map(d=>{const a=map[d];return a.reduce((x,y)=>x+y,0)/a.length;});
-    C.polarRose(document.getElementById("roseChart"),{angles,values});
-    const maxG=Math.max(...values),maxD=angles[values.indexOf(maxG)];
-    document.getElementById("roseNote").innerHTML=
-      `各风向平均增益：最高约 <b class="good">${maxG.toFixed(1)}%</b>（风向 ${maxD}°）。`;
-  }
-  renderRose();
 })();

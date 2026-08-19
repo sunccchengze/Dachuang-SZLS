@@ -10,12 +10,12 @@
 
 | 形态 | 状态 | 入口 |
 |---|---|---|
-| 纯静态演示系统（`site/`，16 页） | **现役产品**，Cloudflare Pages 部署 | https://wind-farm-viz.pages.dev/ |
+| 纯静态演示系统（`site/`，15 页） | **现役产品**，Cloudflare Pages 部署 | https://wind-farm-viz.pages.dev/ |
 | Streamlit 应用（`app.py` + `pages/`，10 页） | 留档本地工具，离线探索与答辩断网备胎 | 本地 `streamlit run app.py` |
 
 静态站零后端：数据经构建脚本注入 `assets/data*.js`，浏览器内双线性插值（`assets/js/interp.js`），Plotly.js / three.js 出图。
 
-## 静态站页面（16 页）
+## 静态站页面（15 页）
 
 | 页面 | 文件 | 一句话 |
 |---|---|---|
@@ -28,13 +28,14 @@
 | 3D 尾流曲面 | `3d_surface.html` | 三维速度曲面 |
 | 3D 体渲染 | `3d_volume.html` | 尾流低速泡等值面 |
 | 热力矩阵 | `heatmap.html` | 偏航角 × 风速增益矩阵 |
-| 风玫瑰与 AEP | `windrose.html` | 12 风向实扫描收益，AEP 等权假设显式声明 |
 | 数据总览 | `overview.html` | 全工况表与分解曲线 |
 | POD 降阶 | `pod.html` | 模态能量 76.4% / 21.6%，前 2 阶累计 98.0%（97.97%） |
 | 3×3 阵列优化 | `array.html` | 统一 +14.87% / 逐排贪心 +24.04% |
 | 功率需求跟踪 | `power_tracking.html` | 目标功率反求偏航角 |
 | 模型精度 | `model.html` | XGBoost 图源级佐证（仓内复现资产待补） |
 | 统一数据接口 | `interface.html` | 三组数据契约与接入状态 |
+
+> 风向扫描 CSV、生成脚本与 Nature 风玫瑰图继续作为科研留档保留，但不再进入现役网页导航。
 
 ## 快速开始
 

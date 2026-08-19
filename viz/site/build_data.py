@@ -69,25 +69,6 @@ data["array"] = {
     "gain": [next(f(r["gain_pct"]) for r in rows if float(r["yaw_upstream"])==y) for y in yu],
 }
 
-# ---- cases_windrose_opt.csv: 风玫瑰(优化后) ----
-rows = read_csv("cases_windrose_opt.csv")
-data["windrose_opt"] = [
-    {"wind_direction": f(r["wind_direction"]), "U_inf": f(r["U_inf"]),
-     "best_yaw": f(r["best_yaw"]), "power_base": f(r["power_base"]),
-     "power_opt": f(r["power_opt"]), "gain_pct": f(r["gain_pct"])}
-    for r in rows
-]
-
-# ---- cases_array_windrose.csv: 3x3 阵列全风向贪心扫描 ----
-rows = read_csv("cases_array_windrose.csv")
-data["array_rose"] = [
-    {"wind_direction": f(r["wind_direction"]), "U_inf": f(r["U_inf"]),
-     "power_base": f(r["power_base"]), "power_greedy": f(r["power_greedy"]),
-     "gain_pct": f(r["gain_pct"]), "greedy_method": r["greedy_method"],
-     "yaws": [f(r[f"yaw_{k}"]) for k in range(1, 10)]}
-    for r in rows
-]
-
 # ---- optimizer_result.json / array_independent_result.json ----
 with open(os.path.join(ROOT, "optimizer_result.json")) as fh:
     data["opt"] = json.load(fh)
@@ -100,5 +81,3 @@ with open(OUT, "w", encoding="utf-8") as fh:
 print("wrote", OUT, "bytes=", len(js))
 print("multi grid:", len(data["multi"]["wind_speeds"]), "x", len(data["multi"]["yaw_angles"]))
 print("array yaw_upstream n=", len(data["array"]["yaw_upstream"]))
-print("windrose_opt n=", len(data["windrose_opt"]))
-print("array_rose n=", len(data["array_rose"]))

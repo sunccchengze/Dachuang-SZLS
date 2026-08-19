@@ -90,7 +90,7 @@
 $$\text{PRD 功能需求} \xrightarrow{\text{Refero DESIGN.md (设计约束)}} \text{锁定莫兰迪色盘/字体阶梯/8px网格} \xrightarrow{\text{MotionSites (动效配方)}} \text{物理插值/流线粒子/平滑转场}$$
 
 ### 5.2 核心运用场景
-1. **静态站 16 个子页面视觉重构**：统一按照 `site/DESIGN.md` 的颜色、圆角（$\le 12\text{px}$）、1px 发丝边框和 14px 毛玻璃背景规范执行，彻底消除粗糙的 AI 模板感；
+1. **静态站 15 个现役页面视觉重构**：统一按照 `site/DESIGN.md` 的颜色、圆角（$\le 12\text{px}$）、1px 发丝边框和 14px 毛玻璃背景规范执行，彻底消除粗糙的 AI 模板感；
 2. **气动流场与 3D 动画交互**：采用 `motion-recipes.md` 中的 Canvas 粒子流线、Three.js 机舱平滑阻尼转动插值（`lerp`）与数据跳动器，提升交互专业度。
 
 ---

@@ -150,7 +150,8 @@
       background: #ffffff; border: 1px solid var(--v-line-strong);
       border-radius: 4px; padding: 28px 32px; margin-bottom: 36px;
     }
-    .dash-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 28px; align-items: start; }
+    .dash-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; align-items: stretch; }
+    .dash-panel { min-width: 0; display: flex; flex-direction: column; }
     .plot-head {
       font-family: var(--v-display); font-size: 14.5px; font-weight: 750; color: var(--v-ink);
       margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -162,11 +163,10 @@
       font-family: var(--v-mono); font-size: 11.5px; line-height: 1.6;
       background: var(--v-bg-soft); border: 1px solid var(--v-line);
       border-radius: 3px; padding: 14px 16px; overflow-x: auto;
-      color: var(--v-body); max-height: 200px; overflow-y: auto; margin-bottom: 12px;
-      white-space: pre;
+      color: var(--v-body); height: 300px; max-height: none; overflow-y: auto;
+      margin-bottom: 0; white-space: pre;
     }
-    .hero-img-wrap { border: 1px solid var(--v-line); border-radius: 3px; overflow: hidden; background: var(--v-bg-soft); }
-    .hero-img-wrap img { width: 100%; height: auto; display: block; }
+    .dash-panel .plot-note { margin-top: 10px; min-height: 40px; }
 
     .t-footer {
       border-top: 1px solid var(--v-line-strong); padding: 60px 0; margin-top: 80px;
@@ -226,14 +226,13 @@
       <a href="dashboard.html" data-nav-code="04" data-nav-name="看板"><i>04</i>看板</a>
       <a href="array.html" data-nav-code="05" data-nav-name="阵列"><i>05</i>阵列</a>
       <a href="heatmap.html" data-nav-code="06" data-nav-name="热力"><i>06</i>热力</a>
-      <a href="windrose.html" data-nav-code="07" data-nav-name="风玫瑰"><i>07</i>风玫瑰</a>
-      <a href="pod.html" data-nav-code="08" data-nav-name="POD"><i>08</i>POD</a>
-      <a href="model.html" data-nav-code="09" data-nav-name="精度"><i>09</i>精度</a>
-      <a href="power_tracking.html" data-nav-code="10" data-nav-name="跟踪"><i>10</i>跟踪</a>
-      <a href="3d_farm.html" data-nav-code="11" data-nav-name="3D风场"><i>11</i>3D风场</a>
-      <a href="3d_surface.html" data-nav-code="12" data-nav-name="3D曲面"><i>12</i>3D曲面</a>
-      <a href="3d_volume.html" data-nav-code="13" data-nav-name="3D体"><i>13</i>3D体</a>
-      <a href="interface.html" data-nav-code="14" data-nav-name="契约"><i>14</i>契约</a>      <a href="overview.html" data-nav-code="MAP" data-nav-name="系统总览"><i>MAP</i>总览</a>
+      <a href="pod.html" data-nav-code="07" data-nav-name="POD"><i>07</i>POD</a>
+      <a href="model.html" data-nav-code="08" data-nav-name="精度"><i>08</i>精度</a>
+      <a href="power_tracking.html" data-nav-code="09" data-nav-name="跟踪"><i>09</i>跟踪</a>
+      <a href="3d_farm.html" data-nav-code="10" data-nav-name="3D风场"><i>10</i>3D风场</a>
+      <a href="3d_surface.html" data-nav-code="11" data-nav-name="3D曲面"><i>11</i>3D曲面</a>
+      <a href="3d_volume.html" data-nav-code="12" data-nav-name="3D体"><i>12</i>3D体</a>
+      <a href="interface.html" data-nav-code="13" data-nav-name="契约"><i>13</i>契约</a>      <a href="overview.html" data-nav-code="MAP" data-nav-name="系统总览"><i>MAP</i>总览</a>
     </div></div>
   </div>
 </nav>
@@ -317,7 +316,7 @@
 
   <div class="v-plots-container">
     <div class="dash-grid">
-      <div>
+      <div class="dash-panel">
         <div class="plot-head">
           <span class="plot-tick">FIG. C</span>实时流场（轮毂高度截面）
           <span class="yaw-badge" id="animYaw" style="margin-left:auto;font-size:12px">0°</span>
@@ -325,13 +324,10 @@
         <div id="dAnim" style="height:300px"></div>
         <div class="plot-note">偏航使尾流横向偏移，是下游功率回升的物理原因；自动扫描时循环播放。</div>
       </div>
-      <div>
+      <div class="dash-panel">
         <div class="plot-head"><span class="plot-tick">FIG. D</span>优化器推荐（optimizer_result.json）</div>
         <div class="opt-json" id="dJson"></div>
-        <div class="plot-note" style="margin-top:0;margin-bottom:12px">8 m/s 工况：基准 0° → 推荐 +25°，全场增益 +8.13%。</div>
-        <div class="hero-img-wrap">
-          <img src="assets/img/hero/wind_farm_control.jpg" alt="风电场主控系统">
-        </div>
+        <div class="plot-note">8 m/s 工况：基准 0° → 推荐 +25°，全场增益 +8.13%。</div>
       </div>
     </div>
   </div>

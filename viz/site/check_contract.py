@@ -6,7 +6,7 @@
 
 纯标准库，无需 numpy/pandas。校验内容：
   - data.js: multi 网格形状、功率非负、ptot==p1+p2、gain 与公式一致；
-             single/array/windrose/opt/array_opt 字段齐全且数值合理。
+             single/array/opt/array_opt 字段齐全且数值合理。
   - data_3d.js: fields_2d/fields_3d 的坐标与速度场形状一致、速度非负；
                 heatmap 网格形状与增益范围合理。
 
@@ -141,52 +141,6 @@ def check_scalars(d):
             for i, row in enumerate(a["powers"]):
                 if len(row) != 9:
                     err(f"array.powers[{i}] 应有 9 台风机功率")
-    wr = d.get("windrose_opt")
-    if isinstance(wr, list):
-        for i, r in enumerate(wr):
-            for k in ("wind_direction", "U_inf", "best_yaw", "gain_pct"):
-                if k not in r:
-                    err(f"windrose_opt[{i}] 缺字段 {k}")
-    ar = d.get("array_rose")
-    if isinstance(ar, list):
-        expect_dirs = {float(x) for x in range(0, 360, 30)}
-        expect_speeds = {6.0, 8.0, 10.0, 12.0}
-        seen = set()
-        for i, r in enumerate(ar):
-            for k in ("wind_direction", "U_inf", "power_base", "power_greedy",
-                      "gain_pct", "greedy_method", "yaws"):
-                if k not in r:
-                    err(f"array_rose[{i}] 缺字段 {k}")
-            try:
-                dd, uu = float(r["wind_direction"]), float(r["U_inf"])
-                seen.add((dd, uu))
-            except Exception:
-                err(f"array_rose[{i}] 风向/风速非数值")
-                continue
-            for pk in ("power_base", "power_greedy"):
-                if not is_num(r[pk]) or r[pk] < 0:
-                    err(f"array_rose[{i}].{pk} 非法: {r[pk]!r}")
-            if is_num(r["power_base"]) and is_num(r["power_greedy"]):
-                if r["power_greedy"] < r["power_base"] - 0.05:
-                    err(f"array_rose[{i}] 贪心功率低于基准: {r['power_greedy']} < {r['power_base']}")
-                if r["power_base"] > 0 and is_num(r["gain_pct"]):
-                    expect = round((r["power_greedy"] - r["power_base"]) / r["power_base"] * 100, 3)
-                    if abs(expect - r["gain_pct"]) > 0.05:
-                        err(f"array_rose[{i}] gain 不一致: 文件 {r['gain_pct']}% vs 公式 {expect}%")
-                if is_num(r["gain_pct"]) and not (-1.0 <= r["gain_pct"] <= 45.0):
-                    err(f"array_rose[{i}] gain_pct 越界: {r['gain_pct']}%")
-            if r.get("greedy_method") not in ("per_turbine", "row_rank"):
-                err(f"array_rose[{i}] greedy_method 非法: {r.get('greedy_method')!r}")
-            ys = r.get("yaws")
-            if not isinstance(ys, list) or len(ys) != 9:
-                err(f"array_rose[{i}] yaws 应为 9 个偏航角")
-            elif any(not is_num(v) or abs(v) > 30.001 for v in ys):
-                err(f"array_rose[{i}] yaws 越界 ±30°: {ys!r}")
-        missing = {(dd, uu) for dd in expect_dirs for uu in expect_speeds} - seen
-        if missing:
-            err(f"array_rose 缺 {len(missing)} 个风向×风速组合: {sorted(missing)[:4]}...")
-    else:
-        err("data.array_rose 缺失或非数组")
     opt = d.get("opt")
     if opt:
         for k in ("wind_speed", "recommended_yaw", "power_before", "power_after", "power_gain_pct"):

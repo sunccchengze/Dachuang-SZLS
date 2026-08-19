@@ -112,8 +112,28 @@
       background: #ffffff; border: 1px solid var(--v-line-strong);
       border-radius: 4px; padding: 28px 32px; margin-bottom: 36px;
     }
-    .grid-plots { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; min-width: 0;}
-    .grid-plots > div { min-width: 0; }
+    .grid-plots {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+      gap: 28px;
+      align-items: stretch;
+      min-width: 0;
+    }
+    .grid-plots > .plot-column {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .plot-column .fig-frame img { display: block; width: 100%; }
+    .plot-residual .stat-grid {
+      flex: 1;
+      grid-auto-rows: minmax(72px, 1fr);
+    }
+    .plot-residual .stat-cell {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
     .plot-head {
       font-family: var(--v-display); font-size: 14.5px; font-weight: 750; color: var(--v-ink);
       margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
@@ -209,20 +229,19 @@
       <a href="dashboard.html" data-nav-code="04" data-nav-name="看板"><i>04</i>看板</a>
       <a href="array.html" data-nav-code="05" data-nav-name="阵列"><i>05</i>阵列</a>
       <a href="heatmap.html" data-nav-code="06" data-nav-name="热力"><i>06</i>热力</a>
-      <a href="windrose.html" data-nav-code="07" data-nav-name="风玫瑰"><i>07</i>风玫瑰</a>
-      <a href="pod.html" data-nav-code="08" data-nav-name="POD"><i>08</i>POD</a>
-      <a href="model.html" data-nav-code="09" data-nav-name="精度"><i>09</i>精度</a>
-      <a href="power_tracking.html" data-nav-code="10" data-nav-name="跟踪"><i>10</i>跟踪</a>
-      <a href="3d_farm.html" data-nav-code="11" data-nav-name="3D风场"><i>11</i>3D风场</a>
-      <a href="3d_surface.html" data-nav-code="12" data-nav-name="3D曲面"><i>12</i>3D曲面</a>
-      <a href="3d_volume.html" data-nav-code="13" data-nav-name="3D体"><i>13</i>3D体</a>
-      <a href="interface.html" data-nav-code="14" data-nav-name="契约"><i>14</i>契约</a>      <a href="overview.html" data-nav-code="MAP" data-nav-name="系统总览"><i>MAP</i>总览</a>
+      <a href="pod.html" data-nav-code="07" data-nav-name="POD"><i>07</i>POD</a>
+      <a href="model.html" data-nav-code="08" data-nav-name="精度"><i>08</i>精度</a>
+      <a href="power_tracking.html" data-nav-code="09" data-nav-name="跟踪"><i>09</i>跟踪</a>
+      <a href="3d_farm.html" data-nav-code="10" data-nav-name="3D风场"><i>10</i>3D风场</a>
+      <a href="3d_surface.html" data-nav-code="11" data-nav-name="3D曲面"><i>11</i>3D曲面</a>
+      <a href="3d_volume.html" data-nav-code="12" data-nav-name="3D体"><i>12</i>3D体</a>
+      <a href="interface.html" data-nav-code="13" data-nav-name="契约"><i>13</i>契约</a>      <a href="overview.html" data-nav-code="MAP" data-nav-name="系统总览"><i>MAP</i>总览</a>
     </div></div>
   </div>
 </nav>
 
 <header class="v-pg-hero t-container">
-  <div class="v-pg-tag">09 / SURROGATE ACCURACY · GENERALIZATION AUDIT</div>
+  <div class="v-pg-tag">08 / SURROGATE ACCURACY · GENERALIZATION AUDIT</div>
   <h1 class="v-pg-title">代理模型精度与泛化验证</h1>
   <p class="v-pg-sub">
     厉今飞基线建模 + 洪祖名 XGBoost 深度调优：全风速、全偏航域真实值–预测值对照、残差分布与多架构横向对比，
@@ -292,14 +311,14 @@
 
   <div class="v-plots-container">
     <div class="grid-plots">
-      <div>
+      <div class="plot-column plot-primary">
         <div class="plot-head"><span class="plot-tick">FIG. A</span>真实值 vs 代理模型预测值散点图 (True vs Pred)</div>
         <div class="fig-frame">
           <img src="assets/img/true_vs_pred_farm_power.png" alt="真实vs预测">
         </div>
         <div class="plot-note">散点严格聚拢在 <em>y = x</em> 对角线上，全风速与偏航工况下均无系统性偏差。</div>
       </div>
-      <div>
+      <div class="plot-column plot-residual">
         <div class="plot-head"><span class="plot-tick">FIG. B</span>预测残差频数与正态分布图 (Residual Histogram)</div>
         <div class="fig-frame">
           <img src="assets/img/residual_gch_xgb_tuned.png" alt="残差分布">

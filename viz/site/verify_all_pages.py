@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """静态站质量门禁。
 
-覆盖 16 个现役页面及站内附加 HTML，检查本地资源、普通超链接、统一导航、
+覆盖 15 个现役页面及站内附加 HTML，检查本地资源、普通超链接、统一导航、
 内联/外部 JavaScript 语法、离线依赖、已删除模块残留、已知伪数据和关键页面
 的“控制在上、动态图居中、Nature 静态证据沉底”顺序。
 """
@@ -17,14 +17,15 @@ ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 CORE_PAGES = [
     "index.html", "wake.html", "optimization.html", "solver.html",
-    "dashboard.html", "array.html", "heatmap.html", "windrose.html",
-    "pod.html", "model.html", "power_tracking.html", "3d_farm.html",
+    "dashboard.html", "array.html", "heatmap.html", "pod.html",
+    "model.html", "power_tracking.html", "3d_farm.html",
     "3d_surface.html", "3d_volume.html", "interface.html", "overview.html",
 ]
 EXPECTED_NAV = CORE_PAGES[:-1] + ["overview.html"]
 EXTRA_PAGES = ["index_v2.html", "slides_823.html"]
 BANNED_TEXT = {
     "aerodynamic_demo.html": "已删除模块残留",
+    "windrose.html": "已下线风玫瑰页面残留",
     "7000吨": "无来源碳减排旧文案",
     "340万元": "无来源金额旧文案",
     "42.5%": "已废弃阵列占位值",
@@ -125,7 +126,7 @@ def main():
             if issue:
                 errors.append(issue)
 
-    # 16 页统一导航：顺序、数量和目标必须完全一致。
+    # 15 页统一导航：顺序、数量和目标必须完全一致。
     for name in CORE_PAGES:
         content = (SITE / name).read_text(encoding="utf-8")
         nav_match = re.search(r'<div class="t-nav-links".*?</div>\s*</div>', content, re.S)
@@ -175,6 +176,56 @@ def main():
         if token not in glass_css and token not in wake:
             errors.append(f"尾流统一布局或绿色色阶缺失：{token}")
 
+    # POD 三张出版图必须在同一响应式行内，桌面图窗等高。
+    pod = (SITE / "pod.html").read_text(encoding="utf-8")
+    if pod.count('class="v-plots-container pod-nature-card"') != 3:
+        errors.append("pod.html 必须恰有 3 张 POD Nature 横排卡片")
+    for token in (".pod-nature-row", "grid-template-rows: minmax(64px, auto) 250px 1fr"):
+        if token not in glass_css:
+            errors.append(f"POD Nature 等高横排样式缺失：{token}")
+
+    # 阵列四张出版图必须同排等高；首页目录必须统一四等分列宽。
+    array_page = (SITE / "array.html").read_text(encoding="utf-8")
+    if array_page.count('class="v-plots-container array-nature-card"') != 4:
+        errors.append("array.html 必须恰有 4 张阵列 Nature 横排卡片")
+    for token in (".array-nature-row", "grid-template-columns: repeat(4, minmax(0, 1fr))", ".dir-grid"):
+        if token not in glass_css:
+            errors.append(f"阵列或首页等宽网格样式缺失：{token}")
+
+    # Dashboard FIG.C / FIG.D 同高，且不再混入无关控制室配图。
+    dashboard = (SITE / "dashboard.html").read_text(encoding="utf-8")
+    if dashboard.count('class="dash-panel"') != 2 or "wind_farm_control.jpg" in dashboard:
+        errors.append("dashboard.html FIG.C/FIG.D 未完成等高双栏或仍含多余配图")
+    if 'height: 300px; max-height: none' not in dashboard:
+        errors.append("dashboard.html FIG.D JSON 主视窗高度未与 FIG.C 对齐")
+
+    # 下线页面专用的前端数据和站点图片副本不得重新混入发布包；根目录科研留档不受影响。
+    site_data = (SITE / "assets/data.js").read_text(encoding="utf-8")
+    for retired_key in ('"windrose_opt"', '"array_rose"'):
+        if retired_key in site_data:
+            errors.append(f"data.js 仍含下线页面专用前端导出：{retired_key}")
+    for retired_asset in (
+        SITE / "assets/img/nature/fig7_windrose.png",
+        SITE / "assets/img/nature/fig7_windrose.pdf",
+    ):
+        if retired_asset.exists():
+            errors.append(f"下线页面专用站点副本仍存在：{retired_asset.relative_to(ROOT)}")
+
+    # 模型验证主图收窄、残差证据放大，并由统计卡填满等高内容区。
+    model_page = (SITE / "model.html").read_text(encoding="utf-8")
+    for token in (
+        "grid-template-columns: minmax(0, 2fr) minmax(0, 3fr)",
+        'class="plot-column plot-primary"',
+        'class="plot-column plot-residual"',
+        ".plot-residual .stat-grid",
+    ):
+        if token not in model_page:
+            errors.append(f"model.html FIG.A/FIG.B 协调比例样式缺失：{token}")
+
+    # 尾流页标题必须复用其余子页的统一玻璃 Hero。
+    if '<header class="v-pg-hero t-container">' not in wake or 'class="wake-hero"' in wake:
+        errors.append("wake.html 大标题区域未与其余子页统一")
+
     # 依赖必须本地锁定。
     required_vendor = [
         SITE / "assets/vendor/plotly/plotly-2.35.2.min.js",
@@ -196,7 +247,7 @@ def main():
         print("=" * 68)
         print("质量门禁失败。")
         return 1
-    print("16 个现役页面及附加页面通过资源、导航、脚本和离线检查。")
+    print("15 个现役页面及附加页面通过资源、导航、脚本和离线检查。")
     print("=" * 68)
     return 0
 

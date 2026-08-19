@@ -13,7 +13,7 @@
 
 ## v1.2 视觉统一增量
 
-- 16 个现役页面与 `index_v2.html` 统一加载 `css/unified-glass.css`，继承尾流页的精密灰阶、Geist 字阶、发丝线和适度透明材质。
+- 15 个现役页面与 `index_v2.html` 统一加载 `css/unified-glass.css`，继承尾流页的精密灰阶、Geist 字阶、发丝线和适度透明材质。
 - 玻璃只覆盖 Hero、一级工作台与主要图表容器，嵌套指标和表格保持平面。
 - 尾流页三张动态图在桌面端左中右同高排成一行，1100px 以下单列回退；静态出版证据区改为浅灰绿，不再切换刺眼纯白。
 - 二维与三维速度场改用 ColorBrewer BuGn 反向顺序色阶，低速深绿、高速浅薄荷。
@@ -28,14 +28,14 @@ python3 site/verify_all_pages.py
 封板结果：
 
 - 源 CSV/JSON、`data.js`、`data_3d.js`、`data_3d_real.js` 同源通过。
-- 16 个现役页面及 `index_v2.html`、`slides_823.html` 资源检查通过。
+- 15 个现役页面及 `index_v2.html`、`slides_823.html` 资源检查通过。
 - 普通链接、CSS URL、JavaScript 语法、统一导航、离线依赖和已知伪数据扫描 0 错误、0 警告。
 - Plotly 2.35.2、Three.js 0.160.0、Geist 1.7.2 已存入仓库，核心站点断网可用。
 - `site/test_wake_runtime.js` 已接入全站门禁：加载真实 `data.js/data_3d.js` 并执行尾流页内联脚本；0°与 +25°均创建三幅 Plotly 图，+25°得到 P₁=1459 kW、P₂=909 kW、Ptot=2368 kW、增益 +8.13%。
 
 ## 现役资产
 
-- `site/`：16 页产品导航，另含主页原型和组会 Web Deck。
+- `site/`：15 页产品导航，另含主页原型和组会 Web Deck。
 - `figures_nature/`：17 张科研图（主工厂 9 张、扩展 8 张），提供 PDF/PNG，部分另有 SVG/灰度版。
 - `20260810洪/extracted/ppo_eval_traces.json`：200 回合逐回合指标与真实代表轨迹。
 - `array_independent_result.json`：四策略总功率和四组九机功率。
