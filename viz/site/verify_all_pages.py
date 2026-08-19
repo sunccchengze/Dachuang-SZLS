@@ -198,6 +198,18 @@ def main():
         for stale_tone in ("168,120,23", "168, 120, 23", "45,117,105", "45, 117, 105"):
             if stale_tone in homepage:
                 errors.append(f"{name} 仍含偏褐或过暗的旧 Hero 光效：{stale_tone}")
+        for token in (
+            'id="windStage"',
+            'id="farm-stage-canvas"',
+            'class="stage-flow-rail"',
+            "stage.addEventListener('pointermove', setPointer)",
+            "function turbinePositions(sceneBottom)",
+            "prefers-reduced-motion: reduce",
+        ):
+            if token not in homepage:
+                errors.append(f"{name} 缺少数字风洞样板或鼠标耦合：{token}")
+        if 'class="terminal-panel"' in homepage or "Math.max(320, power)" in homepage:
+            errors.append(f"{name} 仍含旧遥测卡片或无来源动态功率读数")
     for token in (".hero-title .hl", "font-family: var(--shell-serif) !important"):
         if token not in glass_css:
             errors.append(f"首页主标题共享字体覆盖缺失：{token}")
