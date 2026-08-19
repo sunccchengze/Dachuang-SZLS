@@ -176,21 +176,40 @@ def main():
         if token not in glass_css and token not in wake:
             errors.append(f"尾流统一布局或绿色色阶缺失：{token}")
 
-    # POD 三张出版图必须在同一响应式行内，桌面图窗等高。
-    pod = (SITE / "pod.html").read_text(encoding="utf-8")
-    if pod.count('class="v-plots-container pod-nature-card"') != 3:
-        errors.append("pod.html 必须恰有 3 张 POD Nature 横排卡片")
-    for token in (".pod-nature-row", "grid-template-rows: minmax(64px, auto) 250px 1fr"):
-        if token not in glass_css:
-            errors.append(f"POD Nature 等高横排样式缺失：{token}")
+    # 逐页审计全部 Nature 出版证据：桌面同页横排、统一图窗等高，窄屏再响应式回落。
+    nature_layouts = {
+        "wake.html": (2, 2),
+        "heatmap.html": (2, 2),
+        "power_tracking.html": (2, 2),
+        "pod.html": (3, 3),
+        "array.html": (4, 4),
+        "model.html": (1, 1),
+        "overview.html": (1, 1),
+    }
+    for name, (expected_images, columns) in nature_layouts.items():
+        page = (SITE / name).read_text(encoding="utf-8")
+        image_tags = re.findall(r'<img\b[^>]*src=["\'][^"\']*assets/img/nature/[^"\']+\.png["\'][^>]*>', page)
+        card_count = len(re.findall(r'class=["\'][^"\']*\bnature-card\b[^"\']*["\']', page))
+        if len(image_tags) != expected_images or card_count != expected_images:
+            errors.append(
+                f"{name} Nature 图/卡数量应为 {expected_images}，实际图片 {len(image_tags)}、卡片 {card_count}"
+            )
+        if f"nature-row--{columns}" not in page:
+            errors.append(f"{name} 缺少桌面 {columns} 列 Nature 横排容器")
+        if any("style=" in tag for tag in image_tags):
+            errors.append(f"{name} Nature 图片仍有覆盖统一等高规则的内联样式")
 
-    # 阵列四张出版图必须同排等高；首页目录必须统一四等分列宽。
-    array_page = (SITE / "array.html").read_text(encoding="utf-8")
-    if array_page.count('class="v-plots-container array-nature-card"') != 4:
-        errors.append("array.html 必须恰有 4 张阵列 Nature 横排卡片")
-    for token in (".array-nature-row", "grid-template-columns: repeat(4, minmax(0, 1fr))", ".dir-grid"):
+    for token in (
+        ".nature-row",
+        ".nature-card > img",
+        "height: var(--nature-media-height) !important",
+        "object-fit: contain",
+        "grid-template-columns: repeat(4, minmax(0, 1fr))",
+        ".nature-row--3, .nature-row--4",
+        ".dir-grid",
+    ):
         if token not in glass_css:
-            errors.append(f"阵列或首页等宽网格样式缺失：{token}")
+            errors.append(f"Nature 等高横排或首页等宽网格样式缺失：{token}")
 
     # Dashboard FIG.C / FIG.D 同高，且不再混入无关控制室配图。
     dashboard = (SITE / "dashboard.html").read_text(encoding="utf-8")
