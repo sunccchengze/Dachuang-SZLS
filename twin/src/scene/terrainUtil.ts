@@ -193,6 +193,30 @@ export function coastT(x: number, z: number): number {
 }
 
 /**
+ * 海岸线带符号距离（米，陆侧正 / 海侧负）—— R36 新增（参考 coastal_3d_v2 的
+ * 「真海岸距离」思路，闭式实现，不上 EDT，理由见 docs/11 §四）。
+ *
+ * 真值推导：landBase = max(wN, wW)·(1−fjordCarve)，wN = smoothstep(0, rw, dNorth)，
+ * rw = rampAt(x,z)。max(wN,wW)=0.5（视觉岸线）⟺ max(sN, sW) = 0，其中
+ * sN = dNorth − rw/2、sW = dWest − rw/2（各岸 0.5 等值面即 s=0，两条岸线
+ * 法向分别近似沿 −z / +x，轴方向距离≈法向距离，误差 ≲5%，与 R34 同类已知偏差）。
+ *  · 海侧（至少一个 s<0）：到岸线距离 = min(|sN|, |sW|) → 符号化 = max(sN, sW)
+ *  · 陆侧深处（sN>0 且 sW>0，仅西北角内侧）：最近岸线在拐角 → hypot(sN, sW)
+ *  · 峡湾水道：carve 把陆地挖成海 → 强制负值（≈半渠宽 110m 封顶）
+ *  · 离岸岛/海蚀柱不在此场（其水线泡沫由 vLand 薄带自动环绕，见 WorldTerrain）
+ * 消费：WorldTerrain 顶点浅水阻尼 + 片元浅水着色/岸线碎浪带；selftest R36 断言。
+ */
+export function coastSignedDist(x: number, z: number): number {
+  const rw = rampAt(x, z)
+  const sN = dNorth(x, z) - rw * 0.5
+  const sW = dWest(x, z) - rw * 0.5
+  let d = sN > 0 && sW > 0 ? Math.hypot(sN, sW) : Math.max(sN, sW)
+  const carve = fjordCarve(x, z)
+  if (carve > 0) d = Math.min(d, -110 * carve)
+  return d
+}
+
+/**
  * 陆地权重 0..1：0=开放海床，1=陆地。北/西两个方向各自产生一片陆地，
  * 用平滑 max 组合 —— 任一方向靠陆即抬升。南/东即保持 0（开放海）。
  * 多尺度蜿蜒 + 高斯弧岬湾破除「直线切割」的切割带感；离岸岛叠加设色 mask。

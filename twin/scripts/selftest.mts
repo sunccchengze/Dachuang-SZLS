@@ -9,8 +9,9 @@ import {
 import { powerCurveKw, yawFactor, wakeDeficit, TILT_F, wakeDeflection } from '../src/data/turbinePhysics.ts'
 import {
   FARM, SUBSTATION, FARM_CENTER, terrainHeight, terrainSurfaceY,
-  landMask, biomeWeights, SNOW_LINE, grassSampleHits,
+  landMask, coastT, biomeWeights, SNOW_LINE, grassSampleHits,
   PEAKS, FJORD_A, FJORD_B, STACKS, HEADLANDS, bakeHeightGrid,
+  coastSignedDist,
 } from '../src/scene/terrainUtil.ts'
 import { TURBINE_SPEC } from '../src/scene/turbine/geometry.ts'
 import {
@@ -423,6 +424,42 @@ ok('偏航因子：cos^p 随 |yaw| 递减', yawFactor(0) > yawFactor(10) && yawF
     if (Math.abs(d.ndc.base.y) > 0.98) { towerOK = false; worst += ` hot${i + 1}:baseY=${d.ndc.base.y.toFixed(2)}` }
   }
   ok('HOT 仰拍：7/8/9 塔基在框内（全塔 + 转子同框）', towerOK, worst || '3/3')
+}
+
+// 17. R36：海岸带符号距离场（米值，WorldTerrain 浅水阻尼/浅水着色/碎浪带消费）
+// ---------------------------------------------------------------
+{
+  // 机组/升压站深处开放海：必须显著为负（>600m 净距的量化版）
+  let mxUnit = -Infinity
+  for (const u of [...FARM, SUBSTATION]) mxUnit = Math.max(mxUnit, coastSignedDist(u.x, u.z))
+  ok('R36 海岸距离：9 机 + 升压站全部在开放海（d < −600m）', mxUnit < -600, `max=${mxUnit.toFixed(0)}m`)
+
+  // 深陆：显著为正
+  const inland = coastSignedDist(-2500, -3500)
+  ok('R36 海岸距离：深陆内陆深处 d > 300m', inland > 300, `=${inland.toFixed(0)}m`)
+
+  // 岸线收敛：沿两列扫描 coastT（主岸 0.5 等值面，不含岛 mask）穿越点，|d| 应 < 30m。
+  // 注意用 coastT 而非 landMask —— 岛/海岬 mask 也会让 landMask 穿越 0.5，但那不在本场语义内。
+  let worstShore = 0
+  let shorePts = 0
+  for (const xProbe of [0, -1000]) {
+    for (let z = -1400; z >= -3400; z -= 5) {
+      const a = coastT(xProbe, z)
+      const b = coastT(xProbe, z - 5)
+      if ((a - 0.5) * (b - 0.5) < 0) {
+        shorePts++
+        worstShore = Math.max(worstShore, Math.abs(coastSignedDist(xProbe, z)))
+      }
+    }
+  }
+  ok('R36 海岸距离：coastT≈0.5 主岸线处 |d| < 30m', shorePts >= 2 && worstShore < 30,
+    `穿越点=${shorePts} worst=${worstShore.toFixed(1)}m`)
+
+  // 峡湾：渠内判海（负值）；渠东侧固定旱地点（575,−3250，海拔 229m）判陆且 >100m
+  const fjMid = coastSignedDist((FJORD_A.x + FJORD_B.x) / 2, (FJORD_A.z + FJORD_B.z) / 2)
+  const fjEast = coastSignedDist(575, -3250)
+  ok('R36 海岸距离：峡湾渠内判海 / 渠东侧旱地判陆（>100m）', fjMid < 0 && fjEast > 100,
+    `渠内=${fjMid.toFixed(0)}m 东侧=${fjEast.toFixed(0)}m`)
 }
 
 console.log(`\n结果: ${pass} 通过 / ${fail} 失败`)

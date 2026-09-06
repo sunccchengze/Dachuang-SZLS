@@ -121,6 +121,22 @@ python3 scripts/abdiff.py before.png after.png p0_metrics
 
 ---
 
+## 🌊 R36 场景细化（2026-09-06，分支 `arena/01a074a3-dachuang-szls`）
+
+用户回访确认"场景已不错、继续优化细化"，指定 `docs/research/external/coastal_3d_v2` 为参考。
+本轮为**纯视觉层**（不动数据口径/数字孪生语义/贴地基准），权威记录见
+`docs/11_R36_场景细化_海洋天空v2借鉴.md`：
+
+- **海面**：2 波→5 波 Gerstner（2400/1500/620/380/240m，幅值按克制冰青降档；
+  旧 2 波塔基处 ±16m 起伏压到 ±5m 级）+ 片元法线与几何波**同相位**（waveHeight 重构）
+  + 浅水阻尼（岸 90m 内涌浪→15%）+ 浅水冰青着色 + 真天空反射（seaSky 与 SkyAurora 同色板）
+  + 逆光浪尖 SSS + 滚动碎浪带 + 泡沫气泡调制。
+- **天空**：SkyAurora 加克制程序云（~30% 覆盖、冰青低饱和、夜月光暗底、日月穿出云）。
+- **真值**：`terrainUtil.coastSignedDist`（米值岸距，闭式锚定 0.5 等值面，selftest 岸线误差 0.8~2.4m）。
+- 证据：selftest 66/66、tsc 0 错、oxlint 0/0、build ✓；`twin/docs/research/shots/r36/`
+  四机位 before/after 同参对照 + 量化过曝守卫（海面 mean 持平、天空 max 反降 5，红线条款守住）。
+- 待用户实机 GPU 观感复核（沙箱为 SwiftShader 软渲染）；§四 列了未做项（近场双 mesh 化属 R37+ 级重构）。
+
 ## ✅ 交付完成记录（本会话，2026-08-28）
 以上门槛全部按证据收口，详见 `docs/08_合并评审_最终清单.md`（唯一权威，无待办项）。要点：
 - `npm run build` ✅ / oxlint 0-0 ✅ / `npm run selftest` 22/22 ✅；

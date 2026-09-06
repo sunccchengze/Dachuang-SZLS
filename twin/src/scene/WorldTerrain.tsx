@@ -2,7 +2,7 @@
 import { useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { terrainSurfaceY, landMask, coastT, FARM_CENTER, bakeHeightGrid } from './terrainUtil'
+import { terrainSurfaceY, landMask, coastT, coastSignedDist, FARM_CENTER, bakeHeightGrid } from './terrainUtil'
 import { skyState } from './lightState'
 import { windAt } from '../data/farmSim'
 import { useSim } from '../state/simStore'
@@ -29,8 +29,10 @@ varying vec3 vWN;
 varying float vLand;
 varying float vH;
 varying float vCoast;
+varying float vCoastD; // R36：米值海岸距离（片元浅水着色/碎浪带）
 attribute float aLand;
 attribute float aCoast;
+attribute float aCoastD; // R36：海岸带符号距离（米，海侧负 / 陆侧正），浅水阻尼用
 uniform float uTime;
 uniform vec2 uWind;
 uniform vec2 uCenter;
@@ -69,22 +71,38 @@ void main() {
   vLand = aLand;
   vH = baseY;
   vCoast = aCoast;
+  vCoastD = aCoastD;
 
   // 近场收敛：离场心越近波浪越收敛（塔基贴地、风场稳定）
+  // R36：收敛更强（0.5→0.25）—— 旧 2400/1500m 两波实际波幅 22.9m/10.7m，
+  // 场心水在塔基处起伏 ±16m，物理上不合理；压到 ±5m 级仍保留大尺度涌感。
   float d = length(wp.xz - uCenter);
-  float amp = mix(0.5, 1.0, smoothstep(180.0, 2000.0, d));
+  float amp = mix(0.25, 1.0, smoothstep(150.0, 1800.0, d));
 
-  // 顶点位移只保留「大尺度平缓涌浪」（波长远大于网格 ~30m），
-  // 短波细碎波光全部交给片元解析法线 → 粗网格无块状格子感。
+  // R36 波群重构（参考 coastal_3d_v2 ocean.ts 多波长 Gerstner，幅值按「克制冰青」降档）：
+  // 2 道大涌（几何主体）+ 3 道中周期波（620/380/240m，提供近景浪脊与剪影质感）。
+  // 短波细碎波光仍全部交给片元解析法线（waveHeight 已与本波群同相位）→ 无格子感。
+  // ⚠ 三个中周期波的方向/相位与 FRAG waveHeight 完全同式 —— 改动必须两边同步。
   vec2 wdir = normalize(uWind + vec2(0.0001, 0.0));
   vec2 d2 = normalize(vec2(-uWind.y, uWind.x));
+  vec2 d3 = normalize(vec2(wdir.x * 0.45 + d2.x * 0.89, wdir.y * 0.45 + d2.y * 0.89));
+  vec2 d4 = normalize(vec2(-wdir.x * 0.55 - d2.x * 0.84, -wdir.y * 0.55 - d2.y * 0.84));
+  vec2 d5 = normalize(vec2(wdir.x * 0.89 - d2.x * 0.45, wdir.y * 0.89 - d2.y * 0.45));
   vec3 tangent = vec3(1.0, 0.0, 0.0);
   vec3 binormal = vec3(0.0, 0.0, 1.0);
   vec3 disp = vec3(0.0);
   vec2 p = wp.xz;
-  disp += gerstner(p, wdir, 0.06, 2400.0, uTime * 0.35,          tangent, binormal);
-  disp += gerstner(p, d2,   0.045, 1500.0, uTime * 0.50 + 2.1,   tangent, binormal);
-  disp *= amp;
+  disp += gerstner(p, wdir, 0.022, 2400.0, uTime * 0.35,        tangent, binormal); // 长涌 a≈8.4m
+  disp += gerstner(p, d2,   0.020, 1500.0, uTime * 0.50 + 2.1,  tangent, binormal); // 长涌 a≈4.8m
+  disp += gerstner(p, d3,   0.026, 620.0,  uTime * 0.62 + 4.3,  tangent, binormal); // 中浪 a≈2.6m
+  disp += gerstner(p, d5,   0.025, 380.0,  uTime * 0.85 + 1.1,  tangent, binormal); // 中浪 a≈1.5m
+  disp += gerstner(p, d4,   0.021, 240.0,  uTime * 1.05 + 6.7,  tangent, binormal); // 中浪 a≈0.8m
+
+  // R36 浅水阻尼（参考 v2 damp = 0.12+0.88·smoothstep(0,7,depth)，尺度放大到米值岸距）：
+  // 岸线外 ~90m 内涌浪收敛到 15%，浪能被"岸线碎浪带"接管，水线不再满幅拍滩
+  float sd = max(0.0, -aCoastD);
+  float shoreDamp = 0.15 + 0.85 * smoothstep(0.0, 90.0, sd);
+  disp *= amp * shoreDamp;
 
   // 波浪只在海上位移；陆地保持原始剪影
   float lift = water;
@@ -109,6 +127,7 @@ varying vec3 vWN;
 varying float vLand;
 varying float vH;
 varying float vCoast;
+varying float vCoastD; // R36：米值海岸距离（海侧负 / 陆侧正）
 uniform float uTime;
 uniform float uDayF;
 uniform float uGlow;
@@ -132,17 +151,29 @@ float fbm(vec2 p){
   return v;
 }
 
-// —— 解析波高：多方向正弦 + 高分形微细节 → 细碎连绵涟漪（贴近原图质感）——
+// —— 解析波高（R36 重构）：与 VERT 5 波 Gerstner【同方向同相位】→ 法线与几何同源，
+// 浪脊受光与几何浪头一致（旧版两套波互相脱节，大涌在法线上完全缺席）。
+// ⚠ 改动必须与 VERT gerstner 调用逐项同步（kc = k·c = sqrt(9.8·k)）。
 float waveHeight(vec2 p) {
   float t = uTime;
+  vec2 wdir = normalize(uWind + vec2(0.0001, 0.0));
+  vec2 d2 = normalize(vec2(-wdir.y, wdir.x));
+  vec2 d3 = normalize(vec2(wdir.x * 0.45 + d2.x * 0.89, wdir.y * 0.45 + d2.y * 0.89));
+  vec2 d4 = normalize(vec2(-wdir.x * 0.55 - d2.x * 0.84, -wdir.y * 0.55 - d2.y * 0.84));
+  vec2 d5 = normalize(vec2(wdir.x * 0.89 - d2.x * 0.45, wdir.y * 0.89 - d2.y * 0.45));
   float h = 0.0;
-  // 大尺度涌（低振幅，平缓）
-  h += sin(dot(p, vec2( 0.0120,  0.0080)) *  1.0 + t * 0.70) * 0.40;
-  h += sin(dot(p, vec2(-0.0077,  0.0062)) *  1.0 + t * 0.90 + 1.7) * 0.32;
-  // 中尺度波（主波纹）——加大振幅形成明显浪头
-  h += sin(dot(p, vec2( 0.0220,  0.0160)) *  1.0 + t * 1.10 + 3.3) * 0.46;
-  h += sin(dot(p, vec2( 0.0180, -0.0140)) *  1.0 + t * 1.35 + 5.1) * 0.38;
-  h += sin(dot(p, vec2(-0.0160,  0.0180)) *  1.0 + t * 1.60 + 7.4) * 0.30;
+  // 中周期三波（相位 = VERT 的 k·(dot(d,p) − c·(t·scale + off))，幅值归一到 crest 口径）
+  float k3 = 6.2831853 / 620.0;
+  float k4 = 6.2831853 / 380.0;
+  float k5 = 6.2831853 / 240.0;
+  h += 0.95 * sin(dot(p, d3 * k3) - sqrt(9.8 * k3) * (t * 0.62 + 4.3));
+  h += 0.60 * sin(dot(p, d5 * k4) - sqrt(9.8 * k4) * (t * 0.85 + 1.1));
+  h += 0.35 * sin(dot(p, d4 * k5) - sqrt(9.8 * k5) * (t * 1.05 + 6.7));
+  // 大涌缓坡（顶点几何由 Gerstner 提供，这里只补法线起伏）
+  float k1 = 6.2831853 / 2400.0;
+  float k2 = 6.2831853 / 1500.0;
+  h += 0.55 * sin(dot(p, wdir * k1) - sqrt(9.8 * k1) * (t * 0.35));
+  h += 0.40 * sin(dot(p, d2 * k2)   - sqrt(9.8 * k2) * (t * 0.50 + 2.1));
   // 细碎噪声涟漪：分形 → 连绵、无重复
   h += (fbm(p * 0.06 + uTime * 0.03) - 0.5) * 0.7;
   return h;
@@ -181,6 +212,29 @@ float terrainShadow(vec3 p, vec3 sunDir) {
   return sh * sh * (3.0 - 2.0 * sh);
 }
 
+// —— R36：天空反射色（与 SkyAurora.tsx 同色板：冰青渐变 + 地平线亮带 + 日轮 + 月晕）——
+// 海面不再反射一块"平涂灰蓝"，而是采样与天空同一套程序色 → 天水同源。
+// ⚠ 改 SkyAurora 色板时此处需同步。
+vec3 seaSky(vec3 R, vec3 sunD, vec3 moonD, float dayF) {
+  float y = clamp(R.y, 0.0, 1.0);
+  vec3 col = mix(vec3(0.062, 0.175, 0.230), vec3(0.010, 0.042, 0.075), smoothstep(0.0, 0.16, y));
+  col = mix(col, vec3(0.002, 0.008, 0.018), smoothstep(0.12, 0.55, y));
+  col = mix(col, mix(vec3(0.086, 0.165, 0.239), vec3(0.290, 0.451, 0.565), smoothstep(0.02, 0.55, y)), dayF * 0.86);
+  // 地平线宽亮带（与 SkyAurora 同式）
+  col += vec3(0.16, 0.44, 0.55) * pow(clamp(1.0 - R.y, 0.0, 1.0), 13.0) * 1.35;
+  col += vec3(0.05, 0.16, 0.22) * pow(clamp(1.0 - R.y, 0.0, 1.0), 5.0) * 0.55;
+  // 日轮与晕（白天）
+  float sdR = max(dot(R, sunD), 0.0);
+  col += vec3(0.92, 0.97, 1.0) * pow(sdR, 1400.0) * 1.35 * dayF;
+  col += vec3(0.32, 0.46, 0.58) * pow(sdR, 14.0) * 0.16 * dayF;
+  // 月晕（夜）
+  float mdR = max(dot(R, moonD), 0.0);
+  col += vec3(0.55, 0.70, 0.85) * pow(mdR, 900.0) * 0.9 * (1.0 - dayF);
+  col += vec3(0.35, 0.52, 0.68) * pow(mdR, 90.0) * 0.22 * (1.0 - dayF);
+  // 夜间整体压暗（天空球夜间另有照片星野纹理，反射近似取其暗部均值）
+  return mix(col * 0.30 + vec3(0.004, 0.010, 0.020), col, dayF);
+}
+
 void main() {
   float night = 1.0 - uDayF;
   vec3 V = normalize(cameraPosition - vWPos);
@@ -209,9 +263,24 @@ void main() {
   vec3 shallowCol = mix(vec3(0.024, 0.055, 0.082), vec3(0.150, 0.310, 0.420), uDayF); // 浪尖（低饱和青蓝）
   vec3 waterCol = mix(deepCol, shallowCol, crest * 0.42);
 
-  // 天空反射：低饱和灰青蓝（白天）→ 近黑（夜），权重压低避免整片洗灰
-  vec3 skyRef = mix(vec3(0.014, 0.032, 0.054), vec3(0.150, 0.290, 0.385), uDayF);
-  waterCol = mix(waterCol, skyRef, clamp(fres, 0.0, 1.0) * (0.045 + 0.07 * uDayF));
+  // R36 浅水着色（参考 v2 深度三色，恢复 R34 意图）：岸线外 ~80m 水色向冰青提亮，
+  // 深浅过渡由米值岸距 vCoastD 驱动（场心开放海 vCoastD≪−80m，完全不受影响）
+  float cd = max(0.0, -vCoastD);
+  float shallowF = 1.0 - smoothstep(0.0, 80.0, cd);
+  vec3 shallowTint = mix(vec3(0.030, 0.070, 0.100), vec3(0.115, 0.250, 0.330), uDayF);
+  waterCol = mix(waterCol, shallowTint, shallowF * 0.55);
+
+  // R36 天空反射：反射向量采样与 SkyAurora 同色板的程序天空（含日轮/月晕/地平线亮带）
+  // 贴水面仍由 fres（含朝上 gate）控制；权重较旧平涂版略升，因新反射色本身更克制
+  vec3 Rr = reflect(-V, N);
+  Rr.y = max(Rr.y, 0.015);
+  vec3 skyRef = seaSky(Rr, uSunDir, normalize(uMoonDir), uDayF);
+  waterCol = mix(waterCol, skyRef, clamp(fres, 0.0, 1.0) * (0.05 + 0.10 * uDayF));
+
+  // R36 次表面散射（参考 v2 sss）：逆光浪尖透出冰青光（浅水更强，夜晚走月光）
+  float sss = pow(max(dot(V, -uSunDir), 0.0), 3.0) * crest * (0.5 + 0.5 * uDayF)
+            + pow(max(dot(V, -normalize(uMoonDir)), 0.0), 3.0) * crest * 0.35 * (1.0 - uDayF);
+  waterCol += mix(vec3(0.030, 0.100, 0.130), vec3(0.100, 0.230, 0.280), uDayF) * sss * (0.6 + 0.4 * shallowF) * 0.55;
 
   // —— 太阳/月亮镜面高光：细碎点状波光（点状，克制，不高亮成云斑）——
   vec3 halfV = normalize(V + uSunDir);
@@ -232,6 +301,9 @@ void main() {
   float foamMask = smoothstep(0.78, 0.97, crest)
     * smoothstep(0.55, 0.85, foamStreak)
     * (0.35 + 0.65 * smoothstep(0.55, 0.9, foamFleck));
+  // R36 泡沫颗粒（参考 v2 bub）：米级气泡调制，泡沫不再是平涂云斑
+  float bub = smoothstep(0.55, 0.75, vnoise(vWPos.xz * 14.0 + uTime * 0.35));
+  foamMask *= 0.80 + 0.35 * bub;
   vec3 foam = mix(vec3(0.028, 0.06, 0.09), vec3(0.50, 0.63, 0.68), uDayF); // 更低饱淡青白
   waterCol = mix(waterCol, foam, foamMask * (0.03 + uDayF * 0.09));
   // —— 水侧水线（Step B3）：紧贴岸线的海侧碎浪，与陆侧 foamDot 合成完整水线 ——
@@ -239,6 +311,18 @@ void main() {
   float surfBand = smoothstep(0.0, 0.004, vLand) * (1.0 - smoothstep(0.004, 0.02, vLand));
   float surfN = 0.35 + 0.65 * fbm(vWPos.xz * 0.30 + vec2(-uTime * 0.35, uTime * 0.2));
   waterCol = mix(waterCol, foam, surfBand * surfN * (0.10 + uDayF * 0.30) * vWater);
+
+  // —— R36 岸线碎浪带（参考 v2 rolling bands）：主岸线外 ~90m 内滚动的破碎浪线 ——
+  // 米值岸距 cd 驱动（环岛水线仍归上面的 vLand 薄带）；band 相位随时间漂移 ≈1.8m/s 向海退，
+  // 模拟碎浪后泡沫回漂的"碎浪线"节奏；浅水阻尼（VERT）把涌浪能量收掉，能量在此处变成泡沫
+  float shoreF = 1.0 - smoothstep(0.0, 90.0, cd);
+  float bandN = fbm(vWPos.xz * 0.020 + 5.5);
+  float band = sin(cd * 0.10 - uTime * 0.18 + bandN * 6.0) * 0.5 + 0.5;
+  float rollF = shoreF * smoothstep(0.38, 0.70, band * 0.45 + bandN * 0.30
+    + 0.35 * smoothstep(0.45, 0.85, foamFleck));
+  float waterlineF = (1.0 - smoothstep(0.0, 8.0, cd))
+    * smoothstep(0.35, 0.75, vnoise(vWPos.xz * 1.2 + vec2(-uTime * 0.3, uTime * 0.2)));
+  waterCol = mix(waterCol, foam, clamp(rollF * 0.9 + waterlineF, 0.0, 1.0) * (0.04 + uDayF * 0.26) * vWater);
 
   // —— 月路（C3）：明月在水面的镜面光路 + 月照涌动 ——
   // 旧版用太阳方向算夜高光，夜里太阳在地平线下故恒≈0（“夜里没光”的另一半根因）
@@ -411,6 +495,7 @@ export default function WorldTerrain() {
     const pos = g.attributes.position as THREE.BufferAttribute
     const land = new Float32Array(pos.count)
     const coast = new Float32Array(pos.count)
+    const coastD = new Float32Array(pos.count) // R36：米值海岸距离（splash 期同步烘焙，~0.3s）
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i)
       const z = pos.getZ(i)
@@ -418,9 +503,11 @@ export default function WorldTerrain() {
       pos.setY(i, y)
       land[i] = landMask(x, z)
       coast[i] = coastT(x, z)
+      coastD[i] = coastSignedDist(x, z)
     }
     g.setAttribute('aLand', new THREE.BufferAttribute(land, 1))
     g.setAttribute('aCoast', new THREE.BufferAttribute(coast, 1))
+    g.setAttribute('aCoastD', new THREE.BufferAttribute(coastD, 1))
     g.computeVertexNormals()
 
     // Step C1 高度纹理：512² 烘焙（半浮点线性过滤；R16F WebGL2 可过滤，无需扩展）
@@ -455,7 +542,7 @@ export default function WorldTerrain() {
       depthWrite: true,
       fog: false,
     })
-    m.customProgramCacheKey = () => 'terrain-ocean-v4'
+    m.customProgramCacheKey = () => 'terrain-ocean-v5-r36'
     ;(m.userData as any).u = u
     return { geo: g, mat: m }
   }, [])

@@ -111,6 +111,28 @@ void main() {
   // 白天：冰青天幕渐变 + 日轮与晕（不引入新色相）
   vec3 dayCol = mix(vec3(0.086, 0.165, 0.239), vec3(0.290, 0.451, 0.565), smoothstep(0.02, 0.55, h));
   col = mix(col, dayCol, uDay * 0.86);
+
+  // —— R36 程序云（参考 coastal_3d_v2 sky.ts：虚拟云面 fbm + 朝阳面 shading）——
+  // 冰青低饱和、克制度优先：覆盖 ~30%，白昼浅灰青、夜间月光暗底；
+  // 放在日/月轮之前 → 日月可穿出云；放在星空/极光之后 → 云遮住部分星辰/极光（合理遮挡，增纵深）。
+  // 漂移方向：drift 取 +x/−z，特征视位置向 −drift 移动 → 云随主导风向（北→南）缓慢南移
+  if (h > 0.015) {
+    vec2 cuv = d.xz / (h + 0.10) * 0.85 + vec2(uTime * 0.0028, -uTime * 0.0011);
+    float c1 = fbm(cuv * 1.15);
+    float c2 = fbm(cuv * 3.4 + 11.0);
+    float cov = smoothstep(0.50, 0.74, c1 * 0.72 + c2 * 0.38);
+    float c1s = fbm(cuv * 1.15 + normalize(uSunDir).xz * 0.14);
+    float shade = clamp((c1s - c1) * 6.0, -1.0, 1.0);
+    vec3 cTop = mix(vec3(0.34, 0.42, 0.52), vec3(0.90, 0.96, 1.00), 0.45 + 0.55 * (0.5 + 0.5 * shade));
+    cTop = mix(cTop, vec3(0.045, 0.075, 0.115), 1.0 - uDay); // 夜：月光暗底（与夜空同族）
+    float sunAmtC = max(dot(d, normalize(uSunDir)), 0.0);
+    cTop += vec3(0.55, 0.50, 0.40) * pow(sunAmtC, 10.0) * 0.10 * uDay; // 近阳薄暖（极克制）
+    float moonAmtC = max(dot(d, normalize(uMoonDir)), 0.0);
+    cTop += vec3(0.30, 0.40, 0.52) * pow(moonAmtC, 8.0) * 0.12 * (1.0 - uDay); // 月缘
+    float horizonFade = smoothstep(0.015, 0.16, h);
+    col = mix(col, cTop, cov * horizonFade * (0.50 + 0.30 * uDay));
+  }
+
   float sunDot = clamp(dot(d, normalize(uSunDir)), 0.0, 1.0);
   col += vec3(0.92, 0.97, 1.0) * pow(sunDot, 1400.0) * 1.35 * uDay;
   col += vec3(0.32, 0.46, 0.58) * pow(sunDot, 14.0) * 0.16 * uDay;
