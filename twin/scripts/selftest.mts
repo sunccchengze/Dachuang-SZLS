@@ -12,6 +12,10 @@ import {
   landMask, biomeWeights, SNOW_LINE, grassSampleHits,
   PEAKS, FJORD_A, FJORD_B, STACKS, HEADLANDS, bakeHeightGrid,
 } from '../src/scene/terrainUtil.ts'
+import { TURBINE_SPEC } from '../src/scene/turbine/geometry.ts'
+import {
+  CAM_HOTKEYS, diagnoseHotkey, ORBIT_MIN_DISTANCE, ORBIT_MAX_DISTANCE, ORBIT_MAX_POLAR_DEG,
+} from '../src/scene/hotkeys.ts'
 
 let pass = 0
 let fail = 0
@@ -378,6 +382,47 @@ ok('偏航因子：cos^p 随 |yaw| 递减', yawFactor(0) > yawFactor(10) && yawF
     && noon.dayF === 1 && mid.dayF === 0
   ok('R32-C3 月夜约定（午夜月高悬/正午月隐/门控对位）', moonOK,
     `午夜月高=${mid.moonDir[1].toFixed(2)} 正午月高=${noon.moonDir[1].toFixed(2)}`)
+}
+
+// 17. 热键机位 1-9 回归（2026-09-06：4/7/8/9 视角修复锁）
+// ---------------------------------------------------------------
+// 根因：旧 4/7/8/9 距塔 104/117/129/124m —— 转子框不下（126m 转子 vs
+// 91-112m 框高）且 7/8/9 极角 129-135° 超出 OrbitControls 上限、4/7 落地
+// 距离 < minDistance，跳转落地即被约束钳位弹开（“定不住”）。
+// 本节把“约束相容 + 转子全框 + 机位在开阔海面”锁成断言。
+{
+  // 口径对齐：诊断用的轮毂/转子数必须与 NREL 几何铭牌一致
+  ok('HOT 口径：诊断轮毂高/转子直径 = TURBINE_SPEC 铭牌',
+    TURBINE_SPEC.hubY === 90 && TURBINE_SPEC.rotorD === 126,
+    `hubY=${TURBINE_SPEC.hubY} rotorD=${TURBINE_SPEC.rotorD}`)
+  ok('HOT 数量：热键机位恰 9 个', CAM_HOTKEYS.length === 9, `=${CAM_HOTKEYS.length}`)
+
+  let distOK = true, polarOK = true, rotorOK = true, seaOK = true
+  let worst = ''
+  for (let i = 0; i < 9; i++) {
+    const u = FARM[i]
+    const d = diagnoseHotkey(i, { baseY: terrainSurfaceY(u.x, u.z) })
+    if (!(d.dist3 >= ORBIT_MIN_DISTANCE + 5 && d.dist3 <= ORBIT_MAX_DISTANCE)) { distOK = false; worst += ` hot${i + 1}:dist=${d.dist3.toFixed(0)}` }
+    if (!(d.polarDeg <= ORBIT_MAX_POLAR_DEG - 1)) { polarOK = false; worst += ` hot${i + 1}:polar=${d.polarDeg.toFixed(1)}` }
+    if (!(d.rotorMaxAbs <= 0.92)) { rotorOK = false; worst += ` hot${i + 1}:rotor=${d.rotorMaxAbs.toFixed(2)}` }
+    const { pos } = CAM_HOTKEYS[i]
+    if (!(landMask(pos.x, pos.z) < 0.02 && terrainHeight(pos.x, pos.z) < pos.y - 4 && pos.y >= 10)) {
+      seaOK = false; worst += ` hot${i + 1}:sea`
+    }
+  }
+  ok('HOT 约束相容：落地距离 ∈ [min+5, max]（跳转不再被顶出）', distOK, worst || '9/9')
+  ok('HOT 约束相容：极角 ≤ max-1°（仰拍定得住）', polarOK, worst || '9/9')
+  ok('HOT 取景：转子 5 点 |NDC| ≤ 0.92（fov47/16:9 全框+8% 裕度）', rotorOK, worst || '9/9')
+  ok('HOT 机位：9 机位均在开阔海面（零沾陆、地形低 4m+、浪上 8m+）', seaOK, worst || '9/9')
+
+  // 仰拍（7/8/9）必须收进全塔：塔基仍在框内（|ndcY| ≤ 0.98），不是只拍半截
+  let towerOK = true
+  for (const i of [6, 7, 8]) {
+    const u = FARM[i]
+    const d = diagnoseHotkey(i, { baseY: terrainSurfaceY(u.x, u.z) })
+    if (Math.abs(d.ndc.base.y) > 0.98) { towerOK = false; worst += ` hot${i + 1}:baseY=${d.ndc.base.y.toFixed(2)}` }
+  }
+  ok('HOT 仰拍：7/8/9 塔基在框内（全塔 + 转子同框）', towerOK, worst || '3/3')
 }
 
 console.log(`\n结果: ${pass} 通过 / ${fail} 失败`)

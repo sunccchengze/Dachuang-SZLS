@@ -17,6 +17,7 @@ import Callouts from './scene/Callouts'
 import Effects from './scene/Effects'
 import EnvSetup from './scene/EnvSetup'
 import CameraRig from './scene/CameraRig'
+import { ORBIT_MIN_DISTANCE, ORBIT_MAX_DISTANCE, ORBIT_MAX_POLAR_DEG } from './scene/hotkeys.ts'
 import PerfGovernor from './scene/PerfGovernor'
 import Hud from './hud/Hud'
 import { useSim } from './state/simStore'
@@ -139,9 +140,9 @@ export default function App() {
             <PerfGovernor />
             <OrbitControls
               makeDefault
-              maxPolarAngle={Math.PI / 1.72}
-              minDistance={120}
-              maxDistance={4600}
+              maxPolarAngle={THREE.MathUtils.degToRad(ORBIT_MAX_POLAR_DEG)}
+              minDistance={ORBIT_MIN_DISTANCE}
+              maxDistance={ORBIT_MAX_DISTANCE}
               enableDamping
               dampingFactor={0.035}
               enableZoom
