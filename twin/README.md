@@ -49,7 +49,8 @@ src/
   state/      simStore(zustand 控制态 + 时钟 + useFarmFrame)
   scene/      terrainUtil(世界真值) · turbine/geometry(NREL 5MW 参数化几何) · HoloTurbine/TurbineField
               CableNetwork · WindVeil · Substation · WorldTerrain · SkyAurora · SparkleGround
-              Callouts(防重叠/避让HUD) · CameraRig(13节点+书签+跳过) · Effects(三档) · PerfGovernor · EnvSetup · frameBus
+              TreeField(远岸森林, R36) · grassField(未挂载) · Callouts(防重叠/避让HUD) ·
+              CameraRig(13节点+书签+跳过) · Effects(三档) · PerfGovernor · EnvSetup · frameBus
   hud/        Hud.tsx(1920×1080 等比舞台：KPI/矩阵/雷达/图表/控制台/告警/信息卡/时间轴)
 scripts/      shot.mjs · probe.mjs · qa2.mjs · abdiff.py · selftest.mts · calibrateWake.mts
 ```

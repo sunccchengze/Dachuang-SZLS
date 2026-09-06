@@ -192,6 +192,26 @@ export function coastT(x: number, z: number): number {
   return landBase(x, z)
 }
 
+// ---- R36 · 岸距场（coastal_3d_v2 ocean.ts「真水深/岸距驱动泡沫与阻尼」的本仓口径）----
+// coastT 是【陆侧】渐变（海侧恒 0），无法区分「远海」与「贴岸」；本函数给出
+// 带符号最近岸距（米）：负 = 海侧离岸距离、正 = 陆侧深入距离。
+// 与 landMask 同一几何真值：北/西岸用 dNorth/dWest，岛/海岬/海蚀柱用极坐标轮廓。
+// 用途：浅水波幅阻尼、拍岸碎浪带、swash 水线爬升（WorldTerrain VERT/FRAG 消费）。
+function islandSigned(f: CoastFeature, x: number, z: number): number {
+  const { d, rr } = islandPolar(f, x, z)
+  return rr - d // >0 在岛内（陆），<0 在岛外（海）
+}
+/** 陆地各件的 SDF 并集（任一件内部即陆）：北/西岸 + 岛/海岬/海蚀柱。
+ *  海侧返回带符号最近岸距（负 = 离岸米数）。 */
+export function shoreSigned(x: number, z: number): number {
+  let s = Math.max(dNorth(x, z), dWest(x, z))
+  for (const f of ISLES) {
+    const si = islandSigned(f, x, z)
+    if (si > s) s = si
+  }
+  return s
+}
+
 /**
  * 陆地权重 0..1：0=开放海床，1=陆地。北/西两个方向各自产生一片陆地，
  * 用平滑 max 组合 —— 任一方向靠陆即抬升。南/东即保持 0（开放海）。
@@ -235,6 +255,42 @@ export function grassSampleHits(kind: 0 | 1, tries = 20000): number {
     const w = biomeWeights(x, z)
     if (rnd() > (kind === 0 ? w.grass : w.forest)) continue
     hits++
+  }
+  return hits
+}
+
+// ---- R36 · 远岸森林落位（coastal_3d_v2 vegetation.ts「拒绝采样 + 坡度/雪线门」的本仓口径）----
+// treeAccept 是 treeField.buildSet 与 selftest 的同一真值：
+//  · landMask ≥ 0.30：越过沙岸/潮带（树林不长在海滩上）；
+//  · 接受概率 = w.forest + 0.35·w.hill：林带密、缓丘带稀；
+//  · 高度 < SNOW_LINE-40：雪线以上是裸岩雪冠，不长树；
+//  · 坡度门 ny ≥ 0.62：峭壁不长树（有限差分估地形法线）；
+// 返回树高缩放（米，≈7.5~16.5m 冠幅含在内），0 = 拒绝。
+export const TREE_SPAN_M = 4550 // 与草地同一采样域
+export function treeAccept(x: number, z: number, r: number): number {
+  const L = landMask(x, z)
+  if (L < 0.30) return 0
+  const h = terrainHeight(x, z)
+  if (h > SNOW_LINE - 40) return 0
+  const e = 7
+  const ny = (2 * e) / Math.hypot(
+    terrainHeight(x - e, z) - terrainHeight(x + e, z),
+    2 * e,
+    terrainHeight(x, z - e) - terrainHeight(x, z + e),
+  )
+  if (ny < 0.62) return 0
+  const w = biomeWeights(x, z)
+  if (r > w.forest + 0.35 * w.hill) return 0
+  return 7.5 + r * 9
+}
+/** 树木拒绝采样命中数（selftest 用，与 treeField.buildSet 同一 treeAccept） */
+export function treeSampleHits(tries = 20000): number {
+  const rnd = mulberry32(4242)
+  let hits = 0
+  for (let i = 0; i < tries; i++) {
+    const x = (rnd() * 2 - 1) * TREE_SPAN_M
+    const z = (rnd() * 2 - 1) * TREE_SPAN_M
+    if (treeAccept(x, z, rnd()) > 0) hits++
   }
   return hits
 }

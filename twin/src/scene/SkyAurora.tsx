@@ -23,6 +23,7 @@ uniform float uTime;
 uniform float uDay;
 uniform vec3 uSunDir;
 uniform vec3 uMoonDir;
+uniform vec3 uFogColor;
 uniform sampler2D uSkyTex;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
@@ -36,6 +37,11 @@ float fbm(vec2 p) {
   float v = 0.0, a = 0.5;
   for (int i = 0; i < 4; i++) { v += a * noise(p); p *= 2.03; a *= 0.52; }
   return v;
+}
+float fbm3(vec2 p) {
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 3; i++) { v += a * noise(p); p *= 2.03; a *= 0.52; }
+  return v / 0.876;
 }
 
 void main() {
@@ -115,6 +121,22 @@ void main() {
   col += vec3(0.92, 0.97, 1.0) * pow(sunDot, 1400.0) * 1.35 * uDay;
   col += vec3(0.32, 0.46, 0.58) * pow(sunDot, 14.0) * 0.16 * uDay;
 
+  // —— R36 · 白昼薄卷云（coastal_3d_v2 sky.ts 云层投影的克制版）——
+  // 虚拟平面投影 + 双尺度 fbm + 向阳采样 shading（云不是贴片，有受光方向）；
+  // 覆盖率低、昼间渐显、夜间几乎不可见（不抢星野/极光/日轮）。
+  if (h > 0.035) {
+    vec2 cuv = d.xz / (h + 0.10) * 0.55 + vec2(uTime * 0.0045, uTime * 0.0016);
+    float c1 = fbm(cuv * 1.15);
+    float c2 = fbm3(cuv * 3.4 + 11.0);
+    float cov = smoothstep(0.55, 0.78, c1 * 0.72 + c2 * 0.38);
+    float c1s = fbm(cuv * 1.15 + normalize(uSunDir).xz * 0.10); // 向太阳采样
+    float shade = clamp((c1s - c1) * 5.0, -1.0, 1.0);
+    vec3 cloudCol = mix(vec3(0.50, 0.60, 0.68), vec3(0.76, 0.84, 0.90), 0.5 + 0.5 * shade);
+    cloudCol += vec3(0.55, 0.52, 0.47) * pow(sunDot, 10.0) * 0.25; // 云际微暖反光（极弱）
+    float hf = smoothstep(0.035, 0.16, h); // 地平线附近淡出，不糊极光带
+    col = mix(col, cloudCol, cov * hf * uDay * 0.42);
+  }
+
   // —— 明月（C3）：月轮 + 晕 + 远辉，随夜色渐显（night 门控，昼夜连续不断裂）——
   vec3 md = normalize(uMoonDir);
   float moonDot = clamp(dot(d, md), 0.0, 1.0);
@@ -128,6 +150,12 @@ void main() {
   col += vec3(0.55, 0.70, 0.85) * pow(moonDot, 900.0) * 0.9 * night; // 内晕
   col += vec3(0.35, 0.52, 0.68) * pow(moonDot, 90.0) * 0.22 * night; // 外晕
   col += vec3(0.20, 0.32, 0.44) * pow(moonDot, 9.0) * 0.10 * night; // 远辉（月出月落的地平气息）
+
+  // —— R36 · 下半球融雾：地平线以下渐变到场景雾色 ——
+  // 海面已在 4420m 外全雾（WorldTerrain 远海收边）；天空下半球以同色接住，
+  // 两侧同色 → 9200m 平面边缘不可见（消灭「第二地平线」亮带）。
+  // 只作用 h<0.02，不影响上半球极光/星野/日轮/月轮。
+  col = mix(col, uFogColor, 1.0 - smoothstep(-0.07, 0.02, h));
 
   gl_FragColor = vec4(col, 1.0);
 }
@@ -146,6 +174,7 @@ export default function SkyAurora() {
     uTime: { value: 0 }, uDay: { value: 0 },
     uSunDir: { value: new THREE.Vector3(0, 1, 0) },
     uMoonDir: { value: new THREE.Vector3(0, 1, 0) },
+    uFogColor: { value: new THREE.Color('#040911') },
     uSkyTex: { value: skyTexture },
   }), [skyTexture])
 
@@ -156,6 +185,11 @@ export default function SkyAurora() {
     u.uDay.value = skyState.dayF
     u.uSunDir.value.copy(skyState.sunDir)
     u.uMoonDir.value.copy(skyState.moonDir)
+    // R36：下半球融雾与场景雾同色（LightRig 逐帧驱动 scene.fog）
+    const fog = state.scene.fog
+    if (fog && (fog as THREE.FogExp2).isFogExp2) {
+      ;(u.uFogColor.value as THREE.Color).copy((fog as THREE.FogExp2).color)
+    }
   })
 
   return (

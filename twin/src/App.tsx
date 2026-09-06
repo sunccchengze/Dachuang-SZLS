@@ -6,6 +6,7 @@ import { debugEnabled } from './data/debug'
 import SkyAurora from './scene/SkyAurora'
 import LightRig from './scene/LightRig'
 import WorldTerrain from './scene/WorldTerrain'
+import TreeField from './scene/treeField'
 import NightPulse from './scene/NightPulse'
 import SparkleGround from './scene/SparkleGround'
 import WindVeil from './scene/WindVeil'
@@ -127,6 +128,7 @@ export default function App() {
               <EnvSetup />
               <SkyAurora />
               <WorldTerrain />
+              <TreeField />
               <NightPulse />
               <SparkleGround count={4600} />
               <WindVeil />

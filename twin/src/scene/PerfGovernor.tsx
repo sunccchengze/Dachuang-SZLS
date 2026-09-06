@@ -27,10 +27,12 @@ export default function PerfGovernor() {
 
   useFrame((_, dt) => {
     if (lock.current) {
-      // 锁档一次性生效
+      // 锁档一次性生效，并关闭自适应（manual=true → qualityAuto=false）：
+      // README 口径是「画质锁定」——此前锁后仍被自动降档覆写，
+      // 软渲染 QA 里 ?q=high 会在 ~2s 后跌回 low（R36 树木层 low=0 直接消失）。
       const q = lock.current as 'low' | 'medium' | 'high'
       lock.current = null
-      if (ORDER.includes(q)) useSim.getState().setQuality(q)
+      if (ORDER.includes(q)) useSim.getState().setQuality(q, true)
     }
     const d = Math.min(100, dt * 1000)
     ema.current = ema.current * 0.95 + d * 0.05

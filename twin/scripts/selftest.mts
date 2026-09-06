@@ -3,6 +3,7 @@
 // 运行：node --experimental-strip-types scripts/selftest.mts
 // 依赖：仅 Node 22 原生类型剥离；无浏览器、无网络。
 // ================================================================
+import { readFileSync } from 'node:fs'
 import {
   farmFrame, optimizeYaw, windAt, FARM_RATED_MW, dayNight,
 } from '../src/data/farmSim.ts'
@@ -11,6 +12,8 @@ import {
   FARM, SUBSTATION, FARM_CENTER, terrainHeight, terrainSurfaceY,
   landMask, biomeWeights, SNOW_LINE, grassSampleHits,
   PEAKS, FJORD_A, FJORD_B, STACKS, HEADLANDS, bakeHeightGrid,
+  shoreSigned, treeAccept, treeSampleHits, TREE_SPAN_M, mulberry32,
+  ISLANDS,
 } from '../src/scene/terrainUtil.ts'
 import { TURBINE_SPEC } from '../src/scene/turbine/geometry.ts'
 import {
@@ -423,6 +426,66 @@ ok('偏航因子：cos^p 随 |yaw| 递减', yawFactor(0) > yawFactor(10) && yawF
     if (Math.abs(d.ndc.base.y) > 0.98) { towerOK = false; worst += ` hot${i + 1}:baseY=${d.ndc.base.y.toFixed(2)}` }
   }
   ok('HOT 仰拍：7/8/9 塔基在框内（全塔 + 转子同框）', towerOK, worst || '3/3')
+}
+
+// R36 · 岸距场（浅水阻尼/拍岸碎浪/水线爬升的同一真值）
+// ---------------------------------------------------------------
+{
+  const deepOK = FARM.every((u) => shoreSigned(u.x, u.z) < -400)
+  const worstD = Math.max(...FARM.map((u) => shoreSigned(u.x, u.z)))
+  ok('R36 岸距：9 机离岸 >400m（深水区，涌浪全幅不受阻尼）', deepOK,
+    `最浅机=${worstD.toFixed(0)}m`)
+  const isl = ISLANDS[0]
+  ok('R36 岸距：岛心为陆侧（>0），岛外 1.5km 为海侧（<0）',
+    shoreSigned(isl.x, isl.z) > 0 && shoreSigned(isl.x + 1500, isl.z) < 0,
+    `岛心=${shoreSigned(isl.x, isl.z).toFixed(0)} 岛外=${shoreSigned(isl.x + 1500, isl.z).toFixed(0)}`)
+  // 海侧渐近：北岸线外侧 100m vs 800m，离岸距离应单调（更远更负）
+  const dN100 = shoreSigned(-300, -2060) // 北岸中段（陆侧约 -2060 以北为陆）
+  ok('R36 岸距：北岸外侧海点为负（海侧带符号）', dN100 < 0, `=${dN100.toFixed(0)}m`)
+}
+
+// R36 · 远岸森林（treeAccept 同真值：落位约束 + 命中率）
+// ---------------------------------------------------------------
+{
+  const hits = treeSampleHits()
+  ok('R36 森林：拒绝采样命中 >1%（林带真实存在、可铺满）', hits > 200, `命中=${hits}/20000`)
+  const rnd = mulberry32(99)
+  let n = 0
+  let allOK = true
+  let worstInfo = ''
+  for (let i = 0; i < 60000 && n < 300; i++) {
+    const x = (rnd() * 2 - 1) * TREE_SPAN_M
+    const z = (rnd() * 2 - 1) * TREE_SPAN_M
+    const s = treeAccept(x, z, rnd())
+    if (s <= 0) continue
+    n++
+    if (landMask(x, z) < 0.30) { allOK = false; worstInfo = '沾海岸带' }
+    if (terrainHeight(x, z) > SNOW_LINE - 39) { allOK = false; worstInfo = '超雪线' }
+    if (s < 7.5 - 1e-9 || s > 16.5 + 1e-9) { allOK = false; worstInfo = '尺度域' }
+  }
+  ok('R36 森林：命中点全过约束（内陆≥0.30 / 雪线下 / 尺度 7.5~16.5m）', n > 0 && allOK,
+    `样本=${n} ${worstInfo}`)
+}
+
+// R36 · 渲染层口径锁（防后续重构悄悄丢特性；源码 token 级）
+// ---------------------------------------------------------------
+{
+  const read = (p: string) => readFileSync(p, 'utf8')
+  const wt = read('src/scene/WorldTerrain.tsx')
+  ok('R36 海面：浅水阻尼 + 拍岸碎浪带 + 水线爬升（aShore 消费链完整）',
+    wt.includes('aShore') && wt.includes('shoreDamp') && wt.includes('surfRoll') && wt.includes('swash'),
+    'VERT 阻尼/swash + FRAG surfRoll')
+  ok('R36 海面：远海收边 2600→4420m 全雾（地平线假缝根除）', wt.includes('2600.0, 4420.0'))
+  ok('R36 海面：背光透射 + 双瓣高光 + 微细节距离衰减',
+    wt.includes('sss') && wt.includes('specBroad') && wt.includes('rippleFade'))
+  const sky = read('src/scene/SkyAurora.tsx')
+  ok('R36 天空：下半球融雾（uFogColor）+ 白昼卷云（cov）',
+    sky.includes('uFogColor') && sky.includes('cov'))
+  const tf = read('src/scene/treeField.tsx')
+  ok('R36 森林组件：画质分档 + 风摆 + 雾/昼夜同口径',
+    tf.includes('TREE_TIERS') && tf.includes('uWind') && tf.includes('uFogDensity') && tf.includes('uDayF'))
+  const app = read('src/App.tsx')
+  ok('R36 森林挂载：<TreeField/> 在场景装配内', app.includes('<TreeField />'))
 }
 
 console.log(`\n结果: ${pass} 通过 / ${fail} 失败`)

@@ -2,7 +2,7 @@
 import { useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { terrainSurfaceY, landMask, coastT, FARM_CENTER, bakeHeightGrid } from './terrainUtil'
+import { terrainSurfaceY, landMask, coastT, shoreSigned, FARM_CENTER, bakeHeightGrid } from './terrainUtil'
 import { skyState } from './lightState'
 import { windAt } from '../data/farmSim'
 import { useSim } from '../state/simStore'
@@ -29,8 +29,10 @@ varying vec3 vWN;
 varying float vLand;
 varying float vH;
 varying float vCoast;
+varying float vShore;
 attribute float aLand;
 attribute float aCoast;
+attribute float aShore;
 uniform float uTime;
 uniform vec2 uWind;
 uniform vec2 uCenter;
@@ -69,10 +71,15 @@ void main() {
   vLand = aLand;
   vH = baseY;
   vCoast = aCoast;
+  vShore = aShore;
+
+  // R36 · 浅水波幅阻尼（coastal_3d_v2 ocean.ts 口径）：aShore 为带符号最近岸距
+  // （负=海侧离岸米数）。涌浪贴岸衰减 → 岸线不再被大涌切出硬边、浪不爬坡。
+  float shoreDamp = 0.16 + 0.84 * smoothstep(0.0, 260.0, -aShore);
 
   // 近场收敛：离场心越近波浪越收敛（塔基贴地、风场稳定）
   float d = length(wp.xz - uCenter);
-  float amp = mix(0.5, 1.0, smoothstep(180.0, 2000.0, d));
+  float amp = mix(0.5, 1.0, smoothstep(180.0, 2000.0, d)) * shoreDamp;
 
   // 顶点位移只保留「大尺度平缓涌浪」（波长远大于网格 ~30m），
   // 短波细碎波光全部交给片元解析法线 → 粗网格无块状格子感。
@@ -90,6 +97,10 @@ void main() {
   float lift = water;
   vec3 newPos = vec3(wp.x, baseY + disp.y * lift, wp.z);
   newPos.xz += disp.xz * lift * 0.75;
+
+  // R36 · swash 水线爬升：贴岸 0~32m 水面小幅正弦抬升（浪舌舔滩，随岸线噪声相位）
+  float swash = (1.0 - smoothstep(0.0, 32.0, -aShore)) * water;
+  newPos.y += swash * 0.20 * sin(uTime * 0.8 + wp.x * 0.011 + wp.z * 0.014);
 
   // 法线：海水用大尺度 Gerstner 法线；陆地用真实几何法线（computeVertexNormals），
   // 山体明暗/雪沟/裸岩全靠它 —— 此前陆地近似上向是“盐堆”感的根因（round4 修复）
@@ -109,6 +120,7 @@ varying vec3 vWN;
 varying float vLand;
 varying float vH;
 varying float vCoast;
+varying float vShore;
 uniform float uTime;
 uniform float uDayF;
 uniform float uGlow;
@@ -148,7 +160,8 @@ float waveHeight(vec2 p) {
   return h;
 }
 // 解析法线：波高梯度（有限差分）+ 弱分形噪声微细节 → 平滑、细致、无格子
-vec3 waterNormal(vec2 p) {
+// R36：微细节幅度 ×fade（随相机距离衰减）——远处高频法线欠采样是波光闪烁的根因
+vec3 waterNormal(vec2 p, float fade) {
   float e = 1.0; // 差分步长（米）
   float hL = waveHeight(p - vec2(e, 0.0));
   float hR = waveHeight(p + vec2(e, 0.0));
@@ -158,7 +171,7 @@ vec3 waterNormal(vec2 p) {
   // 弱分形微细节：细碎波光、无格子（振幅压低，避免散射成灰雾）
   float nA = fbm(p * 0.05 + uTime * 0.05);
   float nB = fbm(p * 0.11 - uTime * 0.09);
-  n += vec3((nA - 0.5) * 0.20, 0.0, (nB - 0.5) * 0.20);
+  n += vec3((nA - 0.5) * 0.20 * fade, 0.0, (nB - 0.5) * 0.20 * fade);
   return normalize(n);
 }
 
@@ -184,9 +197,12 @@ float terrainShadow(vec3 p, vec3 sunDir) {
 void main() {
   float night = 1.0 - uDayF;
   vec3 V = normalize(cameraPosition - vWPos);
+  float camDist = length(cameraPosition - vWPos);
+  // R36 · 微细节距离衰减（120→1500m 归零）：远处高频法线欠采样 → 波光闪烁
+  float rippleFade = 1.0 - smoothstep(120.0, 1500.0, camDist);
 
   // 法线：海上用「解析程序法线」（平滑、细致、无格子）；陆上退回顶点法线
-  vec3 N = mix(normalize(vWN), waterNormal(vWPos.xz), vWater);
+  vec3 N = mix(normalize(vWN), waterNormal(vWPos.xz, rippleFade), vWater);
   N = normalize(N);
   vec3 Ns = N;
   float ndv = max(dot(N, V), 0.0);
@@ -213,13 +229,23 @@ void main() {
   vec3 skyRef = mix(vec3(0.014, 0.032, 0.054), vec3(0.150, 0.290, 0.385), uDayF);
   waterCol = mix(waterCol, skyRef, clamp(fres, 0.0, 1.0) * (0.045 + 0.07 * uDayF));
 
+  // —— R36 · 背光浪尖透射（SSS）：逆光时浪尖微透青绿（coastal_3d_v2 sss 的暗调版）——
+  // 只在白天、且视线朝向太阳时出现；强度压低，不引入新色相（沿用冰青）
+  float sss = pow(max(dot(V, -uSunDir), 0.0), 3.0) * crest;
+  waterCol += vec3(0.040, 0.190, 0.185) * sss * uDayF * 0.40;
+
   // —— 太阳/月亮镜面高光：细碎点状波光（点状，克制，不高亮成云斑）——
+  // R36：镜面指数随距离升高（远处的耀斑收窄成点 → 远海不糊成一片亮）
   vec3 halfV = normalize(V + uSunDir);
-  float spec = pow(max(dot(Ns, halfV), 0.0), 620.0 + night * 320.0);
+  float specExp = 620.0 + night * 320.0 + 480.0 * smoothstep(0.0, 2500.0, camDist);
+  float spec = pow(max(dot(Ns, halfV), 0.0), specExp);
   float sparkle = fbm(vWPos.xz * 0.12 + uTime * 0.8) * fbm(vWPos.xz * 0.35 - uTime * 0.5);
   spec *= (0.10 + 0.90 * sparkle);
   vec3 sunCol = mix(vec3(0.11, 0.26, 0.38), vec3(0.80, 0.80, 0.78), uDayF);
   waterCol += sunCol * spec * (uDayF * 0.72 + night * 0.13);
+  // R36 · 宽瓣高光：锐瓣外围一圈柔晕（真实水面耀斑的双瓣结构），克制低强度
+  float specBroad = pow(max(dot(Ns, halfV), 0.0), 56.0);
+  waterCol += sunCol * specBroad * uDayF * 0.10 * (0.3 + 0.7 * sparkle);
 
   // —— 波峰泡沫（Step B2）：顺风拉丝 + 米级碎点 + 三重稀疏门 ——
   // 各向异性坐标把各向同性云斑拉成风纹碎浪，随风漂移；只在最碎的浪尖出现
@@ -234,11 +260,21 @@ void main() {
     * (0.35 + 0.65 * smoothstep(0.55, 0.9, foamFleck));
   vec3 foam = mix(vec3(0.028, 0.06, 0.09), vec3(0.50, 0.63, 0.68), uDayF); // 更低饱淡青白
   waterCol = mix(waterCol, foam, foamMask * (0.03 + uDayF * 0.09));
-  // —— 水侧水线（Step B3）：紧贴岸线的海侧碎浪，与陆侧 foamDot 合成完整水线 ——
+  // —— 水侧水线（Step B3）+ R36 拍岸碎浪带 ——
+  // 紧贴岸线的海侧碎浪（与陆侧 foamDot 合成完整水线）；
   // 水像素中 vLand∈(0,0.02) 即岸线外 15~40m；环岸/环岛/环柱自动出现，机组区 vLand=0 不受影响
   float surfBand = smoothstep(0.0, 0.004, vLand) * (1.0 - smoothstep(0.004, 0.02, vLand));
   float surfN = 0.35 + 0.65 * fbm(vWPos.xz * 0.30 + vec2(-uTime * 0.35, uTime * 0.2));
-  waterCol = mix(waterCol, foam, surfBand * surfN * (0.10 + uDayF * 0.30) * vWater);
+  // 周期性向岸推进的碎浪带：离岸 0~300m、带间隔 ~114m、向岸传播，
+  // 相位用 fbm 扰动 → 不是机械平行弧线（coastal_3d_v2 rolling surf 的暗调版）
+  float dShore = -vShore;
+  float shoreBand = 1.0 - smoothstep(0.0, 300.0, dShore);
+  float rollPh = -dShore * 0.055 - uTime * 1.35 + fbm(vWPos.xz * 0.02) * 5.5;
+  float rollB = sin(rollPh) * 0.5 + 0.5;
+  float surfRoll = shoreBand * smoothstep(0.45, 0.78,
+    rollB * 0.62 + shoreBand * 0.30 + (fbm(vWPos.xz * 0.09 - uTime * 0.10) - 0.5) * 0.4);
+  float foamAmt = max(surfBand * surfN, surfRoll) * (0.10 + uDayF * 0.30) * vWater;
+  waterCol = mix(waterCol, foam, foamAmt);
 
   // —— 月路（C3）：明月在水面的镜面光路 + 月照涌动 ——
   // 旧版用太阳方向算夜高光，夜里太阳在地平线下故恒≈0（“夜里没光”的另一半根因）
@@ -302,7 +338,6 @@ void main() {
   float dHz = fbm(vWPos.xz * 0.045 + 3.7) - fbm(vWPos.xz * 0.045 - vec2(0.0, eD * 0.045) + 3.7);
   vec3 Ndet = normalize(N + vec3(-dHx * 2.2, 0.0, -dHz * 2.2));
   // 微起伏（round8）：米级地表凹凸进法线，近看有“颗粒”，远处衰减防闪烁
-  float camDist = length(cameraPosition - vWPos);
   float microFade = exp(-camDist / 380.0);
   if (microFade > 0.01) {
     float m1 = fbm(vWPos.xz * 0.55 + 7.1);
@@ -393,9 +428,13 @@ void main() {
   vec3 col = mix(landCol, waterCol, vWater);
 
   // —— 空气透视（指数雾）：海水轻吃雾保色，远山吃雾显空气感 ——
-  float dist = length(cameraPosition - vWPos);
+  // R36 · 远海收边：海面在到达 9200m 平面边缘（±4600m）前渐进融进雾色
+  //（2600→4420m 到全雾），与 SkyAurora 下半球融雾两侧同色 —— 消灭
+  //「海面切边 + 边缘外露亮青」的地平线假缝；近场水色不变。
+  float dist = camDist;
   float fogF = 1.0 - exp(-uFogDensity * uFogDensity * dist * dist);
-  float fogMix = mix(fogF, fogF * 0.30, vWater); // 海水更轻吃雾，保住水色
+  float seaFar = smoothstep(2600.0, 4420.0, dist);
+  float fogMix = mix(fogF, mix(fogF * 0.30, 1.0, seaFar), vWater);
   col = mix(col, uFogColor, clamp(fogMix, 0.0, 1.0));
 
   gl_FragColor = vec4(col, 1.0);
@@ -411,6 +450,7 @@ export default function WorldTerrain() {
     const pos = g.attributes.position as THREE.BufferAttribute
     const land = new Float32Array(pos.count)
     const coast = new Float32Array(pos.count)
+    const shore = new Float32Array(pos.count)
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i)
       const z = pos.getZ(i)
@@ -418,9 +458,13 @@ export default function WorldTerrain() {
       pos.setY(i, y)
       land[i] = landMask(x, z)
       coast[i] = coastT(x, z)
+      // R36 岸距场：带符号最近岸距（负=海侧米数）。近岸阻尼/碎浪带/水线爬升共用；
+      // 夹取 [-700,120]：只消费近岸段，内陆大值无意义且省精度。
+      shore[i] = Math.max(-700, Math.min(120, shoreSigned(x, z)))
     }
     g.setAttribute('aLand', new THREE.BufferAttribute(land, 1))
     g.setAttribute('aCoast', new THREE.BufferAttribute(coast, 1))
+    g.setAttribute('aShore', new THREE.BufferAttribute(shore, 1))
     g.computeVertexNormals()
 
     // Step C1 高度纹理：512² 烘焙（半浮点线性过滤；R16F WebGL2 可过滤，无需扩展）
@@ -455,7 +499,7 @@ export default function WorldTerrain() {
       depthWrite: true,
       fog: false,
     })
-    m.customProgramCacheKey = () => 'terrain-ocean-v4'
+    m.customProgramCacheKey = () => 'terrain-ocean-v5-r36'
     ;(m.userData as any).u = u
     return { geo: g, mat: m }
   }, [])
