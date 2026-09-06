@@ -434,12 +434,19 @@ export function dayNight(tHours: number): {
   const elM = (-38 * Math.sin(th) * Math.PI) / 180
   const azM = az + Math.PI
   const moonF = Math.min(1, Math.max(0, (-elDeg + 3) / 18))
+  // R36b · 月落修复：去掉 y=Math.max(0.06, sin(elM)) 的“构造性托底”。
+  // 旧钳制下月亮几何落山后被钉在 3.44° 仰角水平滑行（t=5.4→6.0 方位滑 9°，
+  // 仰角恒 0.06）再被昼光门控中途淡出——月不落山、贴地平线漂；月出同理
+  // 是“凭空出现在 3.44°”。放开后：满月夜 17:24 东升 / 05:24 西落（与日出同刻，
+  /// 与日完美反相），落山时沉进西侧地平线雾带（SkyAurora 下半球融雾）。
+  // 灯光侧无需跟随：LightRig 主光方向另有 Math.max(0.045,…) 独立托底；
+  // WorldTerrain/TreeField 的月光漫反射对 y<0 连续变暗，月路高光天然归零。
   return {
     dayF,
     moonF,
     sunElDeg: elDeg,
     sunDir: [sx, sy, sz],
-    moonDir: [Math.sin(azM) * Math.cos(elM), Math.max(0.06, Math.sin(elM)), -Math.cos(azM) * Math.cos(elM)],
+    moonDir: [Math.sin(azM) * Math.cos(elM), Math.sin(elM), -Math.cos(azM) * Math.cos(elM)],
   }
 }
 

@@ -488,5 +488,24 @@ ok('偏航因子：cos^p 随 |yaw| 递减', yawFactor(0) > yawFactor(10) && yawF
   ok('R36 森林挂载：<TreeField/> 在场景装配内', app.includes('<TreeField />'))
 }
 
+// R36b · 月落修复锁：月亮必须真的落山（旧版 y=Math.max(0.06,·) 把月钉在
+// 3.44° 贴地平线水平滑行后中途淡出；月出同理凭空出现）。满月与日反相：
+// 17:24 东升 / 05:24 西落（与日出同刻），昼夜无跳变。
+{
+  const rise = dayNight(18), set = dayNight(6)
+  ok('R36b 月相：18 时月已升（y>0.05）、6 时月已落（y<0）',
+    rise.moonDir[1] > 0.05 && set.moonDir[1] < 0,
+    `18时y=${rise.moonDir[1].toFixed(3)} 6时y=${set.moonDir[1].toFixed(3)}`)
+  let minY = 1, maxStep = 0, prevY = dayNight(0).moonDir[1]
+  for (let t = 0.05; t <= 24.0001; t += 0.05) {
+    const y = dayNight(t).moonDir[1]
+    minY = Math.min(minY, y)
+    maxStep = Math.max(maxStep, Math.abs(y - prevY))
+    prevY = y
+  }
+  ok('R36b 月落深度：24h 内最低仰角 sin ≤ -0.55（真落到地平线下，无托底）', minY <= -0.55, `minY=${minY.toFixed(3)}`)
+  ok('R36b 月轨连续：0.05h 步长最大 |Δy| < 0.01（无跳变/无钳制折点）', maxStep < 0.01, `maxΔ=${maxStep.toFixed(4)}`)
+}
+
 console.log(`\n结果: ${pass} 通过 / ${fail} 失败`)
 process.exit(fail ? 1 : 0)
