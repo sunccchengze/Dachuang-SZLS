@@ -130,6 +130,7 @@ uniform float uFogDensity;
 uniform vec2 uWind; // Step B：泡沫顺风拉丝用风向（uniforms 本就有，FRAG 补声明）
 uniform sampler2D uHeightTex; // Step C1：烘焙高度图（512²，uv = xz/9200+0.5）
 uniform vec3 uMoonDir; // Step C3：月光方向（地形月夜漫反射 + 水面月路）
+uniform float uWarmF; // R37 太阳色温（0=白 1=红，仰角连续）：雪冠/岩脊/晨光波光共用
 
 float hash21(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
 float vnoise(vec2 p){
@@ -242,6 +243,9 @@ void main() {
   float sparkle = fbm(vWPos.xz * 0.12 + uTime * 0.8) * fbm(vWPos.xz * 0.35 - uTime * 0.5);
   spec *= (0.10 + 0.90 * sparkle);
   vec3 sunCol = mix(vec3(0.11, 0.26, 0.38), vec3(0.80, 0.80, 0.78), uDayF);
+  // R37 晨昏波光：日出/日落时镜面高光是太阳的倒影，理应同色温（红金）；
+  // uWarmF 由仰角连续驱动，正午自动回白，海面本身的暗调冰青口径不变。
+  sunCol = mix(sunCol, vec3(1.00, 0.52, 0.24), uWarmF * 0.45);
   waterCol += sunCol * spec * (uDayF * 0.72 + night * 0.13);
   // R36 · 宽瓣高光：锐瓣外围一圈柔晕（真实水面耀斑的双瓣结构），克制低强度
   float specBroad = pow(max(dot(Ns, halfV), 0.0), 56.0);
@@ -372,7 +376,14 @@ void main() {
   float glint = pow(max(dot(Ndet, Hv), 0.0), 60.0);
   float glintN = fbm(vWPos.xz * 0.12 + uTime * 0.05);
   snowCol += vec3(1.0, 0.98, 0.94) * glint * smoothstep(0.50, 0.9, glintN) * uDayF * 4.0 * sunDiff;
-  landDay = mix(landDay, snowCol, snowM);
+  // —— R37 日照金山 v2（仰角连续）：雪冠朝阳面红→金→随白昼退去 ——
+  // pow(sunDiff,2.2)：只有朝阳坡吃色，背阴面保持冷蓝雪 —— 金山的核心是方向性。
+  // 强度与色相都由 uWarmF 连续驱动：日出红金（warm≈1）→ 上午淡金（0.3）
+  // → 正午纯白雪（0）；日落对称再来一遍。海面 vWater 路径不消费本项。
+  float alpen = uWarmF * pow(sunDiff, 2.2);
+  vec3 alpenCol = mix(vec3(1.06, 0.72, 0.40), vec3(1.05, 0.44, 0.22), uWarmF * 0.45);
+  vec3 snowGold = mix(snowCol, alpenCol, alpen * 0.88);
+  landDay = mix(landDay, snowGold, snowM);
   // 岩石质感（round5）：层理 + 碎石颗粒 + 凹缝 AO，杀“塑料黏土”；
   // round10 起只给高山 + 陡壁（丘陵带保持干净植被，不再整片压灰）
   float strata = sin(vH * 0.33 + rockN * 5.0 + Ndet.x * 2.0);
@@ -381,6 +392,9 @@ void main() {
   float rockZone = clamp(wMtn + rockExp, 0.0, 1.0);
   float rockTex = (0.88 + 0.12 * strata) * (0.78 + 0.44 * rockGrain) * crevAO;
   landDay *= mix(1.0, rockTex, (1.0 - snowM) * clamp(rockZone, 0.0, 1.0));
+  // R37 日照金山 v2：裸岩山脊吃一线暖色（比雪弱，只勾山脊棱线；仰角连续）
+  landDay *= mix(vec3(1.0), vec3(1.22, 0.94, 0.68),
+    uWarmF * pow(sunDiff, 2.5) * clamp(rockZone, 0.0, 1.0) * 0.45);
   // 微反照率（round8）：厘米~米级地表质感，放大看的本钱；植被（草/树）不管，只做地
   if (fade2 > 0.02) {
     // 沙：风成波纹（定向）+ 散布卵石
@@ -421,7 +435,11 @@ void main() {
   float moonWrap = clamp(dot(Ndet, normalize(uMoonDir)) * 0.5 + 0.5, 0.0, 1.0);
   float moonSlope = pow(moonWrap, 1.7); // 朝阳坡亮、背阳坡暗（明暗差 ~3×）
   vec3 nightMult = nightBase + vec3(0.62, 0.78, 1.00) * (0.16 * moonSlope) * moonGate;
-  vec3 landCol = landDay * mix(vec3(1.0), nightMult, night);
+  // R37 晨昏修正：太阳一旦升到地平线上（warm>0），其直射光已点亮山体，
+  // 夜乘数须让位 —— 否则日出瞬间的红金雪冠被 ~0.1 的夜乘数压成近黑
+  //（物理上「日照金山」恰发生在太阳 1-2° 时）。深夜 warm=0，夜乘数原样。
+  float nightEff = night * (1.0 - 0.85 * uWarmF);
+  vec3 landCol = landDay * mix(vec3(1.0), nightMult, nightEff);
   landCol += (lm - 0.5) * mix(0.012, 0.04, uDayF);     // 斑驳：白天严格=旧值 0.04，夜间减到 0.012
   landCol += vec3(0.012, 0.040, 0.060) * uDayF * 0.45; // 白天冷调补光（不变）
 
@@ -498,6 +516,7 @@ export default function WorldTerrain() {
       uFogDensity: { value: 0.00013 }, // C4：默认值随 App 场景雾（逐帧覆盖，此处仅首帧）
       uHeightTex: { value: htex },
       uMoonDir: { value: new THREE.Vector3(0, 1, 0) },
+      uWarmF: { value: 0 },
     }
 
     const m = new THREE.ShaderMaterial({
@@ -522,6 +541,7 @@ export default function WorldTerrain() {
       uGlow: { value: number }
       uSunDir: { value: THREE.Vector3 }
       uMoonDir: { value: THREE.Vector3 }
+      uWarmF: { value: number }
       uFogColor: { value: THREE.Color }
       uFogDensity: { value: number }
     }
@@ -534,6 +554,7 @@ export default function WorldTerrain() {
     uu.uGlow.value = dayF * 0.6 + night * nightGlow
     uu.uDayF.value = dayF
     uu.uSunDir.value.copy(skyState.sunDir)
+    uu.uWarmF.value = skyState.warmF
     uu.uMoonDir.value.copy(skyState.moonDir)
     const { fromDeg } = windAt(useSim.getState().tHours)
     const th = (fromDeg * Math.PI) / 180

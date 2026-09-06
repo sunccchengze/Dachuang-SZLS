@@ -2,7 +2,7 @@
 import { useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { dayNight } from '../data/farmSim'
+import { dayNight, sunWarmth } from '../data/farmSim'
 import { useSim } from '../state/simStore'
 import { skyState } from './lightState'
 
@@ -73,6 +73,10 @@ export default function LightRig() {
     const fd = dn.dayF * dn.dayF * (3 - 2 * dn.dayF)
     const mf = dn.moonF * dn.moonF * (3 - 2 * dn.moonF)
     skyState.dayF = fd
+    // R37 太阳色温：仰角连续驱动（红→金→白）进共享天光总线，场景各层消费。
+    // 用连续钟 tmp.simT（非量化 tHours），拖时间轴时色温平滑变化不跳变。
+    const warm = sunWarmth(tmp.simT)
+    skyState.warmF = warm
     skyState.sunDir.set(...dn.sunDir)
     skyState.moonDir.set(...dn.moonDir)
     const night = 1 - fd
@@ -89,6 +93,8 @@ export default function LightRig() {
       sunRef.current.position.set(TARGET.x + tmp.dir.x * R, TARGET.y + tmp.dir.y * R, TARGET.z + tmp.dir.z * R)
       sunRef.current.intensity = 0.34 + 1.6 * fd
       tmp.col.setHex(0xcfe4ff).lerp(new THREE.Color(0xf6fbff), fd)
+      // R37 太阳色温：仰角连续驱动 —— 日出橙红 → 金 → 白（风机纯白线稿不受灯光影响）。
+      tmp.col.lerp(new THREE.Color(0xff9a4d), warm * 0.6)
       sunRef.current.color.copy(tmp.col)
     }
     if (keyNight.current) keyNight.current.intensity = 0.62 * (0.3 + 0.7 * night)

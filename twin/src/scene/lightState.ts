@@ -5,4 +5,5 @@ export const skyState = {
   dayF: 0,
   sunDir: new THREE.Vector3(0, 1, 0),
   moonDir: new THREE.Vector3(0, 1, 0),
+  warmF: 0, // R37 太阳色温（0=白 1=红，仰角连续）：LightRig 写，场景各层读
 }

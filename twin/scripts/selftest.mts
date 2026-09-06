@@ -5,7 +5,7 @@
 // ================================================================
 import { readFileSync } from 'node:fs'
 import {
-  farmFrame, optimizeYaw, windAt, FARM_RATED_MW, dayNight,
+  farmFrame, optimizeYaw, windAt, FARM_RATED_MW, dayNight, sunWarmth,
 } from '../src/data/farmSim.ts'
 import { powerCurveKw, yawFactor, wakeDeficit, TILT_F, wakeDeflection } from '../src/data/turbinePhysics.ts'
 import {
@@ -518,6 +518,34 @@ ok('偏航因子：cos^p 随 |yaw| 递减', yawFactor(0) > yawFactor(10) && yawF
   ok('R36c 夜树：同口径乘性月光（nightMultT），无加性灰底',
     tf.includes('nightMultT') && !tf.includes('col += vec3(0.30, 0.42, 0.58)'),
     '树与地形同病同治')
+}
+
+// R37 · 太阳色温（连续、仰角驱动）：初升红 → 金 → 白，日落对称；无时间窗
+{
+  const g = sunWarmth
+  ok('R37 色温演进：5:30 红日(>0.9) → 6 时金(>0.7) → 7 时淡金(0.15~0.5) → 正午白(=0)',
+    g(5.5) > 0.9 && g(6.0) > 0.7 && g(7.0) > 0.15 && g(7.0) < 0.5 && g(12) === 0,
+    `5.5=${g(5.5).toFixed(2)} 6=${g(6).toFixed(2)} 7=${g(7).toFixed(2)} 12=${g(12)}`)
+  ok('R37 色温对称：日落前同样泛红(17.3 > 0.9)；夜间为 0（月光不染暖）',
+    g(17.3) > 0.9 && g(0) === 0 && g(3) === 0 && g(23) === 0,
+    `17.3=${g(17.3).toFixed(2)} 0=${g(0)} 3=${g(3)}`)
+  let maxG = 0, prevG = g(0)
+  for (let t = 0.02; t <= 24.0001; t += 0.02) {
+    const v = g(t)
+    maxG = Math.max(maxG, Math.abs(v - prevG))
+    prevG = v
+  }
+  ok('R37 色温连续：0.02h 步长最大 |Δ| < 0.2（红→金→白全程平滑，无开关跳变）',
+    maxG < 0.2, `maxΔ=${maxG.toFixed(3)}`)
+  const wtR = readFileSync('src/scene/WorldTerrain.tsx', 'utf8')
+  ok('R37 渲染：雪冠红金(alpen/alpenCol) + 岩脊暖线 + 晨昏波光同色温 + uWarmF',
+    wtR.includes('alpen') && wtR.includes('alpenCol') && wtR.includes('uWarmF')
+    && wtR.includes('sunCol = mix(sunCol, vec3(1.00, 0.52, 0.24), uWarmF'))
+  const skyR = readFileSync('src/scene/SkyAurora.tsx', 'utf8')
+  ok('R37 渲染：日轮本体色温(sunDiscCol)随仰角红→金→白', skyR.includes('sunDiscCol') && skyR.includes('uWarmF'))
+  const lrR = readFileSync('src/scene/LightRig.tsx', 'utf8')
+  ok('R37 主灯：sunWarmth 驱动色温暖化 + skyState.warmF 写入',
+    lrR.includes('sunWarmth') && lrR.includes('warmF'))
 }
 
 console.log(`\n结果: ${pass} 通过 / ${fail} 失败`)

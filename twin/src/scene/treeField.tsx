@@ -81,6 +81,7 @@ uniform float uDayF;
 uniform vec3 uMoonDir;
 uniform vec3 uFogColor;
 uniform float uFogDensity;
+uniform float uWarmF; // R37 太阳色温（0=白 1=红）：向阳树冠暖调
 
 void main() {
   vec3 col = vCol;
@@ -91,7 +92,10 @@ void main() {
   vec3 nightMultT = vec3(0.040, 0.050, 0.070) * (0.55 + 0.45 * moonUpT)
     + vec3(0.62, 0.78, 1.00) * (0.10 * moonUpT);
   col *= mix(0.80, vLit, uDayF * 0.92);
-  col *= mix(vec3(1.0), nightMultT, nightT);
+  // R37 晨昏修正：与地形同口径 —— 晨昏暖光出现时夜乘数让位（深夜不变）
+  col *= mix(vec3(1.0), nightMultT, nightT * (1.0 - 0.85 * uWarmF));
+  // R37 日照金山：向阳树冠吃晨光暖调（背阴保持冷绿；窗口外逐字旧色）
+  col *= mix(vec3(1.0), vec3(1.18, 0.95, 0.75), uWarmF * vLit * 0.35);
   // 指数雾（与场景雾同式；树是陆地，吃全雾）
   float fogF = 1.0 - exp(-uFogDensity * uFogDensity * vFogDepth * vFogDepth);
   col = mix(col, uFogColor, clamp(fogF, 0.0, 1.0));
@@ -190,6 +194,7 @@ function createSet(): TreeSet {
       uMoonDir: { value: new THREE.Vector3(0, 1, 0) },
       uFogColor: { value: new THREE.Color('#040911') },
       uFogDensity: { value: 0.00013 },
+      uWarmF: { value: 0 },
     },
     side: THREE.DoubleSide,
   })
@@ -251,6 +256,7 @@ export default function TreeField() {
     ;(u.uDayF as { value: number }).value = skyState.dayF
     ;(u.uSunDir as { value: THREE.Vector3 }).value.copy(skyState.sunDir)
     ;(u.uMoonDir as { value: THREE.Vector3 }).value.copy(skyState.moonDir)
+    ;(u.uWarmF as { value: number }).value = skyState.warmF
     const { fromDeg } = windAt(useSim.getState().tHours)
     const th = (fromDeg * Math.PI) / 180
     ;(u.uWind as { value: THREE.Vector2 }).value.set(Math.sin(th), Math.cos(th))

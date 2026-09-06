@@ -25,6 +25,7 @@ uniform vec3 uSunDir;
 uniform vec3 uMoonDir;
 uniform vec3 uFogColor;
 uniform sampler2D uSkyTex;
+uniform float uWarmF; // R37 太阳色温（0=白 1=红，仰角连续）：日轮/暖晕共用
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
 float noise(vec2 p) {
@@ -63,8 +64,17 @@ void main() {
   col = mix(col, photoSky, photoMask * 0.86);
 
   // 地平线宽亮带（原图发光地平线：亮核 + 宽裙）
-  col += vec3(0.16, 0.44, 0.55) * pow(clamp(1.0 - abs(h), 0.0, 1.0), 13.0) * 1.35;
-  col += vec3(0.05, 0.16, 0.22) * pow(clamp(1.0 - abs(h), 0.0, 1.0), 5.0) * 0.55;
+  // R37b：带色在太阳方位扇区让位于太阳色温——低空气溶胶的前向散射随光源颜色，
+  // 日出时太阳扇区的地平带应暖化而非冰青；否则冰青带在红日下方叠出 G/B 削顶，
+  // 把初升红日洗成白斑（5:30 取证：日轮区 G/B 双通道 1.0 饱和）。离开太阳扇区
+  // 或正午（uWarmF=0）时与原带完全一致，冰青审美零改动。
+  float band1 = pow(clamp(1.0 - abs(h), 0.0, 1.0), 13.0);
+  float band2 = pow(clamp(1.0 - abs(h), 0.0, 1.0), 5.0);
+  vec2 sdHxz = normalize(uSunDir.xz + vec2(1e-5, 0.0));
+  float azCone = pow(clamp(dot(normalize(d.xz + vec2(1e-5, 0.0)), sdHxz), 0.0, 1.0), 3.0);
+  float wAz = uWarmF * azCone; // 1 = 日出时刻正对太阳的地平扇区
+  col += mix(vec3(0.16, 0.44, 0.55) * 1.35, vec3(0.72, 0.26, 0.08) * 0.90, wAz) * band1;
+  col += mix(vec3(0.05, 0.16, 0.22) * 0.55, vec3(0.55, 0.20, 0.07) * 0.55, wAz) * band2;
 
   // 左上冷光辉（基准图左侧天际亮斑，含月亮意象，克制）。
   // 必须限制在上半球：无人机俯冲时会看到天空球内侧的下半球，
@@ -117,9 +127,33 @@ void main() {
   // 白天：冰青天幕渐变 + 日轮与晕（不引入新色相）
   vec3 dayCol = mix(vec3(0.086, 0.165, 0.239), vec3(0.290, 0.451, 0.565), smoothstep(0.02, 0.55, h));
   col = mix(col, dayCol, uDay * 0.86);
-  float sunDot = clamp(dot(d, normalize(uSunDir)), 0.0, 1.0);
-  col += vec3(0.92, 0.97, 1.0) * pow(sunDot, 1400.0) * 1.35 * uDay;
+  // —— R37b 视差修正：日/月盘的视方向 = 相机沿真方向的球面命中点 ——
+  // 天体在无穷远，但天空球只有 6800m 且以世界原点定向：旧版盘心画在
+  // 「原点→天体」方向上，相机离原心 1~4.6km 时视位置偏移可达 ~12°，
+  // 日轮/月轮会跑出锁定机位画面（太阳锁定机位实测拍不到日轮的根因）。
+  vec3 sdSun = normalize(uSunDir);
+  float bS = dot(cameraPosition, sdSun);
+  float tS = sqrt(max(bS * bS - dot(cameraPosition, cameraPosition) + 46240000.0, 0.0)) - bS; // 6800²
+  vec3 sunDirV = normalize(cameraPosition + sdSun * tS);
+  vec3 sdMoon = normalize(uMoonDir);
+  float bM = dot(cameraPosition, sdMoon);
+  float tM = sqrt(max(bM * bM - dot(cameraPosition, cameraPosition) + 46240000.0, 0.0)) - bM;
+  vec3 moonDirV = normalize(cameraPosition + sdMoon * tM);
+  float sunDot = clamp(dot(d, sunDirV), 0.0, 1.0);
+  // —— R37 日轮色温（连续物理）：初升红彤彤 → 金 → 白 ——
+  // v1 的「白色日轮 + 时间窗暖晕」是错的：真实日轮颜色由仰角连续决定
+  // （大气路径长 → 瑞利散射吃蓝 → 红）。uWarmF 随仰角连续变化，无开关。
+  // 亮度门 sGate（太阳在地平线上）与 dayF 解耦：日轮是全天空最亮天体，
+  // 刚跃出地平线时就应清晰可见（旧 ×uDay 在日出时刻只有 0.3，红日几乎不可见）；
+  // 日落后 sGate→0，不会在夜间地平线残留鬼影。
+  float sUp = normalize(uSunDir).y;
+  float sGate = smoothstep(-0.017, 0.035, sUp);
+  vec3 sunDiscCol = mix(vec3(0.92, 0.97, 1.0), vec3(1.08, 0.40, 0.15), uWarmF);
+  col += sunDiscCol * pow(sunDot, 1400.0) * 1.35 * (1.0 - 0.28 * uWarmF) * sGate;
   col += vec3(0.32, 0.46, 0.58) * pow(sunDot, 14.0) * 0.16 * uDay;
+  // 低角度大气消光暖晕：宽晕 + 内晕，随 uWarmF 连续（正午自动为 0，无需门）
+  col += vec3(1.02, 0.50, 0.20) * pow(sunDot, 5.0) * uWarmF * 0.30 * (0.30 + 0.70 * sGate);
+  col += vec3(0.95, 0.44, 0.17) * pow(sunDot, 24.0) * uWarmF * 0.22 * (0.30 + 0.70 * sGate);
 
   // —— R36 · 白昼薄卷云（coastal_3d_v2 sky.ts 云层投影的克制版）——
   // 虚拟平面投影 + 双尺度 fbm + 向阳采样 shading（云不是贴片，有受光方向）；
@@ -138,7 +172,7 @@ void main() {
   }
 
   // —— 明月（C3）：月轮 + 晕 + 远辉，随夜色渐显（night 门控，昼夜连续不断裂）——
-  vec3 md = normalize(uMoonDir);
+  vec3 md = moonDirV; // R37b 视差修正后的月盘方向
   float moonDot = clamp(dot(d, md), 0.0, 1.0);
   float mDisc = smoothstep(0.99980, 0.99995, moonDot); // 月面（~0.6°）
   float limb = 0.75 + 0.25 * smoothstep(0.99980, 1.0, moonDot); // 临边昏暗
@@ -176,6 +210,7 @@ export default function SkyAurora() {
     uMoonDir: { value: new THREE.Vector3(0, 1, 0) },
     uFogColor: { value: new THREE.Color('#040911') },
     uSkyTex: { value: skyTexture },
+    uWarmF: { value: 0 },
   }), [skyTexture])
 
   useFrame((state) => {
@@ -185,6 +220,7 @@ export default function SkyAurora() {
     u.uDay.value = skyState.dayF
     u.uSunDir.value.copy(skyState.sunDir)
     u.uMoonDir.value.copy(skyState.moonDir)
+    u.uWarmF.value = skyState.warmF
     // R36：下半球融雾与场景雾同色（LightRig 逐帧驱动 scene.fog）
     const fog = state.scene.fog
     if (fog && (fog as THREE.FogExp2).isFogExp2) {

@@ -450,6 +450,28 @@ export function dayNight(tHours: number): {
   }
 }
 
+/**
+ * R37 · 太阳色温（连续、仰角驱动）：初升红彤彤 → 慢慢金色 → 渐渐白色。
+ * 大气散射规律：仰角越低，直射光穿过的大气路径越长，蓝光被瑞利散射掉越多，
+ * 剩下的越红。因此色温必须由【太阳仰角】连续驱动，不能用时间窗编排
+ * （v1 的 6-7 点窗口在沿上必然「白→暖→白」突跳，正是用户指出的不真实）。
+ *   el ≤ 2°   warm=1（红日贴海）
+ *   el 2°→30° 红退金、金退白：6 时 el≈8.4°→0.87（金）、7 时 el≈19.6°→0.29
+ *   （淡金）、9 时 el≈44°→0（白）
+ *   日落对称（17:24 起同样的红→金过程，无开关）。
+ * 出地平线门 smoothstep(-1, 1.5, el)：夜间（日在地下）为 0，月光/夜陆不染暖。
+ */
+export function sunWarmth(tHours: number): number {
+  const elDeg = dayNight(tHours).sunElDeg
+  const ss = (a: number, b: number, x: number) => {
+    const k = Math.min(1, Math.max(0, (x - a) / (b - a)))
+    return k * k * (3 - 2 * k)
+  }
+  const ramp = 1 - ss(2, 30, elDeg)
+  const gate = ss(-1, 1.5, elDeg)
+  return ramp * gate
+}
+
 export const UNIT_NAMEPLATE = {
   model: 'AEOLUS-5MW（NREL 5MW 参考机组几何）',
   ratedKw: 5000,
