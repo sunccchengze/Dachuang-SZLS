@@ -84,11 +84,14 @@ uniform float uFogDensity;
 
 void main() {
   vec3 col = vCol;
-  // 昼夜口径与 WorldTerrain 陆地一致：白天受光塑形；夜间统一压暗 + 月光冷调
+  // 昼夜口径与 WorldTerrain 陆地一致（R36c 同步）：白天受光塑形不变；
+  // 夜间改【乘性】月光（旧版加性 wrap +0.30×0.3 抬灰底 → 与地形同病的灰白树影墙）
+  float nightT = 1.0 - uDayF;
+  float moonUpT = clamp(uMoonDir.y, 0.0, 1.0);
+  vec3 nightMultT = vec3(0.040, 0.050, 0.070) * (0.55 + 0.45 * moonUpT)
+    + vec3(0.62, 0.78, 1.00) * (0.10 * moonUpT);
   col *= mix(0.80, vLit, uDayF * 0.92);
-  col *= mix(vec3(0.19, 0.20, 0.23), vec3(1.0), uDayF);
-  float moonDiff = 0.5 + 0.5 * uMoonDir.y;
-  col += vec3(0.30, 0.42, 0.58) * moonDiff * (1.0 - uDayF) * 0.30;
+  col *= mix(vec3(1.0), nightMultT, nightT);
   // 指数雾（与场景雾同式；树是陆地，吃全雾）
   float fogF = 1.0 - exp(-uFogDensity * uFogDensity * vFogDepth * vFogDepth);
   col = mix(col, uFogColor, clamp(fogF, 0.0, 1.0));

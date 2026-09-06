@@ -407,13 +407,23 @@ void main() {
   float lm = vnoise(vWPos.xz * 0.0021);
   lm += 0.5 * vnoise(vWPos.xz * 0.0055);
 
-  // 昼夜：夜间统一压暗（保留冷调），白天补微弱冷光
-  vec3 landCol = landDay * mix(vec3(0.19, 0.20, 0.23), vec3(1.0), uDayF);
-  // —— 月夜漫反射（C3）：月光给山体塑形，背阳面留天光底不死黑（包裹漫反射）——
-  float moonDiff = clamp(dot(N, normalize(uMoonDir)) * 0.5 + 0.5, 0.0, 1.0);
-  landCol += vec3(0.30, 0.42, 0.58) * moonDiff * night * 0.35;
-  landCol += (lm - 0.5) * 0.04;                        // 微弱整体斑驳
-  landCol += vec3(0.012, 0.040, 0.060) * uDayF * 0.45; // 白天冷调补光
+  // —— 昼夜（R36c 重做）：夜间陆地不再「灰白」——
+  // 旧版 = 平乘 0.19~0.23 + 【加性】wrap 月光 vec3(0.30,0.42,0.58)×0.35（与反照率
+  // 无关，沙/岩/雪全被抬到同一灰蓝平台 → 灰白抹灰感；雪冠反照率≈1 最受害）。
+  // 真实月夜（3 张实拍对拍：均值 0.04~0.22、只朝阳坡亮、坡向明暗差 2~4×）：
+  //   ① 夜底乘压到星光/气辉量级（≈0.05），不再 0.2 级平台；
+  //   ② 月光改【乘性方向塑形】：朝阳坡银灰、背阳坡近黑（对比出山体体积）；
+  //   ③ 月高度门 moonGate：月落山后陆地沉入更黑的夜（连续，无开关跳变）。
+  // 白天路径逐字不变（全部改动按 night=1-uDayF 门控）；海面 vWater 路径不碰。
+  float moonUp = clamp(normalize(uMoonDir).y, 0.0, 1.0);
+  float moonGate = night * moonUp;
+  vec3 nightBase = vec3(0.045, 0.055, 0.075) * (0.55 + 0.45 * moonUp);
+  float moonWrap = clamp(dot(Ndet, normalize(uMoonDir)) * 0.5 + 0.5, 0.0, 1.0);
+  float moonSlope = pow(moonWrap, 1.7); // 朝阳坡亮、背阳坡暗（明暗差 ~3×）
+  vec3 nightMult = nightBase + vec3(0.62, 0.78, 1.00) * (0.16 * moonSlope) * moonGate;
+  vec3 landCol = landDay * mix(vec3(1.0), nightMult, night);
+  landCol += (lm - 0.5) * mix(0.012, 0.04, uDayF);     // 斑驳：白天严格=旧值 0.04，夜间减到 0.012
+  landCol += vec3(0.012, 0.040, 0.060) * uDayF * 0.45; // 白天冷调补光（不变）
 
   // —— 投影落位（Step C1/C2）：只作用陆地；影里留 30% 天光 + 透冷调 ——
   // C2：①加重（0.38→0.30）；②随太阳高度渐显渐隐 —— 日出日落阴影淡入淡出。

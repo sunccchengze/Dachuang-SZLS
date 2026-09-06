@@ -507,5 +507,18 @@ ok('偏航因子：cos^p 随 |yaw| 递减', yawFactor(0) > yawFactor(10) && yawF
   ok('R36b 月轨连续：0.05h 步长最大 |Δy| < 0.01（无跳变/无钳制折点）', maxStep < 0.01, `maxΔ=${maxStep.toFixed(4)}`)
 }
 
+// R36c · 夜陆口径锁：夜间陆地 = 暗底乘性 + 方向月光（旧版加性 wrap 抬灰底 → 灰白）
+{
+  const wt = readFileSync('src/scene/WorldTerrain.tsx', 'utf8')
+  ok('R36c 夜陆：乘性月光塑形（nightBase/moonSlope/moonGate），无加性灰底',
+    wt.includes('nightBase') && wt.includes('moonSlope') && wt.includes('moonGate')
+    && !wt.includes('landCol += vec3(0.30, 0.42, 0.58)'),
+    '加性 wrap 月光必须移除')
+  const tf = readFileSync('src/scene/treeField.tsx', 'utf8')
+  ok('R36c 夜树：同口径乘性月光（nightMultT），无加性灰底',
+    tf.includes('nightMultT') && !tf.includes('col += vec3(0.30, 0.42, 0.58)'),
+    '树与地形同病同治')
+}
+
 console.log(`\n结果: ${pass} 通过 / ${fail} 失败`)
 process.exit(fail ? 1 : 0)
