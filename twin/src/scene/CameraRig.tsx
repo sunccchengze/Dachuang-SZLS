@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { CAM, FARM } from './terrainUtil'
+import { CAM_HOTKEYS } from './hotkeys.ts'
 import { useSim } from '../state/simStore'
 import {
   CAMERA_PATH, LOOK_PATH, INTRO_END,
@@ -15,15 +16,10 @@ import {
 //  · 消除前 5 秒黑屏与 180 度翻转：高空俯冲注视点稳定朝向风场中轴，远离垂直奇异点；
 //  · 巡航期间禁用 OrbitControls 抢镜；巡航/环绕结束后平滑交接；
 //  · 保持视平线稳定，移除造成摇晃抖动的侧倾(bank)与速度阶跃；
-//  · 书签机位：键 1/2/3 = 全景 / 近排 / 升压站；
+//  · 热键机位：键 1-9 = 九个塔位快速镜头（1.2s ease 平滑过渡），
+//    机位真值在 ./hotkeys.ts（与 OrbitControls 约束、selftest 断言同源）；
 //  · WASD 自由飞行支持。
 // ============================================================================
-
-const CAM_BOOKMARKS = [
-  { pos: new THREE.Vector3(60, 430, 990), target: new THREE.Vector3(0, 22, -340) },
-  { pos: new THREE.Vector3(FARM[6].x + 170, 150, FARM[6].z + 250), target: new THREE.Vector3(FARM[6].x, 74, FARM[6].z) },
-  { pos: new THREE.Vector3(-340, 250, 760), target: new THREE.Vector3(300, 20, 300) },
-] as const
 
 const ORBIT_DUR = 9
 const INTRO_TOTAL = INTRO_END + ORBIT_DUR
@@ -123,7 +119,7 @@ export default function CameraRig() {
     }
   }, [])
 
-  // 全局快捷键：Esc 跳过 / 1-3 书签
+  // 全局快捷键：Esc 跳过开场 / 1-9 塔位快速镜头（见 ./hotkeys.ts）
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const s = useSim.getState()
@@ -131,8 +127,8 @@ export default function CameraRig() {
         if (!s.introDone) s.skipIntro()
       }
       const n = Number(e.key)
-      if (n >= 1 && n <= CAM_BOOKMARKS.length) {
-        const b = CAM_BOOKMARKS[n - 1]
+      if (n >= 1 && n <= CAM_HOTKEYS.length) {
+        const b = CAM_HOTKEYS[n - 1]
         const p = camera.position.clone()
         const ctl = controlsRef.current
         bookmark.current = {
