@@ -17,6 +17,7 @@ npm run selftest   # 数据契约/渲染口径 84 断言（Node 22 原生类型�
 node scripts/shot.mjs <url> <out.png> [settleMs] [w] [h]  # 无头自拍（沙箱需 /tmp/nsslibs，真机无需）
 node scripts/probe.mjs <url含debug> [settleMs] [fpsMs]  # FPS/DrawCall/三角面/控制台错误探针
 npm run perftier   # 三档画质单帧计数 + 帧时长（high/medium/low，同参同机位）
+npm run verify     # ★ 四条闸门一次跑完：lint → selftest → tsc + build（CI 同口径）
 node scripts/qa2.mjs <baseUrl含debug> <curtail.png> <optimize.png>  # 联动/闭环证据注入器
 ```
 

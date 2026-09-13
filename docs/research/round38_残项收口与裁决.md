@@ -60,7 +60,7 @@
 | T1 | 门面文档回填：`README.md` / `twin/README.md` / `HANDOFF.md` / `HANDOFF_NEXT.md` 的过期数字与口径 | ✅ **本轮完成**（见 §四） |
 | T1b | 三档画质基线探针 `npm run perftier`（跨档回归口径此前不存在） | ✅ 随 T1 入库 |
 | T2 | 仓库卫生：16 个 0 字节假证据 PNG 出库、证据树合并、根目录 zip 出库、`.gitignore` 补 | ✅ **本轮完成**（见 §五） |
-| T3 | CI 化：`.github/workflows/qa.yml`（tsc+lint+selftest+build）兑现 docs/08「全部进 CI 可跑」 | ⬜ |
+| T3 | CI 化：`.github/workflows/qa.yml`（tsc+lint+selftest+build）兑现 docs/08「全部进 CI 可跑」 | ✅ **本轮完成**（见 §六） |
 | T3b | 首帧后长尖峰：`treeField` 延迟落位 4800 株一次性拒绝采样（p90 尖峰 2.5–5.1 s 的来源）→ 分帧预算摊销 | ⬜ |
 | T4 | 采纳孤儿分支的三项技法（波系同源 / 真天空反射 / 云掩日月次序） | ⬜ |
 | T5 | 浪形重标定专项：塔基 ±16.8m 涌浪是否合理（场心 amp），独立 A/B 后裁决 | ⬜ |
@@ -118,10 +118,32 @@
   并注明"不要拿今天的代码造一张 R34 夜景充证据"，夜间口径改指 R36c 的 `r36/nightland/`。
 - `round29` 证据表写的是迭代临时名（`ocean_day_v6` 等）→ 改为实际入库名（`r29_ocean_day_hero.png` 等），
   并注明"文件名口径"。
-- `docs/08` 的 `after_az92_east/az272_west/az182_north.png` 与 round11 的 `r11-sunset/noon.png` 是斜杠速记，
-  机器不可查 → 写全为三个/两个真实文件名。
+- `docs/08` 把三张方位图并成一格（east / west / north 用斜杠连写）、round11 把 sunset 与 noon 连写——
+  这种速记机器不可查，已分别写全为真实文件名。
 - `sky-realistic-cyan.png`（Round-9 按裁决删除的 1.9 MB 无许可位图）进守卫的 `GONE` 例外表，
   注释明确"不许为通过检查往里塞"。
 
 **验证**：`npm run selftest` **86/86** · `npm run lint` 0/0 · `npx tsc -b --noEmit` 0 错 · `npm run build` ✓。
 本任务只动 markdown/图片/gitignore/selftest 守卫，未触碰任何 `src/` 渲染代码（`terrainUtil.ts` 仅改注释里的文档路径）。
+
+## 六、T3 · QA 门槛自动化（完成，但**启用需要人点一下头**）
+
+**先说一个硬事实**：本仓连接的 GitHub App 没有 `workflows` 权限，任何写 `.github/workflows/*` 的推送
+都被远端拒绝（`refusing to allow a GitHub App to create or update workflow … without 'workflows' permission`）。
+我没有绕开权限（也不该绕）。所以 T3 交付的是**可一键启用的成品**，而不是"CI 已绿"这种说不清的话：
+
+- `ci/qa-gates.yml`：`tsc -b --noEmit` → `oxlint`(0/0) → `selftest`(86，含 R38 两项证据链守卫) → `vite build`；
+  Node 22（selftest 靠原生类型剥离）、`npm ci` + lockfile 缓存、触发 push/PR→main + 手动；
+  附一条**非阻断**哨兵（>3 MB 入库图片/压缩包清单 + 证据树 0 字节图计数）。
+- 启用只需：`mkdir -p .github/workflows && git mv ci/qa-gates.yml .github/workflows/qa-gates.yml && git push`
+  （文件头注释里写了这三行，含"为什么先放在 ci/"的说明）。
+- `npm run verify`（twin）：`lint && selftest && build`，**本地与 CI 同一口径**，不依赖任何权限，今天就能用。
+- 明确不进 CI：`shot.mjs` / `perftier` 的帧时长（SwiftShader 在 runner 上不可比），按 `shots/README.md` 的 SOP 做。
+- 顺带把 `docs/08` §四 E7 里「全部进 CI 可跑」这句**标注为不实宣称并校正**——原文不删，只加【R38 校正】，
+  保留审计痕迹（本项目一贯做法）。
+
+**验证**：YAML 解析通过（1 job / 8 steps）；四条命令本地预跑全绿（lint 0/0 · selftest 86/86 · tsc 0 错 · build ✓）；
+`find ../docs -type f -size 0` 在 `working-directory: twin` 下路径成立（已实测）。
+守卫自身在 T3 期间还拦下过一次：我在本文里引用旧速记写法时被它判为断链——**误报也照改**，
+因为"文档里出现的每个 .png 名字都必须存在"这条规矩一旦能打折就守不住。
+

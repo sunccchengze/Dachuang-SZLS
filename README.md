@@ -35,6 +35,9 @@
 | 产物体积 | JS gzip 合计 **468 kB**（three 单包 384 kB + 业务 58 kB + floris3d 26 kB）· CSS 162 kB | `vite build` reporter |
 
 > 旧文档里反复出现的「22 断言 / 35 draw calls」是 2026-08-28 v3 交付轮的口径，**已作废**，以本表为准。
+> **一条命令跑齐四条闸门**：`cd twin && npm run verify`（lint + selftest + tsc/build）。
+> CI：`ci/qa-gates.yml` 已备好但**尚未生效**——本仓 GitHub App 无 `workflows` 权限，需人执行
+> `mkdir -p .github/workflows && git mv ci/qa-gates.yml .github/workflows/ && git push` 启用（见该文件头注释）。
 > 沙箱为 SwiftShader 软渲染（本沙箱仅 2 核），**帧率绝对值不可用作结论**，只作档间相对比较；实机 GPU 需另行验收。
 
 数据口径三分法（真实/演示/示意）已上界面角标与 README。文档索引补充：
