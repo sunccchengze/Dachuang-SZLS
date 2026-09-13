@@ -54,7 +54,7 @@ const smoothstep = (e0: number, e1: number, x: number) => {
 //  · 峡湾水道深切北岸（长 1.6km、宽 220~560m，两壁陡峭，海岬变湾中岛）；
 //  · 海蚀柱群（离岸峭岩，浪蚀奇观）；
 //  · 海床仍只保留极低幅微地貌（±2m），贴地稳定。
-// 注：R32-R34 系回退后重做（见 twin/docs/research/R32-R34-改造提示词.md），
+// 注：R32-R34 系回退后重做（见 docs/research/R32-R34-改造提示词.md），
 //     因原 commit 不在本快照内，函数名与原实现未必逐字一致，但几何约束等价。
 /** 海上风电场中心（保持旧取景重心；本版地形不再以之为圆心） */
 export const FARM_CENTER = { x: -100, z: -640 } as const

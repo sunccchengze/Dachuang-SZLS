@@ -3,7 +3,7 @@
 // 运行：node --experimental-strip-types scripts/selftest.mts
 // 依赖：仅 Node 22 原生类型剥离；无浏览器、无网络。
 // ================================================================
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import {
   farmFrame, optimizeYaw, windAt, FARM_RATED_MW, dayNight, sunWarmth,
 } from '../src/data/farmSim.ts'
@@ -546,6 +546,53 @@ ok('偏航因子：cos^p 随 |yaw| 递减', yawFactor(0) > yawFactor(10) && yawF
   const lrR = readFileSync('src/scene/LightRig.tsx', 'utf8')
   ok('R37 主灯：sunWarmth 驱动色温暖化 + skyState.warmF 写入',
     lrR.includes('sunWarmth') && lrR.includes('warmF'))
+}
+
+// R38 · 证据链完整性（docs/08 D2 精神：把「要拿证据」沉淀成可执行断言）
+// 历史坑：① `twin/shots/` 曾提交 16 个 0 字节 PNG（分步 A/B 序列全是空文件＝假证据）；
+// ② `twin/docs/` 与 `docs/` 双证据树，路径漂移后文档指不到图（本轮已合并为单树）。
+// 两条都在这里锁死：图片不得为空，*.md 引用的图片名必须能在证据树里找到。
+{
+  const IMG = /\.(png|jpe?g|webp|gif|bmp)$/i
+  const walk = (dir: string, out: string[] = []): string[] => {
+    if (!existsSync(dir)) return out
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === 'node_modules' || e.name === 'dist' || e.name.startsWith('.')) continue
+      const p = `${dir}/${e.name}`
+      if (e.isDirectory()) walk(p, out)
+      else out.push(p)
+    }
+    return out
+  }
+  const evidence = [...walk('../docs'), ...walk('../image-search')]
+  const empty = evidence.filter((f) => IMG.test(f) && statSync(f).size === 0)
+  ok('R38 证据完整性：docs/ 与 image-search/ 下不存在 0 字节图片',
+    empty.length === 0, `${empty.length} 个：${empty.slice(0, 3).join(' ')}`)
+
+  const present = new Set(evidence.filter((f) => IMG.test(f)).map((f) => f.split('/').pop()!))
+  const missing: string[] = []
+  // 证据图引用必须可查：漏拍 / 改名 / 移树都在这里锁死。
+  // 不查：命令行示例（shot.mjs/abdiff/… 行）、花括号速记、`<占位>.png`。
+  const CMD = /shot\d?\.mjs|abdiff|framestats|horizoncheck|perfstats|python3|npm run|npx |^\s*\$/
+  const TOK = /[^\s`"'()[\]<>|{},*?]+\.(?:png|jpe?g)/g // 排除通配（`r33_*.png` 是集合描述，不是链接）
+  // 设计上已不存在、但历史文档合理提及的资产（不允许静默扩大此表）：
+  //  sky-realistic-cyan.png —— Round-9 #6 删除的 1.9 MB 无许可位图（见 docs/08「删除…无许可记录」）
+  const GONE = new Set(['sky-realistic-cyan.png'])
+  for (const m of walk('../docs').filter((f) => f.endsWith('.md'))) {
+    const lines = readFileSync(m, 'utf8').split('\n')
+    lines.forEach((line, i) => {
+      if (CMD.test(line)) return
+      for (const mm of line.matchAll(TOK)) {
+        const prev = mm.index! > 0 ? line[mm.index! - 1] : ' '
+        if (!/[\s`(/]/.test(prev)) continue // 不是独立 token（如 r24_{20,30}s_before.png 的尾巴）
+        const name = mm[0].split('/').pop()!
+        const tag = `${m.split('/').pop()}:${i + 1} → ${name}`
+        if (!present.has(name) && !GONE.has(name) && !missing.includes(tag)) missing.push(tag)
+      }
+    })
+  }
+  ok('R38 证据链：docs/**.md 引用的截图都能找到对应文件（无漏拍/无断链）',
+    missing.length === 0, `${missing.length} 处：${missing.slice(0, 6).join(' | ')}`)
 }
 
 console.log(`\n结果: ${pass} 通过 / ${fail} 失败`)

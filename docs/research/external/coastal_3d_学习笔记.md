@@ -195,4 +195,4 @@ coastal_3d 架构
 - [ ] R36+ 评估 **EDT 替换闭式**（成本高，仅在出现视觉失真时）
 - [ ] R35+ 用 **极坐标 sin(3/5/9 θ) 框架** 重写 wobN/wobW（更可控）
 - [x] 保留 **coastal_3d{,_v2} 源码** 作为参考（已完成解包）
-- [x] 写**提示词**复刻 R32-R34 cherry-pick 路径（见 `twin/docs/research/R32-R34-改造提示词.md`）
+- [x] 写**提示词**复刻 R32-R34 cherry-pick 路径（见 `docs/research/R32-R34-改造提示词.md`）

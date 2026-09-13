@@ -58,7 +58,8 @@
 | # | 任务 | 状态 |
 |---|---|---|
 | T1 | 门面文档回填：`README.md` / `twin/README.md` / `HANDOFF.md` / `HANDOFF_NEXT.md` 的过期数字与口径 | ✅ **本轮完成**（见 §四） |
-| T2 | 仓库卫生：16 个 0 字节假证据 PNG 出库、证据树合并、根目录 zip 出库、`.gitignore` 补 | ⬜ |
+| T1b | 三档画质基线探针 `npm run perftier`（跨档回归口径此前不存在） | ✅ 随 T1 入库 |
+| T2 | 仓库卫生：16 个 0 字节假证据 PNG 出库、证据树合并、根目录 zip 出库、`.gitignore` 补 | ✅ **本轮完成**（见 §五） |
 | T3 | CI 化：`.github/workflows/qa.yml`（tsc+lint+selftest+build）兑现 docs/08「全部进 CI 可跑」 | ⬜ |
 | T3b | 首帧后长尖峰：`treeField` 延迟落位 4800 株一次性拒绝采样（p90 尖峰 2.5–5.1 s 的来源）→ 分帧预算摊销 | ⬜ |
 | T4 | 采纳孤儿分支的三项技法（波系同源 / 真天空反射 / 云掩日月次序） | ⬜ |
@@ -83,3 +84,44 @@
 
 **验证**：本任务只动 markdown 与 package.json 脚本注册项 → `npm run lint` 0/0、`npx tsc -b --noEmit` 0 错误、
 `npm run selftest` 84/84、`npm run build` ✓（表内数字即本任务实测来源）。
+
+## 五、T2 · 仓库卫生 + 证据链守卫（完成）
+
+**做的四件事**
+
+1. **删假证据**：`twin/shots/` 16 个 PNG 全部 0 字节且 md5 彼此相同——它们挂着 `stepA10_hero / stepA10_peak`
+   这类"分步对拍"的名字，实际是一次崩溃的无头截图残留。已出库 + `twin/shots/` 进 `.gitignore`。
+2. **证据树合一**：`twin/docs/research/**`（R30–R34，21 文件）`git mv` 进 `docs/research/`，
+   `twin/docs/` 目录消失；5 处引用同步改写（docs/10、round31、学习笔记、terrainUtil 头注、提示词自引）。
+   合并前先验证**无同名冲突、无内容重复**（`md5` 全树比对：唯一重复就是上面那 16 个空壳）。
+3. **删冗余 zip**：根目录 `hyper-realistic-3d-coastal-landscape.zip`（180 kB）——与
+   `docs/research/external/coastal_3d_v2/` 逐条目比对，zip 独有的 4 项只是空目录条目，即 100% 冗余；
+   新增 `external/README.md` 写清来源、比对结论与"只借技法不引代码"的许可口径。
+4. **docs/10 §七「未收口事项」7 条逐条销账**（这张表从 R32 起就一直挂着）：
+
+| 当时列的事项 | 本轮核对结论 |
+|---|---|
+| 17 张 r33 截图无 README | 已补 `shots/r33/README.md`；实际现存 4 张，"17 张"对今天的树已过期 |
+| `r32/` 3 张图无 README | 已补 `shots/r32/README.md`（+ `r34/`，同批） |
+| `r32_hero_1920.png` 是否与 `r32/r32_hero.png` 重复 | **不重复**：同 1920×1080，md5 不同（`2311f325…` / `0515dc07…`）→ 两份都保留 |
+| `grassField.tsx` 37 行红方块 debug | 现为 195 行正式组件、无红方块；**仍未挂载** → 转 §三-T8 处理 |
+| `r33_verify.py / r33_verify2.py` 保留还是废弃 | 两文件已不在库内，视为已废弃 |
+| 参考 zip 未完整入库 | zip 与 `external/coastal_3d_v2/` 等价 → zip 出库，来源改记 `external/README.md` |
+| 叶片投影（R33 修过）与 R31 移交说明 | 现存 `HoloTurbine.tsx:407 ENABLE_BLADE_SHADOW=false` + `shadow_blade_verdict.md`，与用户裁决一致 |
+
+**证据链守卫（+2 断言，84→86）**：`selftest` 现在会 ①拒绝证据树里的 0 字节图片；
+②逐个检查 `docs/**/*.md` 引用的图片名是否存在（通配符/`<占位符>`/命令行行不查）。
+守卫**第一轮就抓出 16 处真实断链**，全部定性修完：
+
+- `docs/09` 承诺回填 `r34_ocean_hero_1920 / _coast / _night`——前两张其实以 `shots/r34/r34_hero.png`、
+  `r34_coast.png` 入库（改名未回写文档），**夜场那张从未拍过**。已在 docs/09 顶部就地校正，
+  并注明"不要拿今天的代码造一张 R34 夜景充证据"，夜间口径改指 R36c 的 `r36/nightland/`。
+- `round29` 证据表写的是迭代临时名（`ocean_day_v6` 等）→ 改为实际入库名（`r29_ocean_day_hero.png` 等），
+  并注明"文件名口径"。
+- `docs/08` 的 `after_az92_east/az272_west/az182_north.png` 与 round11 的 `r11-sunset/noon.png` 是斜杠速记，
+  机器不可查 → 写全为三个/两个真实文件名。
+- `sky-realistic-cyan.png`（Round-9 按裁决删除的 1.9 MB 无许可位图）进守卫的 `GONE` 例外表，
+  注释明确"不许为通过检查往里塞"。
+
+**验证**：`npm run selftest` **86/86** · `npm run lint` 0/0 · `npx tsc -b --noEmit` 0 错 · `npm run build` ✓。
+本任务只动 markdown/图片/gitignore/selftest 守卫，未触碰任何 `src/` 渲染代码（`terrainUtil.ts` 仅改注释里的文档路径）。
