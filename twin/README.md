@@ -13,9 +13,10 @@ npm install
 npm run dev        # http://localhost:5173/
 npm run build      # tsc -b && vite build → dist/（0 错误）
 npm run lint       # oxlint（0 警告 0 错误；R3F 每帧 ref/uniform 惯用法为带注释的文件级豁免）
-npm run selftest   # 数据契约 22 断言（Node 22 原生类型剥离，无浏览器依赖）
+npm run selftest   # 数据契约/渲染口径 84 断言（Node 22 原生类型剥离，无浏览器依赖）
 node scripts/shot.mjs <url> <out.png> [settleMs] [w] [h]  # 无头自拍（沙箱需 /tmp/nsslibs，真机无需）
 node scripts/probe.mjs <url含debug> [settleMs] [fpsMs]  # FPS/DrawCall/三角面/控制台错误探针
+npm run perftier   # 三档画质单帧计数 + 帧时长（high/medium/low，同参同机位）
 node scripts/qa2.mjs <baseUrl含debug> <curtail.png> <optimize.png>  # 联动/闭环证据注入器
 ```
 
@@ -40,7 +41,8 @@ node scripts/qa2.mjs <baseUrl含debug> <curtail.png> <optimize.png>  # 联动/�
 ## 调试/QA 键（生产构建需先 `?debug=1` 解锁；dev 常开）
 `?cam=方位角,仰角,距离[,tx,ty,tz]` 机位锁定（自动跳过开场）· `?t=10.2` 锁定时刻并暂停（A/B 截图可复现）
 · `?noveil=1` 关闭风纱层 · `?q=low|medium|high` 画质锁定 · `?intro0=1` 跳过开场 ·
-`window.__aeolus`（useSim/farmFrameNow）与 `window.__aeolus_stats()`（手动单帧渲染计数，实测 35 draw calls）。
+`window.__aeolus`（useSim/farmFrameNow）与 `window.__aeolus_stats()`（手动单帧渲染计数；
+2026-09-13 实测 `?q=high` **250 draw calls / 636,718 tris**，medium 250/562,318，low 222/417,538）。
 
 ## 结构
 ```
@@ -52,10 +54,16 @@ src/
               TreeField(远岸森林, R36) · grassField(未挂载) · Callouts(防重叠/避让HUD) ·
               CameraRig(13节点+书签+跳过) · Effects(三档) · PerfGovernor · EnvSetup · frameBus
   hud/        Hud.tsx(1920×1080 等比舞台：KPI/矩阵/雷达/图表/控制台/告警/信息卡/时间轴)
-scripts/      shot.mjs · probe.mjs · qa2.mjs · abdiff.py · selftest.mts · calibrateWake.mts
+scripts/      shot.mjs · shot2.mjs · shotlocal.mjs · probe.mjs · qa2.mjs · perftier.mjs ·
+              sunprobe.mjs · moontrack.py · framestats.py · horizoncheck.py ·
+              abdiff.py · selftest.mts · calibrateWake.mts · bootstrap.sh（沙箱一键恢复依赖）
 ```
 
 ## 已知边界（v3 阶段工作，非缺陷隐瞒）
 - 浏览器内不集成 FLORIS（包体/依赖越"零后端"红线）；代理模型与 FLORIS 的系统偏差未实测（E7 口径见 docs/08 §四）。
-- 多用户/权限/审计、真实 DEM 与测风塔接入、LOD 链、在线自整定控制：见 docs/02 路线图与 docs/08 §五。
-- 构建 chunk>500kB 提示为 three+postprocessing 单包；演示场景不做 code-split，已记录不修。
+- 多用户/权限/审计、真实 DEM 与测风塔接入、在线自整定控制：见 docs/02 路线图与 docs/08 §五。
+- 构建 chunk>500kB 提示来自 three 单包（1,278 kB / gzip 384 kB）；业务代码 150 kB、floris3d 数据 130 kB 已各自分包。
+- R29–R37 场景层进度与遗留：见 `../docs/research/round36_海岸真实化与远岸森林.md`（含 R36b/R36c/R37）
+  与 `../docs/research/round38_残项收口与裁决.md`（草地组件 `grassField` 仍未挂载、岛上无树、软渲染性能口径等）。
+- 帧率类数字**一律不要引用沙箱值**：SwiftShader 软件渲染（本沙箱 2 核）与真机 GPU 差一个量级，
+  `npm run perftier` 只用于档间相对比较与计数回归。

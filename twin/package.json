@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "selftest": "node --experimental-strip-types scripts/selftest.mts",
+    "perftier": "node scripts/perftier.mjs",
     "test": "npm run selftest",
     "preview": "vite preview"
   },
