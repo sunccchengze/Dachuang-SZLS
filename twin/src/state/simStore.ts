@@ -131,7 +131,7 @@ export const useSim = create<SimState>((set, get) => ({
   ackAlarm: (k) =>
     set((s) => (s.ackedAlarms.includes(k) ? {} : { ackedAlarms: [...s.ackedAlarms, k] })),
 
-  quality: 'high',
+  quality: 'medium',
   qualityAuto: true,
   setQuality: (q, manual) => set(manual ? { quality: q, qualityAuto: false } : { quality: q }),
 

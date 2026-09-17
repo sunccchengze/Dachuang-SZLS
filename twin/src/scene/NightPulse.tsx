@@ -42,14 +42,18 @@ function getPulseTex() {
   return sharedPulse
 }
 
+let sharedPulseGeo: THREE.CircleGeometry | null = null
+function getPulseGeo() {
+  if (!sharedPulseGeo) sharedPulseGeo = new THREE.CircleGeometry(1, 32)
+  return sharedPulseGeo
+}
+
 function Pulse({ x, z, y, phase, scaleBase }: { x: number; z: number; y: number; phase: number; scaleBase: number }) {
   const meshRef = useRef<THREE.Mesh>(null!)
   const matRef = useRef<THREE.MeshBasicMaterial>(null!)
 
-  const { geo, tex } = useMemo(() => {
-    const g = new THREE.CircleGeometry(1, 32)
-    return { geo: g, tex: getPulseTex() }
-  }, [])
+  const geo = getPulseGeo()
+  const tex = getPulseTex()
 
   const mat = useMemo(() => {
     return new THREE.MeshBasicMaterial({

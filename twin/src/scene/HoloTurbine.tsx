@@ -58,11 +58,74 @@ function makeBeaconTexture(): THREE.CanvasTexture {
   tex.magFilter = THREE.LinearFilter
   return tex
 }
+
 let sharedBeaconTex: THREE.CanvasTexture | null = null
 function getBeaconTexture(): THREE.CanvasTexture | null {
   if (typeof document === 'undefined') return null
   if (!sharedBeaconTex) sharedBeaconTex = makeBeaconTexture()
   return sharedBeaconTex
+}
+
+let sharedShadowTex: THREE.CanvasTexture | null = null
+function getSharedShadowTex(): THREE.CanvasTexture | null {
+  if (typeof document === 'undefined') return null
+  if (!sharedShadowTex) {
+    const c = document.createElement('canvas'); c.width = 64; c.height = 256
+    const ctx = c.getContext('2d')!
+    const img = ctx.createImageData(64, 256)
+    for (let y = 0; y < 256; y++) {
+      const v = y / 255
+      const lenA = Math.pow(1 - v, 1.35)
+      const wf = 1 - v * 0.55
+      for (let x = 0; x < 64; x++) {
+        const u = (x / 63 - 0.5) * 2
+        const au = Math.abs(u)
+        let a = 0
+        if (au <= wf) a = Math.pow(1 - au / wf, 2.2) * lenA
+        const i = (y * 64 + x) * 4
+        img.data[i] = 255; img.data[i + 1] = 255; img.data[i + 2] = 255
+        img.data[i + 3] = Math.round(a * 255)
+      }
+    }
+    ctx.putImageData(img, 0, 0)
+    const tex = new THREE.CanvasTexture(c)
+    tex.colorSpace = THREE.NoColorSpace
+    tex.wrapS = THREE.ClampToEdgeWrapping; tex.wrapT = THREE.ClampToEdgeWrapping
+    tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter
+    sharedShadowTex = tex
+  }
+  return sharedShadowTex
+}
+
+let sharedShadowDiscTex: THREE.CanvasTexture | null = null
+function getSharedShadowDiscTex(): THREE.CanvasTexture | null {
+  if (typeof document === 'undefined') return null
+  if (!sharedShadowDiscTex) {
+    const c = document.createElement('canvas'); c.width = 128; c.height = 128
+    const ctx = c.getContext('2d')!
+    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64)
+    g.addColorStop(0, 'rgba(255,255,255,0.95)')
+    g.addColorStop(0.28, 'rgba(255,255,255,0.55)')
+    g.addColorStop(0.55, 'rgba(255,255,255,0.18)')
+    g.addColorStop(0.82, 'rgba(255,255,255,0.04)')
+    g.addColorStop(1, 'rgba(255,255,255,0)')
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128)
+    const tex = new THREE.CanvasTexture(c)
+    tex.colorSpace = THREE.NoColorSpace
+    sharedShadowDiscTex = tex
+  }
+  return sharedShadowDiscTex
+}
+
+let sharedShadowGeo: { disc: THREE.BufferGeometry; tower: THREE.BufferGeometry; blade: THREE.BufferGeometry } | null = null
+function getSharedShadowGeo() {
+  if (!sharedShadowGeo) {
+    const disc = new THREE.CircleGeometry(1, 48)
+    const tower = new THREE.PlaneGeometry(14, 1); tower.translate(0, 0.5, 0)
+    const blade = new THREE.PlaneGeometry(2.2, 1); blade.translate(0, 0.5, 0)
+    sharedShadowGeo = { disc, tower, blade }
+  }
+  return sharedShadowGeo
 }
 
 // ---------------------------------------------------------------------------
@@ -499,56 +562,9 @@ export default function HoloTurbine({ idx, x, z, y, servo }: {
   const shadowDiscMat = useRef<THREE.MeshBasicMaterial>(null!)
   const shadowBladeMats = [useRef<THREE.MeshBasicMaterial>(null!), useRef<THREE.MeshBasicMaterial>(null!), useRef<THREE.MeshBasicMaterial>(null!)]
 
-  const shadowGeo = useMemo(() => {
-    const disc = new THREE.CircleGeometry(1, 48)
-    const tower = new THREE.PlaneGeometry(14, 1); tower.translate(0, 0.5, 0)
-    const blade = new THREE.PlaneGeometry(2.2, 1); blade.translate(0, 0.5, 0)
-    return { disc, tower, blade }
-  }, [])
-
-  // 影子纹理（黑底 alpha 渐变，贴地压暗）
-  const shadowTex = useMemo(() => {
-    if (typeof document === 'undefined') return null
-    const c = document.createElement('canvas'); c.width = 64; c.height = 256
-    const ctx = c.getContext('2d')!
-    const img = ctx.createImageData(64, 256)
-    for (let y = 0; y < 256; y++) {
-      const v = y / 255
-      const lenA = Math.pow(1 - v, 1.35)
-      const wf = 1 - v * 0.55
-      for (let x = 0; x < 64; x++) {
-        const u = (x / 63 - 0.5) * 2
-        const au = Math.abs(u)
-        let a = 0
-        if (au <= wf) a = Math.pow(1 - au / wf, 2.2) * lenA
-        const i = (y * 64 + x) * 4
-        img.data[i] = 255; img.data[i + 1] = 255; img.data[i + 2] = 255
-        img.data[i + 3] = Math.round(a * 255)
-      }
-    }
-    ctx.putImageData(img, 0, 0)
-    const tex = new THREE.CanvasTexture(c)
-    tex.colorSpace = THREE.NoColorSpace
-    tex.wrapS = THREE.ClampToEdgeWrapping; tex.wrapT = THREE.ClampToEdgeWrapping
-    tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter
-    return tex
-  }, [])
-
-  const shadowDiscTex = useMemo(() => {
-    if (typeof document === 'undefined') return null
-    const c = document.createElement('canvas'); c.width = 128; c.height = 128
-    const ctx = c.getContext('2d')!
-    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64)
-    g.addColorStop(0, 'rgba(255,255,255,0.95)')
-    g.addColorStop(0.28, 'rgba(255,255,255,0.55)')
-    g.addColorStop(0.55, 'rgba(255,255,255,0.18)')
-    g.addColorStop(0.82, 'rgba(255,255,255,0.04)')
-    g.addColorStop(1, 'rgba(255,255,255,0)')
-    ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128)
-    const tex = new THREE.CanvasTexture(c)
-    tex.colorSpace = THREE.NoColorSpace
-    return tex
-  }, [])
+  const shadowGeo = getSharedShadowGeo()
+  const shadowTex = getSharedShadowTex()
+  const shadowDiscTex = getSharedShadowDiscTex()
 
   // 影子世界坐标 → 投影到地面 → 转风机局部，驱动 mesh（与前面 world 投影共用临时对象）
   const _sProj = useMemo(() => new THREE.Vector3(), [])
