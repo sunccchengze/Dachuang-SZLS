@@ -60,9 +60,9 @@ export function powerTableKw(uEff: number): number {
   return interp1d(U_TAB, P_TAB, uEff, 0)
 }
 
-/** 推力系数：FLORIS 表线性插值（表外 0.0001） */
-export function ctTable(uEff: number): number {
-  return interp1d(U_TAB, CT_TAB, uEff, 0.0001)
+/** 推力系数：FLORIS 表线性插值（表外 0.0001，基准倾角 5°，按转子面风速 uAvg 插值，不含偏航余弦乘子） */
+export function ctTable(uAvg: number): number {
+  return interp1d(U_TAB, CT_TAB, uAvg, 0.0001)
 }
 
 /**
@@ -84,8 +84,10 @@ export function effectiveVelocity(
   return uAvg * (rho / TURBINE.refRho) ** (1 / 3) * Math.cos(yawDeg * d) ** (TURBINE.expYaw / 3) * tiltF
 }
 
-/** 轴向诱导因子 a = (1 − √(1−Ct))/2（FLORIS SimpleTurbine.axial_induction 口径） */
-export function axialInduction(ct: number): number {
-  const c = Math.min(ct, 0.9999) // 防护：验证域内恒 <0.82，钳位不触发
-  return (1 - Math.sqrt(1 - c)) / 2
+/** 轴向诱导因子（FLORIS CosineLossTurbine.axial_induction 口径，含偏航损失） */
+export function axialInduction(ct: number, yawDeg = 0): number {
+  const mis = Math.cos(yawDeg * (Math.PI / 180))
+  if (mis <= 0) return 0
+  const c = Math.min(ct, 0.9999)
+  return (0.5 / mis) * (1 - Math.sqrt(Math.max(0, 1 - c * mis)))
 }

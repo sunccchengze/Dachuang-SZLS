@@ -144,6 +144,8 @@ ok('偏航因子：cos^p 随 |yaw| 递减', yawFactor(0) > yawFactor(10) && yawF
 }
 
 // 12. V&V：对老网页 FLORIS 阵列基准的三指标复算（标定不漂移）
+// [TODO P1-Jensen-Migrate]: 下方 none 与 独立寻优增益 2 项为旧 Jensen 代理口径既有失败（farmModel.ts 仍用简化的顶帽 Jensen 代理）。
+// 待后续控制层/寻优层全面切换到 GCH 内核（L5/L7）后即可收敛全绿。勿顺手放宽容差。
 {
   const W = { u: 8, fromDeg: 0 }
   const Z = new Array(9).fill(0)
