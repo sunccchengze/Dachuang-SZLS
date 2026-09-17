@@ -155,6 +155,24 @@ void main() {
   col += vec3(1.02, 0.50, 0.20) * pow(sunDot, 5.0) * uWarmF * 0.30 * (0.30 + 0.70 * sGate);
   col += vec3(0.95, 0.44, 0.17) * pow(sunDot, 24.0) * uWarmF * 0.22 * (0.30 + 0.70 * sGate);
 
+  // —— 明月（C3）：月轮 + 晕 + 远辉，随夜色渐显（night 门控，昼夜连续不断裂）——
+  vec3 md = moonDirV; // R37b 视差修正后的月盘方向
+  float moonDot = clamp(dot(d, md), 0.0, 1.0);
+  float mDisc = smoothstep(0.99980, 0.99995, moonDot); // 月面（~0.6°）
+  float limb = 0.75 + 0.25 * smoothstep(0.99980, 1.0, moonDot); // 临边昏暗
+  vec3 moonWhite = vec3(0.92, 0.96, 1.0);
+  col += moonWhite * mDisc * limb * 2.4 * night; // 明盘
+  // 月海：两块暗斑（程序写意，不求精确环形山）
+  float maria = smoothstep(0.45, 0.9, fbm(d.xy * 900.0 + md.xy * 130.0));
+  col -= moonWhite * mDisc * maria * 0.35 * night;
+  col += vec3(0.55, 0.70, 0.85) * pow(moonDot, 900.0) * 0.9 * night; // 内晕
+  col += vec3(0.35, 0.52, 0.68) * pow(moonDot, 90.0) * 0.22 * night; // 外晕
+  col += vec3(0.20, 0.32, 0.44) * pow(moonDot, 9.0) * 0.10 * night; // 远辉（月出月落的地平气息）
+
+  // —— R39 · T4：云的绘制次序与日月统一 ——
+  // R38 裁决：旧版「日轮在云之前（云掩日）、月盘在云之后（不掩月）」自相矛盾。
+  // 统一为：日月都先画、云最后画 → **云可遮日月**（物理上云在前，法线朝向无关）；
+  // 夜间云几乎不可见（×uDay），星野/极光/月盘不受影响。
   // —— R36 · 白昼薄卷云（coastal_3d_v2 sky.ts 云层投影的克制版）——
   // 虚拟平面投影 + 双尺度 fbm + 向阳采样 shading（云不是贴片，有受光方向）；
   // 覆盖率低、昼间渐显、夜间几乎不可见（不抢星野/极光/日轮）。
@@ -170,20 +188,6 @@ void main() {
     float hf = smoothstep(0.035, 0.16, h); // 地平线附近淡出，不糊极光带
     col = mix(col, cloudCol, cov * hf * uDay * 0.42);
   }
-
-  // —— 明月（C3）：月轮 + 晕 + 远辉，随夜色渐显（night 门控，昼夜连续不断裂）——
-  vec3 md = moonDirV; // R37b 视差修正后的月盘方向
-  float moonDot = clamp(dot(d, md), 0.0, 1.0);
-  float mDisc = smoothstep(0.99980, 0.99995, moonDot); // 月面（~0.6°）
-  float limb = 0.75 + 0.25 * smoothstep(0.99980, 1.0, moonDot); // 临边昏暗
-  vec3 moonWhite = vec3(0.92, 0.96, 1.0);
-  col += moonWhite * mDisc * limb * 2.4 * night; // 明盘
-  // 月海：两块暗斑（程序写意，不求精确环形山）
-  float maria = smoothstep(0.45, 0.9, fbm(d.xy * 900.0 + md.xy * 130.0));
-  col -= moonWhite * mDisc * maria * 0.35 * night;
-  col += vec3(0.55, 0.70, 0.85) * pow(moonDot, 900.0) * 0.9 * night; // 内晕
-  col += vec3(0.35, 0.52, 0.68) * pow(moonDot, 90.0) * 0.22 * night; // 外晕
-  col += vec3(0.20, 0.32, 0.44) * pow(moonDot, 9.0) * 0.10 * night; // 远辉（月出月落的地平气息）
 
   // —— R36 · 下半球融雾：地平线以下渐变到场景雾色 ——
   // 海面已在 4420m 外全雾（WorldTerrain 远海收边）；天空下半球以同色接住，

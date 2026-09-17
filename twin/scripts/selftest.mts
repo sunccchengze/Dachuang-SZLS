@@ -548,6 +548,52 @@ ok('偏航因子：cos^p 随 |yaw| 递减', yawFactor(0) > yawFactor(10) && yawF
     lrR.includes('sunWarmth') && lrR.includes('warmF'))
 }
 
+// R39 · T4 落地锁（从孤儿分支 a3 采纳并重写的三项：波系同源 / 真天空反射 / 云掩日月次序）
+// ---------------------------------------------------------------
+// 依据：docs/research/round38_残项收口与裁决.md §一（先裁决后合并）；
+//      实现落在主线基线上，不照抄 a3 写法。
+{
+  const wt = readFileSync('src/scene/WorldTerrain.tsx', 'utf8')
+  const vert = wt.slice(wt.indexOf('const VERT'), wt.indexOf('const FRAG'))
+  const frag = wt.slice(wt.indexOf('const FRAG'), wt.indexOf('export default function'))
+
+  // ① 波系同源：VERT 的 Gerstner 与 FRAG 的 swellN 必须逐项对表（波长/陡度/时间系数/相位）
+  const gs = [...vert.matchAll(/gerstner\(p,\s*(\w+),\s*([\d.]+),\s*([\d.]+),\s*uTime \* ([\d.]+)((?:\s*\+\s*[\d.]+)?)\s*,/g)]
+    .map((m) => ({ dir: m[1], steep: m[2], lambda: m[3], tc: m[4], phase: m[5].replace(/\s+/g, '') }))
+  const expect = [
+    { steep: '0.06', lambda: '2400.0', tc: '0.35', phase: '' },
+    { steep: '0.045', lambda: '1500.0', tc: '0.50', phase: '+2.1' },
+  ]
+  const tableOK = gs.length === 2 && gs.every((g, i) =>
+    g.steep === expect[i].steep && g.lambda === expect[i].lambda
+    && g.tc === expect[i].tc && g.phase === expect[i].phase)
+  ok('R39 波系同源：VERT 仍是两条 Gerstner（λ 2400/1500 · 陡度 0.06/0.045 · 时序 0.35/0.50+2.1）',
+    tableOK, JSON.stringify(gs))
+  const need = ['6.28318530718 / 2400.0', '6.28318530718 / 1500.0', '0.06 / k1', '0.045 / k2', 't * 0.35', 't * 0.50 + 2.1']
+  const miss = need.filter((n) => !frag.includes(n))
+  ok('R39 波系同源：FRAG swellN 与 VERT 同方向/同波长/同相位/同幅值（照抄项级对表）',
+    frag.includes('float swellN') && miss.length === 0, miss.join(' '))
+  ok('R39 波系同源：waveHeight = 0.72·swellN·swellEnv + 次网格细节；法线 = 几何法线 + 解析细节',
+    frag.includes('0.72 * swellN(p) * swellEnv()') && frag.includes('vec3 waterNormal(vec3 gN')
+    && frag.includes('normalize(gN + vec3(') && frag.includes('float rippleHeight(vec2 p)'))
+  ok('R39 波系同源：VERT 几何法线同吃 amp 包络（防「水面不动、法线在摇」）',
+    vert.includes('mix(vec3(0.0, 1.0, 0.0), gNorm, clamp(amp, 0.0, 1.0))'))
+
+  // ② 真天空反射：反射色必须来自天幕采样（同源消费 uWarmF/uFogColor/uSunDir/uMoonDir）
+  ok('R39 真天空反射：seaSky() 存在且被 reflect(-V,N) 驱动（反射与视角/日月/色温同源）',
+    wt.includes('vec3 seaSky(vec3 R, float sGate)') && wt.includes('vec3 Rr = reflect(-V, N)')
+    && wt.includes('vec3 skyRef = seaSky(Rr, sGateNow)'))
+  ok('R39 真天空反射：旧「与视角无关的平涂 skyRef」已移除',
+    !wt.includes('vec3 skyRef = mix(vec3(0.014, 0.032, 0.054)'),
+    '平涂反射 = 反射一个天上不存在的颜色（round38 §一 判据）')
+
+  // ③ 云掩日月次序：云必须画在日月之后（云可遮日月），不再自相矛盾
+  const sky = readFileSync('src/scene/SkyAurora.tsx', 'utf8')
+  const sIdx = sky.indexOf('sunDiscCol'), mIdx = sky.indexOf('moonDot ='), cIdx = sky.indexOf('cov = smoothstep')
+  ok('R39 云掩日月次序：日 → 月 → 云（云最后画，可遮日月；夜间云不可见不抢星野）',
+    sIdx > -1 && mIdx > sIdx && cIdx > mIdx, `sun=${sIdx} moon=${mIdx} cloud=${cIdx}`)
+}
+
 // ================================================================
 // G · L4 物理内核（FLORIS 4.6.6 GCH 移植）vs FLORIS 实算 oracle
 // 数据：src/data/oracle/florisGchOracle.ts（生成件，勿手改；

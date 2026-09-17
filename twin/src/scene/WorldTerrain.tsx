@@ -105,6 +105,10 @@ void main() {
   // 法线：海水用大尺度 Gerstner 法线；陆地用真实几何法线（computeVertexNormals），
   // 山体明暗/雪沟/裸岩全靠它 —— 此前陆地近似上向是“盐堆”感的根因（round4 修复）
   vec3 gNorm = normalize(cross(binormal, tangent));
+  // R39 · T4：法线也吃同一个包络。位移乘了 amp（场心收敛 × 浅水阻尼），
+  // 而 tangent/binormal 是在 gerstner 内部按未衰减的陡度累加的 —— 不修则近岸/塔基
+  // 会出现「水面几乎不动、法线却在大幅摇摆」的自相矛盾。按 amp 把法线回归 up。
+  gNorm = normalize(mix(vec3(0.0, 1.0, 0.0), gNorm, clamp(amp, 0.0, 1.0)));
   vec3 n = normalize(mix(normal, gNorm, water));
   vWN = n;
 
@@ -128,6 +132,7 @@ uniform vec3 uSunDir;
 uniform vec3 uFogColor;
 uniform float uFogDensity;
 uniform vec2 uWind; // Step B：泡沫顺风拉丝用风向（uniforms 本就有，FRAG 补声明）
+uniform vec2 uCenter; // R39 · T4：涌浪包络的场心收敛（与 VERT 同式，FRAG 补声明）
 uniform sampler2D uHeightTex; // Step C1：烘焙高度图（512²，uv = xz/9200+0.5）
 uniform vec3 uMoonDir; // Step C3：月光方向（地形月夜漫反射 + 水面月路）
 uniform float uWarmF; // R37 太阳色温（0=白 1=红，仰角连续）：雪冠/岩脊/晨光波光共用
@@ -145,30 +150,58 @@ float fbm(vec2 p){
   return v;
 }
 
-// —— 解析波高：多方向正弦 + 高分形微细节 → 细碎连绵涟漪（贴近原图质感）——
-float waveHeight(vec2 p) {
+// —— R39 · T4「波系同源」：片元解析波高与 VERT 的 Gerstner 【同方向/同波长/同相位/同幅值】——
+// 旧版这里是与顶点几何**毫无关系**的 5 条等幅正弦（λ≈436m/280m/…，方向/相位各自为政）：
+// 泡沫、浪尖、高光全都骑在另一套波上，几何浪峰与着色浪峰错位（round38 §一 判定为真缺陷）。
+// 现在涌浪项由下面两个函数给出，公式逐项镜像 VERT 的 gerstner：
+//   f = k·(dot(dir,p) − c·(t·coef + phase)),  c = √(9.8/k),  a = steepness/k
+// ⚠ 改 VERT 的 gerstner 参数（方向/波长/陡度/时间系数/相位）必须同步改这里 ——
+//   selftest R39 逐项对表（波长/陡度/时间系数/相位四个数都在断言里）。
+float swellN(vec2 p) {
+  vec2 wdir = normalize(uWind + vec2(0.0001, 0.0));
+  vec2 d2 = normalize(vec2(-uWind.y, uWind.x));
   float t = uTime;
-  float h = 0.0;
-  // 大尺度涌（低振幅，平缓）
-  h += sin(dot(p, vec2( 0.0120,  0.0080)) *  1.0 + t * 0.70) * 0.40;
-  h += sin(dot(p, vec2(-0.0077,  0.0062)) *  1.0 + t * 0.90 + 1.7) * 0.32;
-  // 中尺度波（主波纹）——加大振幅形成明显浪头
-  h += sin(dot(p, vec2( 0.0220,  0.0160)) *  1.0 + t * 1.10 + 3.3) * 0.46;
-  h += sin(dot(p, vec2( 0.0180, -0.0140)) *  1.0 + t * 1.35 + 5.1) * 0.38;
-  h += sin(dot(p, vec2(-0.0160,  0.0180)) *  1.0 + t * 1.60 + 7.4) * 0.30;
-  // 细碎噪声涟漪：分形 → 连绵、无重复
+  float k1 = 6.28318530718 / 2400.0;
+  float k2 = 6.28318530718 / 1500.0;
+  float a1 = 0.06 / k1;   // = 22.9m，与 VERT 第 1 条 Gerstner 的 a = steepness/k 同
+  float a2 = 0.045 / k2;  // = 10.7m，同上
+  float s1 = sin(k1 * (dot(wdir, p) - sqrt(9.8 / k1) * (t * 0.35)));
+  float s2 = sin(k2 * (dot(d2,  p) - sqrt(9.8 / k2) * (t * 0.50 + 2.1)));
+  return (a1 * s1 + a2 * s2) / (a1 + a2); // 归一化相位包络 ∈[-1,1]（幅值比=几何的 0.68:0.32）
+}
+// 与 VERT 的 amp 同式（场心收敛 × 浅水阻尼）：几何收的地方，着色浪尖也要跟着收。
+// 用 varying vShore / vWPos（不是参数 p）——包络在米级尺度上是平滑量，与差分点无关。
+float swellEnv() {
+  float dc = length(vWPos.xz - uCenter);
+  return mix(0.5, 1.0, smoothstep(180.0, 2000.0, dc)) * (0.16 + 0.84 * smoothstep(0.0, 260.0, -vShore));
+}
+// 次网格细节：λ≈230m 以下（网格 23m 解析不了这些波，顶点不位移它们），
+// 只进法线/浪尖 —— 沿用 R36 之前就有的这三项 + 分形涟漪，手感不变。
+float rippleHeight(vec2 p) {
+  float t = uTime;
+  float h = sin(dot(p, vec2( 0.0220,  0.0160)) * 1.0 + t * 1.10 + 3.3) * 0.46;
+  h += sin(dot(p, vec2( 0.0180, -0.0140)) * 1.0 + t * 1.35 + 5.1) * 0.38;
+  h += sin(dot(p, vec2(-0.0160,  0.0180)) * 1.0 + t * 1.60 + 7.4) * 0.30;
   h += (fbm(p * 0.06 + uTime * 0.03) - 0.5) * 0.7;
   return h;
 }
-// 解析法线：波高梯度（有限差分）+ 弱分形噪声微细节 → 平滑、细致、无格子
-// R36：微细节幅度 ×fade（随相机距离衰减）——远处高频法线欠采样是波光闪烁的根因
-vec3 waterNormal(vec2 p, float fade) {
+// 解析波高（**着色口径**，与 R36 前的量级刻意保持一致：涌浪 0.72 + 细节 1.14 + 分形），
+// 这样 crest 阈值（smoothstep 0.25/0.85）与泡沫/浪尖的统计口径不变，
+// 变的只是「涌浪项的相位」—— 从与几何无关变成与几何同源。
+float waveHeight(vec2 p) {
+  return 0.72 * swellN(p) * swellEnv() + rippleHeight(p);
+}
+// 水体法线 = 顶点 Gerstner 几何法线（真实涌浪斜率，已吃 amp 包络）
+//          + 次网格细碎波梯度（着色细节，几何不位移）
+// 旧版直接丢弃几何法线、只解析算 5 条正弦 → 浪形与着色脱节（本项要修的根因）。
+vec3 waterNormal(vec3 gN, vec2 p, float fade) {
   float e = 1.0; // 差分步长（米）
-  float hL = waveHeight(p - vec2(e, 0.0));
-  float hR = waveHeight(p + vec2(e, 0.0));
-  float hD = waveHeight(p - vec2(0.0, e));
-  float hU = waveHeight(p + vec2(0.0, e));
-  vec3 n = normalize(vec3(hL - hR, 2.0 * e, hD - hU));
+  float hL = rippleHeight(p - vec2(e, 0.0));
+  float hR = rippleHeight(p + vec2(e, 0.0));
+  float hD = rippleHeight(p - vec2(0.0, e));
+  float hU = rippleHeight(p + vec2(0.0, e));
+  // 0.5 = 与旧式 normalize(vec3(hL−hR, 2e, hD−hU)) 等价的比例（2e=2）——斜率口径不变
+  vec3 n = normalize(gN + vec3((hL - hR) * 0.5, 0.0, (hD - hU) * 0.5));
   // 弱分形微细节：细碎波光、无格子（振幅压低，避免散射成灰雾）
   float nA = fbm(p * 0.05 + uTime * 0.05);
   float nB = fbm(p * 0.11 - uTime * 0.09);
@@ -195,6 +228,48 @@ float terrainShadow(vec3 p, vec3 sunDir) {
   return sh * sh * (3.0 - 2.0 * sh);
 }
 
+// —— R39 · T4「真天空反射」：在反射方向上采样与 SkyAurora **同源**的解析天幕 ——
+// 旧版 skyRef 是「与视角、太阳方位、月相全都无关」的两个常数色（mix(暗, 亮, uDayF)）——
+// 海面反射着一个天上并不存在的颜色（round38 §一 判定为真缺陷）。
+// 这里逐项镜像 SkyAurora 的解析层：冰青渐变 → 地平亮带（太阳方位扇区随 uWarmF 暖化）→
+// 日轮/冷晕/暖晕 → 月盘/月晕 → 下半球融雾（uFogColor）。
+// **不含**：照片星野纹理、极光带、星点、程序云（云影扫海另议，见 docs/11 §四）。
+// ⚠ 改 SkyAurora 的色板必须同步改这里（selftest R39 锁同源：uWarmF/uFogColor/uSunDir 都必须被消费）。
+vec3 seaSky(vec3 R, float sGate) {
+  float h = clamp(R.y, -1.0, 1.0);
+  float night = 1.0 - uDayF;
+  vec3 col = mix(vec3(0.062, 0.175, 0.230), vec3(0.010, 0.042, 0.075), smoothstep(0.0, 0.16, h));
+  col = mix(col, vec3(0.002, 0.008, 0.018), smoothstep(0.12, 0.55, h));
+  vec3 dayCol = mix(vec3(0.086, 0.165, 0.239), vec3(0.290, 0.451, 0.565), smoothstep(0.02, 0.55, h));
+  col = mix(col, dayCol, uDayF * 0.86);
+  // 地平线宽亮带（与 SkyAurora 同式：R37b 的太阳扇区暖化也一并镜像）
+  float band1 = pow(clamp(1.0 - abs(h), 0.0, 1.0), 13.0);
+  float band2 = pow(clamp(1.0 - abs(h), 0.0, 1.0), 5.0);
+  vec2 sdHxz = normalize(uSunDir.xz + vec2(1e-5, 0.0));
+  float azCone = pow(clamp(dot(normalize(R.xz + vec2(1e-5, 0.0)), sdHxz), 0.0, 1.0), 3.0);
+  float wAz = uWarmF * azCone;
+  col += mix(vec3(0.16, 0.44, 0.55) * 1.35, vec3(0.72, 0.26, 0.08) * 0.90, wAz) * band1;
+  col += mix(vec3(0.05, 0.16, 0.22) * 0.55, vec3(0.55, 0.20, 0.07) * 0.55, wAz) * band2;
+  // 左上冷光辉 + 顶部全宽柔光（SkyAurora 的两项解析层，同样只在上半球）
+  float az = atan(R.x, -R.z);
+  float upper = smoothstep(-0.04, 0.10, h);
+  col += vec3(0.55, 0.72, 0.85) * exp(-pow((az + 0.42) * 3.4, 2.0)) * exp(-max(h, 0.0) * 14.0) * upper * 0.14;
+  col += vec3(0.06, 0.17, 0.24) * pow(clamp(1.0 - abs(h), 0.0, 1.0), 3.0) * exp(-max(h, 0.0) * 2.4) * upper * 0.38;
+  // 日轮 + 冷晕 + 暖晕（亮度门 sGate 由调用方按 SkyAurora 同式给出）
+  float sunDot = clamp(dot(R, normalize(uSunDir)), 0.0, 1.0);
+  vec3 sunDiscCol = mix(vec3(0.92, 0.97, 1.0), vec3(1.08, 0.40, 0.15), uWarmF);
+  col += sunDiscCol * pow(sunDot, 1400.0) * 1.35 * (1.0 - 0.28 * uWarmF) * sGate;
+  col += vec3(0.32, 0.46, 0.58) * pow(sunDot, 14.0) * 0.16 * uDayF;
+  col += vec3(1.02, 0.50, 0.20) * pow(sunDot, 5.0) * uWarmF * 0.30 * (0.30 + 0.70 * sGate);
+  // 月盘 + 内晕 + 外晕（夜间月光在海面反射里的分量）
+  float moonDot = clamp(dot(R, normalize(uMoonDir)), 0.0, 1.0);
+  col += vec3(0.92, 0.96, 1.0) * smoothstep(0.99980, 0.99995, moonDot) * 2.4 * night;
+  col += vec3(0.55, 0.70, 0.85) * pow(moonDot, 900.0) * 0.9 * night;
+  col += vec3(0.35, 0.52, 0.68) * pow(moonDot, 90.0) * 0.22 * night;
+  // 下半球融雾：与 SkyAurora / 场景雾同色（远海收边两侧同色，接缝不可见）
+  return mix(col, uFogColor, 1.0 - smoothstep(-0.07, 0.02, h));
+}
+
 void main() {
   float night = 1.0 - uDayF;
   vec3 V = normalize(cameraPosition - vWPos);
@@ -202,8 +277,9 @@ void main() {
   // R36 · 微细节距离衰减（120→1500m 归零）：远处高频法线欠采样 → 波光闪烁
   float rippleFade = 1.0 - smoothstep(120.0, 1500.0, camDist);
 
-  // 法线：海上用「解析程序法线」（平滑、细致、无格子）；陆上退回顶点法线
-  vec3 N = mix(normalize(vWN), waterNormal(vWPos.xz, rippleFade), vWater);
+  // 法线：海上 = 顶点 Gerstner 几何法线（真实涌浪斜率）× 次网格解析细碎波（R39 · T4）；
+  // 陆上退回顶点法线（山体明暗/雪沟/裸岩全靠它）
+  vec3 N = mix(normalize(vWN), waterNormal(normalize(vWN), vWPos.xz, rippleFade), vWater);
   N = normalize(N);
   vec3 Ns = N;
   float ndv = max(dot(N, V), 0.0);
@@ -226,8 +302,15 @@ void main() {
   vec3 shallowCol = mix(vec3(0.024, 0.055, 0.082), vec3(0.150, 0.310, 0.420), uDayF); // 浪尖（低饱和青蓝）
   vec3 waterCol = mix(deepCol, shallowCol, crest * 0.42);
 
-  // 天空反射：低饱和灰青蓝（白天）→ 近黑（夜），权重压低避免整片洗灰
-  vec3 skyRef = mix(vec3(0.014, 0.032, 0.054), vec3(0.150, 0.290, 0.385), uDayF);
+  // 天空反射（R39 · T4 重做）：反射方向上真采一次天幕（与 SkyAurora 同源），
+  // 不再是与视角无关的平涂色。权重维持 R36 口径（新反射色本身比旧平涂更准，
+  // 不需要靠提高权重去"补色"；若观感需要再走 A/B，见 docs/research/round39）。
+  // R 的 y 夹到 ≥0.02：水面反射只取上半球，避免掠射时反射到地平线以下（融雾带）。
+  vec3 Rr = reflect(-V, N);
+  Rr.y = max(Rr.y, 0.02);
+  float sunUpNow = normalize(uSunDir).y;
+  float sGateNow = smoothstep(-0.017, 0.035, sunUpNow); // 与 SkyAurora 同式：日轮亮度门
+  vec3 skyRef = seaSky(Rr, sGateNow);
   waterCol = mix(waterCol, skyRef, clamp(fres, 0.0, 1.0) * (0.045 + 0.07 * uDayF));
 
   // —— R36 · 背光浪尖透射（SSS）：逆光时浪尖微透青绿（coastal_3d_v2 sss 的暗调版）——
