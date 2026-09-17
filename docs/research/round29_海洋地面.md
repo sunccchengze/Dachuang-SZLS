@@ -53,11 +53,16 @@
 
 | 场景 | 文件 | 结论 |
 |---|---|---|
-| 白天俯视（t=12） | `ocean_day_v6.png` | 湛蓝海面 + 涌浪 + 波光 + 远山剪影 |
-| 白天低角度（t≈15.6） | `ocean_lowangle_v3.png` | 海面碎金波光 + 山脉模糊出地平 |
-| 夜间俯视（t=0.2） | `ocean_night_v2.png` | 漆黑如墨，暗潮微光 |
-| 夜间低角度（t=0.2） | `ocean_night_low.png` | 墨色海 + 暗潮涌动 + 远山剪影 |
-| 风机塔基特写 | `ocean_t7_closeup.png` | 塔基贴海良好，无悬浮无吞没 |
+> 文件名口径：本表原写的是迭代过程中的临时名（`*_v2/_v3/_v6`），入库时已按 `r29_ocean_*` 重命名，
+> 下表已改为**仓库实际文件名**（`docs/research/shots/`），可用 `npm run selftest` 的 R38 证据链断言机器校验。
+
+| 场景 | 文件 | 结论 |
+|---|---|---|
+| 白天俯视（t=12） | `r29_ocean_day_hero.png` | 湛蓝海面 + 涌浪 + 波光 + 远山剪影 |
+| 白天低角度（t≈15.6） | `r29_ocean_day_lowangle.png` | 海面碎金波光 + 山脉模糊出地平 |
+| 夜间俯视（t=0.2） | `r29_ocean_night.png` | 漆黑如墨，暗潮微光 |
+| 夜间低角度（t=0.2） | `r29_ocean_night_low.png` | 墨色海 + 暗潮涌动 + 远山剪影 |
+| 风机塔基特写 | `r29_turbine_contact.png` | 塔基贴海良好，无悬浮无吞没 |
 
 工程校验：`npm run build` 0 错误；`npm run lint` 0 警告 0 错误；
 `npm run selftest` 35/35 全通过（含新增「波浪位移不污染贴地基准」检查）。

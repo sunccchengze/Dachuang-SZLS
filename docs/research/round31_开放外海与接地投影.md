@@ -48,10 +48,10 @@
 
 | 场景 | 文件 | 结论 |
 |---|---|---|
-| 高空全景 | `twin/docs/research/shots/r31_new_coast_far.png` | 一条蜿蜒海岸线 + 黄沙带 + 绿色森林台地 + 远山剪影，海陆对比显著；不再是封闭盆/湖 |
-| 白天 hero | `twin/docs/research/shots/r31_new_hero.png` | 开放洋面 + 风机全在海中央 + 升压站离岸；海面细碎波光，无格子 |
-| 风机接地投影(15.5 时) | `twin/docs/research/shots/r31_inline_shadow_wide3.png` | 塔影带沿背离太阳方向延伸、接地盘锚定塔基，形态正确 |
-| 海面改善 | `twin/docs/research/shots/r31_sea_improved.png` | 泡沫云斑明显减少，海面更平顺像水，不再是云海/冰面 |
+| 高空全景 | `docs/research/shots/r31_new_coast_far.png` | 一条蜿蜒海岸线 + 黄沙带 + 绿色森林台地 + 远山剪影，海陆对比显著；不再是封闭盆/湖 |
+| 白天 hero | `docs/research/shots/r31_new_hero.png` | 开放洋面 + 风机全在海中央 + 升压站离岸；海面细碎波光，无格子 |
+| 风机接地投影(15.5 时) | `docs/research/shots/r31_inline_shadow_wide3.png` | 塔影带沿背离太阳方向延伸、接地盘锚定塔基，形态正确 |
+| 海面改善 | `docs/research/shots/r31_sea_improved.png` | 泡沫云斑明显减少，海面更平顺像水，不再是云海/冰面 |
 
 工程校验：`npm run build` 0 错误；`npm run lint` 0 警告 0 错误；`npm run selftest` 37/37 通过（新增「开放外海：南/东相邻侧 2300m 处保持海床 ≤12m」断言）。
 
