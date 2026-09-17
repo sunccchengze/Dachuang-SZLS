@@ -224,7 +224,11 @@ export function shoreSigned(x: number, z: number): number {
  *  · 陆侧深处（sN>0 且 sW>0，仅西北角内侧）：最近岸线在拐角 → hypot(sN, sW)
  *  · 峡湾水道：carve 把陆地挖成海 → 强制负值（≈半渠宽 110m 封顶）
  *  · 离岸岛/海蚀柱不在此场（其水线泡沫由 vLand 薄带自动环绕，见 WorldTerrain）
- * 消费：WorldTerrain 顶点浅水阻尼 + 片元浅水着色/岸线碎浪带；selftest R36 断言。
+ * ⚠ R39 合并口径（2026-09-17）：本函数**未被运行时采用**。主线同一问题的实现是上面的
+ * `shoreSigned()`——北/西岸 + 岛/海岬/海蚀柱的 SDF 并集（严格更全，含离岸岛）；
+ * 本函数只算两条岸（其作者自己在 docs/11 §四 声明离岸岛不在此场）。
+ * 按 docs/research/round38_残项收口与裁决.md §一 的裁决「否决」，仅作对照实现保留，
+ * 无调用方、不参与渲染、不进 selftest；若后续确认无用可直接删除（历史在 595daf2）。
  */
 export function coastSignedDist(x: number, z: number): number {
   const rw = rampAt(x, z)
