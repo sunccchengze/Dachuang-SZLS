@@ -19,6 +19,20 @@ import { TURBINE_SPEC } from '../src/scene/turbine/geometry.ts'
 import {
   CAM_HOTKEYS, diagnoseHotkey, ORBIT_MIN_DISTANCE, ORBIT_MAX_DISTANCE, ORBIT_MAX_POLAR_DEG,
 } from '../src/scene/hotkeys.ts'
+// R40 新增模块（T9 声场 / T8 草地分块 / P2 偏航执行器）
+import {
+  swellEnvAt, swellHeightAt, swellPeriodS, surfGain, oceanLandGate, oceanSwellGain,
+  bladePassHz, driveTrainHz, turbineDistanceGain, downwindFactor, selectTurbines,
+  acousticFrame, SWELL_A1, SWELL_A2,
+} from '../src/audio/audioModel.ts'
+import {
+  bladesPerTile, buildTileBlades, drawnFrac, tilesInView, tileAt, tileFromIndex,
+  GRASS_TARGET_TOTAL, GRASS_TILE_COUNT,
+} from '../src/scene/grassTile.ts'
+import {
+  createYawActuator, stepYaw, yawEtaFrom, createYawBank, stepYawBank, snapYawBank,
+  bankActual, YAW_RATE_DPS, YAW_DEADBAND_DEG, YAW_STOP_BAND_DEG,
+} from '../src/core/control/yawDrive.ts'
 
 let pass = 0
 let fail = 0
@@ -735,6 +749,144 @@ console.log('== G · L4 GCH 内核 V&V（oracle：FLORIS 4.6.6 实算）==')
   }
   ok('R38 证据链：docs/**.md 引用的截图都能找到对应文件（无漏拍/无断链）',
     missing.length === 0, `${missing.length} 处：${missing.slice(0, 6).join(' | ')}`)
+}
+
+
+// ================================================================
+// R40 · T9 声场模型（audioModel 纯函数层：与渲染同源 + 增益映射单调性）
+// ================================================================
+{
+  // 同源：涌浪包络在「场心 + 远岸」两口子上与 WorldTerrain 的 amp 式逐项对表
+  const envCenter = swellEnvAt(FARM_CENTER.x, FARM_CENTER.z, -9999)
+  const envFarShore = swellEnvAt(FARM_CENTER.x, FARM_CENTER.z, -130) // smoothstep(0,260,130)=0.5
+  ok('R40 声场同源：场心包络 = 0.5×浅水阻尼(=1) = 0.5（与 VERT amp 同式）', close(envCenter, 0.5, 1e-9))
+  ok('R40 声场同源：岸距 -130m 包络 = 0.5×(0.16+0.84×0.5)（浅水阻尼半程）',
+    close(envFarShore, 0.5 * (0.16 + 0.84 * 0.5), 1e-9))
+  // 波高有界 + 与视觉同周期
+  let hMax = 0
+  for (let t = 0; t < swellPeriodS() * 3; t += 0.37) {
+    hMax = Math.max(hMax, swellHeightAt(300, 900, t, 4, -800))
+  }
+  ok('R40 声场：有效波高 ≤ 两 Gerstner 幅值和（22.9+10.7m）', hMax <= SWELL_A1 + SWELL_A2 + 1e-9)
+  // 主导涌浪（λ2400，幅值占 0.68）的节奏 = P；第二条（λ1500）周期不可通约，
+  // 故 h(t+P) 与 h(t) 的差被第二分量幅值界定（而不是逐点相等）
+  const P = swellPeriodS()
+  const env = swellEnvAt(300, 900, -800)
+  const h1 = swellHeightAt(300, 900, 12.5, 4, -800)
+  const h2 = swellHeightAt(300, 900, 12.5 + P, 4, -800)
+  ok('R40 声场：涌浪主节奏与视觉同源（|h(t+P)−h(t)| ≤ 2·A2·包络，P=λ1/(c1·0.35)）',
+    Math.abs(h1 - h2) <= 2 * SWELL_A2 * env + 1e-9, `P=${P.toFixed(1)}s Δ=${Math.abs(h1 - h2).toFixed(2)}`)
+  // 拍岸碎浪：海侧远海无声 / 贴岸最大 / 深入内陆渐隐
+  ok('R40 声场：离岸 2km 碎浪增益 = 0', surfGain(-2000, 6) === 0)
+  ok('R40 声场：贴岸 30m 碎浪增益 > 离岸 300m', surfGain(-30, 6) > surfGain(-300, 6))
+  ok('R40 声场：深入内陆 2km 碎浪增益 = 0（沙滩听得见、村里听不见）', surfGain(2000, 6) === 0)
+  ok('R40 声场：陆地门单调（深海 1 → 内陆 0.45）',
+    oceanLandGate(-1000) === 1 && close(oceanLandGate(3000), 0.45, 1e-9))
+  ok('R40 声场：涌浪底噪随波高单调不减', oceanSwellGain(1) <= oceanSwellGain(6) && oceanSwellGain(6) <= oceanSwellGain(14))
+  // 风机声学：叶片通过频率 / 传动链基频 / 距离衰减 / 下风向
+  ok('R40 声场：叶片通过频率 = 3×转频（6.9rpm→0.345Hz，12.1rpm→0.605Hz）',
+    close(bladePassHz(6.9), 0.345, 1e-9) && close(bladePassHz(12.1), 0.605, 1e-9))
+  ok('R40 声场：传动链基频 = 转频×97（12.1rpm→19.56Hz 齿轮箱侧）', close(driveTrainHz(12.1), (12.1 / 60) * 97, 1e-9))
+  ok('R40 声场：距离衰减单调递减且 1km 处 < 0.2',
+    turbineDistanceGain(50) > turbineDistanceGain(300) && turbineDistanceGain(300) > turbineDistanceGain(1000)
+    && turbineDistanceGain(1000) < 0.2)
+  ok('R40 声场：下风向听者增益 > 上风向（IEC 61400-11 常识口径）',
+    downwindFactor(0, 500, 0, 0, 0) > downwindFactor(0, -500, 0, 0, 0))
+  // 声部裁决：近塔取本机、远场归零（≤3 声部）
+  const units = FARM.map((f) => ({ x: f.x, z: f.z, rpm: 11, uEff: 8 }))
+  const near = selectTurbines(units, FARM[6].x + 60, 20, FARM[6].z, 0, 3)
+  ok('R40 声场：T07 塔旁 60m 的第一声部就是 T07', near.length > 0 && near[0].idx === 6, `got ${near[0]?.idx}`)
+  const far = selectTurbines(units, 4200, 300, 4200, 0, 3)
+  ok('R40 声场：4km 外全场无声部（融进底噪，不占 PannerNode）', far.length === 0)
+  ok('R40 声场：声部数上限 3', selectTurbines(units, FARM_CENTER.x, 90, FARM_CENTER.z, 0, 3).length <= 3)
+  // 整帧求值：海上 vs 内陆
+  const sea = acousticFrame({ lx: 300, ly: 12, lz: 900, fx: 0, fy: 0, fz: -1, ux: 0, uy: 1, uz: 0, tHours: 9, t: 40, windSpeed: 9, windFromDeg: 4, units })
+  const inland = acousticFrame({ lx: -2600, ly: 300, lz: -3000, fx: 0, fy: 0, fz: 1, ux: 0, uy: 1, uz: 0, tHours: 9, t: 40, windSpeed: 9, windFromDeg: 4, units })
+  ok('R40 声场：海上涌浪底噪 > 0 且内陆碎浪 = 0', sea.swellGain > 0 && inland.surfGain === 0)
+}
+
+// ================================================================
+// R40 · T8 草地分块（grassTile：确定性 / 海洋零株 / 贴地真值 / 视距裁决）
+// ================================================================
+{
+  const seaTi = tileAt(FARM_CENTER.x, FARM_CENTER.z)
+  ok('R40 草地：场心（纯海）瓦片零株、零地形求值', bladesPerTile(seaTi) === 0 && buildTileBlades(seaTi, bladesPerTile(seaTi)).length === 0)
+  const landTi = 58
+  const b1 = buildTileBlades(landTi, 600)
+  const b2 = buildTileBlades(landTi, 600)
+  ok('R40 草地：同瓦片同种子两次落位逐株一致（可复现，D2 红线）', JSON.stringify(b1) === JSON.stringify(b2) && b1.length === 600)
+  const t58 = tileFromIndex(landTi)
+  let inBounds = true
+  let maxDy = 0
+  for (const bl of b1) {
+    if (Math.abs(bl.x - t58.cx) > 256 + 6 || Math.abs(bl.z - t58.cz) > 256 + 6) inBounds = false
+    maxDy = Math.max(maxDy, Math.abs(bl.y + 0.15 - terrainSurfaceY(bl.x, bl.z)))
+  }
+  ok('R40 草地：落株不越瓦片边界（丛半径羽化 ≤6m）', inBounds)
+  ok('R40 草地：丛级贴地平面与 terrainSurfaceY 真值偏差 ≤0.35m', maxDy <= 0.35, `maxΔy=${maxDy.toFixed(3)}m`)
+  let total = 0
+  for (let ti = 0; ti < GRASS_TILE_COUNT; ti++) total += bladesPerTile(ti)
+  ok('R40 草地：全域满密度株数 ≈ 目标（按 biome 权重摊派，不超发 >2%）',
+    total > GRASS_TARGET_TOTAL * 0.8 && total <= GRASS_TARGET_TOTAL * 1.02, `total=${total}`)
+  ok('R40 草地：视距密度截断单调不增且远端不为零',
+    drawnFrac(0) >= drawnFrac(300) && drawnFrac(300) >= drawnFrac(600)
+    && drawnFrac(600) >= drawnFrac(1200) && drawnFrac(1200) >= drawnFrac(3000) && drawnFrac(3000) > 0)
+  const seaView = tilesInView(FARM_CENTER.x, FARM_CENTER.z, 1600)
+  const landView = tilesInView(-800, -2600, 1600)
+  ok('R40 草地：陆侧机位视距环瓦片数 > 海上机位（海瓦片不进环）', landView.length > seaView.length, `sea=${seaView.length} land=${landView.length}`)
+  // 排序：到瓦片 AABB 的距离不递减
+  let sorted = true
+  const distOf = (ti: number, cx: number, cz: number) => {
+    const t = tileFromIndex(ti)
+    return Math.hypot(Math.max(Math.abs(cx - t.cx) - 256, 0), Math.max(Math.abs(cz - t.cz) - 256, 0))
+  }
+  for (let i = 1; i < landView.length; i++) if (distOf(landView[i], -800, -2600) < distOf(landView[i - 1], -800, -2600) - 1e-9) sorted = false
+  ok('R40 草地：视距环按「相机→瓦片最近距离」升序（近的先建先上屏）', sorted)
+}
+
+// ================================================================
+// R40 · P2 偏航执行器（死区 / 速率限制 / 滞环 / 到位）
+// ================================================================
+{
+  // 死区：±5° 内电机不启停
+  let st = createYawActuator(0)
+  const inBand = YAW_DEADBAND_DEG - 1
+  for (let i = 0; i < 600; i++) st = stepYaw(st, inBand, 0.1)
+  ok(`P2 执行器：指令 ${inBand}°（死区内）60s 后实际仍 0°、零起动`, st.actual === 0 && st.cycles === 0 && !st.slewing)
+  //  creeping：死区内多次小改指令也不动
+  st = createYawActuator(0)
+  for (const c of [2, 4, 3, 4.5]) for (let i = 0; i < 100; i++) st = stepYaw(st, c, 0.1)
+  ok('P2 执行器：死区内连续小改指令（2/4/3/4.5°）不产生动作', st.actual === 0 && st.cycles === 0)
+  // 速率限制 + 到位
+  st = createYawActuator(0)
+  let maxRate = 0
+  let t = 0
+  while (t < 200 && (Math.abs(st.actual - 30) > YAW_STOP_BAND_DEG || st.slewing)) {
+    st = stepYaw(st, 30, 0.1)
+    maxRate = Math.max(maxRate, Math.abs(st.rate))
+    t += 0.1
+  }
+  ok('P2 执行器：偏航速率从不超 0.3°/s（NREL 5MW 口径）', maxRate <= YAW_RATE_DPS + 1e-9, `max=${maxRate.toFixed(4)}`)
+  ok('P2 执行器：0→30° 在 85~130s 内到位并抱闸（≈100s + 加减速）',
+    t > 85 && t < 130 && !st.slewing && Math.abs(st.actual - 30) <= YAW_STOP_BAND_DEG, `t=${t.toFixed(1)}s`)
+  ok('P2 执行器：全程恰好一次起动（无 hunting）', st.cycles === 1)
+  // 滞环：指令在起动阈值边抖动不产生连续点动
+  st = createYawActuator(0)
+  for (let i = 0; i < 3000; i++) st = stepYaw(st, i % 2 ? 5.3 : 4.7, 0.1)
+  ok('P2 执行器：指令在 4.7/5.3° 间抖动 300s，起动次数 ≤2（滞环防点动）', st.cycles <= 2, `cycles=${st.cycles}`)
+  // 到位倒计时口径
+  ok('P2 执行器：yawEtaFrom(30°,0°) = 30/0.3 + 1.6τ ≈ 101.9s', close(yawEtaFrom(30, 0), 30 / YAW_RATE_DPS + 1.2 * 1.6, 1e-9))
+  ok('P2 执行器：死区内 eta = 0（设计上不动，不显示倒计时）', yawEtaFrom(inBand, 0) === 0)
+  // 整组：步进 + 量化 + QA 瞬移
+  const bank = createYawBank(9, new Array(9).fill(0))
+  stepYawBank(bank, [30, 0, 0, 0, 0, 0, 0, 0, 0], 0.1)
+  const act = bankActual(bank)
+  ok('P2 执行器：bankActual 量化到 0.5°（缓存键口径）', act.every((v) => Math.abs(v * 2 - Math.round(v * 2)) < 1e-9))
+  snapYawBank(bank, [12.34, -7, 0, 0, 0, 0, 0, 0, 0])
+  ok('P2 执行器：snapYawBank（QA 取证）瞬移到指令且量程钳制生效',
+    close(bank.states[0].actual, 12.34, 1e-9) && close(bank.states[1].actual, -7, 1e-9))
+  stepYawBank(bank, [999, 0, 0, 0, 0, 0, 0, 0, 0], 0.1)
+  ok('P2 执行器：指令量程钳制 ±30°（与滑杆/store 同一约束）', close(bank.states[0].cmd, 30, 1e-9))
 }
 
 console.log(`\n结果: ${pass} 通过 / ${fail} 失败`)

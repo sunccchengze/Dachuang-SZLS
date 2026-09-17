@@ -39,13 +39,18 @@ const r2 = await page.evaluate(async () => {
   const { useSim: S, farmFrameNow } = window.__aeolus
   S.setState({ targetMW: 45, tHours: 15 })
   for (let i = 0; i < 9; i++) S.getState().setUnitYaw(i, 25 - (i % 3) * 12)
+  // P2：偏航执行器有 0.3°/s 速率限制 + ±5° 死区 —— 稳态取证用 snapYaw 瞬移到指令角
+  window.__aeolus.snapYaw()
   await new Promise((r) => setTimeout(r, 600))
   const fr = farmFrameNow()
   return { total: +fr.totalMW.toFixed(2), yaw: fr.units.map((u) => u.yawDeg).join('|'),
     wake: +fr.wakeLossPct.toFixed(1), prec: +fr.yawPrecPct.toFixed(1) }
 })
 console.log('BEFORE_OPT', JSON.stringify(r2))
-await page.evaluate(() => window.__aeolus.useSim.getState().runOptimize())
+await page.evaluate(() => {
+  window.__aeolus.useSim.getState().runOptimize()
+  window.__aeolus.snapYaw() // 同上：让「寻优后」截图落在稳态而不是执行器过渡态
+})
 await sleep(2600)
 const r3 = await page.evaluate(() => {
   const { useSim: S, farmFrameNow } = window.__aeolus

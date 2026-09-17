@@ -681,14 +681,18 @@ export default function HoloTurbine({ idx, x, z, y, servo }: {
       if (shadowTower.current) shadowTower.current.visible = false
       shadowBlades.forEach((b) => { if (b.current) b.current.visible = false })
     }
-    // 偏航：机头基向朝北（迎风，A4 修正）；正偏航 = 方位向东
+    // 偏航：机头基向朝北（迎风，A4 修正）；正偏航 = 方位向东。
+    // P2：u.yawDeg 现在由【偏航执行器实际角】派生（0.3°/s 速率限制 + ±5° 死区，
+    // 见 core/control/yawDrive.ts），本身就是平滑量 —— 旧的 dt×3.5 一阶插值
+    // （≈0.29s 走完全程）等于给真实执行器再套一层「假快」，这里改为直接对齐，
+    // 只留极短的视觉滤波吃掉 0.5° 量化台阶。
     if (root.current) {
       const target = Math.PI - D2R(u.yawDeg)
       const cur = root.current.rotation.y
       let d = target - (cur % (Math.PI * 2))
       if (d > Math.PI) d -= Math.PI * 2
       if (d < -Math.PI) d += Math.PI * 2
-      root.current.rotation.y = cur + d * Math.min(1, dt * 3.5)
+      root.current.rotation.y = cur + d * Math.min(1, dt * 12)
     }
     // 状态环：告警红（呼吸）/ 限功率幽蓝 / 正常纯白
     if (ringMat.current) {

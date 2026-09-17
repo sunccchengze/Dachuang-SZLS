@@ -182,7 +182,9 @@ export default function AirflowField() {
     for (let j = 0; j < NX; j++) {
       x9[j] = FARM[j].x
       z9[j] = FARM[j].z
-      yawErr9[j] = s.unitYaw[j] ?? 0
+      // P2：尾流偏折读【实际偏航】（执行器输出），与 farmSim/HUD/机头朝向同源 ——
+      // 指令与实际之间的分钟级滞后，画面上看得见（烟羽跟着机头慢慢摆过去）。
+      yawErr9[j] = s.actYaw[j] ?? 0
     }
 
     const g = streaks.geometry

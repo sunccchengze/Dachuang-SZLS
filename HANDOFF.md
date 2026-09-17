@@ -75,7 +75,7 @@ npm run perftier                         # 三档画质单帧计数 + 帧时长�
 > `docs/08`（P0/P1 收口）与 R29–R37 场景重构中解决，别再照着它找问题；**"职责"列仍然有效**。
 > R29 之后的新增/重写：`scene/WorldTerrain.tsx`（地形+海洋双层自定义着色器，R36 岸距场/碎浪/swash，R37 色温消费）、
 > `scene/SkyAurora.tsx`（程序星野+极光+白昼卷云+日月视差修正）、`scene/treeField.tsx`（实例化远岸森林，新建）、
-> `scene/hotkeys.ts`（9 机位取景真值源 + 约束 + 诊断，新建）、`scene/grassField.tsx`（草地，**仍未挂载**）、
+> `scene/hotkeys.ts`（9 机位取景真值源 + 约束 + 诊断，新建）、`scene/grassField.tsx`（草地，**R40 校正 2026-09-17：已挂载**，见 docs/research/round40）、
 > `data/farmSim.ts`（唯一真值源 + `dayNight`/`sunWarmth`）、`data/turbinePhysics.ts`（FLORIS nrel_5MW 表 + Jensen）、
 > `data/telemetry.ts`（接入契约 Demo/Ws）、`data/debug.ts`（`?debug` 门控）。
 

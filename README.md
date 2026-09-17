@@ -20,21 +20,22 @@
 - wrangler 4.125.0 可用；npm 核验：n8ao 2.0.1、@takram/three-atmosphere 0.19.1、@gltf-transform/cli 4.4.2、camera-controls 3.1.2、echarts 6.1.0、uplot 1.6.32、maath 0.10.8、gsap 3.15.0
 - Cloudflare Pages 硬约束登记：单文件 ≤25MiB、20,000 文件、带宽免费；Workers Static Assets 为官方新推荐（迁移零成本预留）
 
-## 🚦 当前状态（2026-09-13 实测，R38 收口轮）
+## 🚦 当前状态（2026-09-17 实测，R40 声场/草地/执行器轮）
 **v3 演示平台已交付并持续细化**：`twin/`（AEOLUS TWIN）。docs/07 评审 + docs/08 合并清单全部 P0/P1 修复并实测验收，
-场景自 R29 起已推进到 R37（海洋/海岸/天空/色温）。本轮（2026-09-13）在 `arena/01a099f2-dachuang-szls` 复测的**权威数字**：
+场景自 R29 起已推进到 R40（海洋/海岸/天空/色温/声场/草地/偏航执行器）。本轮（2026-09-17）在 `arena/01a0ae5c-dachuang-szls` 复测的**权威数字**
+（过程与根因见 `docs/research/round40_声场真实化_草地挂载_偏航执行器.md`）：
 
 | 指标 | 实测值 | 测法 |
 |---|---|---|
-| `npm run selftest` | **84 通过 / 0 失败** | Node 22 原生类型剥离，无浏览器依赖 |
+| `npm run selftest` | **143 通过 / 0 失败** | Node 22 原生类型剥离，无浏览器依赖（R40 新增声场/草地/执行器 36 断言） |
 | `npx tsc -b --noEmit` | **0 错误** | — |
 | `npm run lint` | **0 warnings / 0 errors**（52 files） | oxlint 1.79 |
 | `npm run build` | **✓ 1.36s** | Vite 8 + rolldown |
-| 渲染计数（`?q=high&t=15&cam=60,22,990`） | **250 draw calls / 636,718 tris / 47,384 lines** | `npm run perftier`（`window.__aeolus_stats()` 单帧手动计数） |
-| 画质分档 | high 250c/636,718t · medium 250c/562,318t · low 222c/417,538t | 同上，三档同参 |
+| 渲染计数（`?q=high&t=15&cam=60,22,990`） | **267 draw calls / 642,556 tris / 48,880 lines** | `npm run perftier`（`window.__aeolus_stats()` 单帧手动计数） |
+| 画质分档 | high 267c/642,556t · medium 264c/567,064t · low 231c/440,060t（与 R39 基线同探针实测**完全一致**：草地 low 档零绘制） | 同上，三档同参 |
 | 产物体积 | JS gzip 合计 **468 kB**（three 单包 384 kB + 业务 58 kB + floris3d 26 kB）· CSS 162 kB | `vite build` reporter |
 
-> 旧文档里反复出现的「22 断言 / 35 draw calls」是 2026-08-28 v3 交付轮的口径，**已作废**，以本表为准。
+> 旧文档里反复出现的「22 断言 / 35 draw calls / 84 断言 / 250 draw calls」是 2026-08-28 v3 交付轮与 R38 轮的口径，**已作废**，以本表为准。
 > **一条命令跑齐四条闸门**：`cd twin && npm run verify`（lint + selftest + tsc/build）。
 > CI：`ci/qa-gates.yml` 已备好但**尚未生效**——本仓 GitHub App 无 `workflows` 权限，需人执行
 > `mkdir -p .github/workflows && git mv ci/qa-gates.yml .github/workflows/ && git push` 启用（见该文件头注释）。
