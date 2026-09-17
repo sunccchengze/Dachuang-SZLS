@@ -548,5 +548,99 @@ ok('偏航因子：cos^p 随 |yaw| 递减', yawFactor(0) > yawFactor(10) && yawF
     lrR.includes('sunWarmth') && lrR.includes('warmF'))
 }
 
+// ================================================================
+// G · L4 物理内核（FLORIS 4.6.6 GCH 移植）vs FLORIS 实算 oracle
+// 数据：src/data/oracle/florisGchOracle.ts（生成件，勿手改；
+//   生成器 docs/research/scripts/generate_floris_gch_oracle.py，
+//   FlorisModel('defaults')=GCH，TI=0.06，shear=0.12@90m）
+// 容差口径：TS 为行级移植（float64），容差设宽 2 个数量级以上，
+//   任何结构性偏差都会越线。
+// ================================================================
+import { ORACLE } from '../src/data/oracle/florisGchOracle.ts'
+import { evaluateFarmScene } from '../src/core/physics/evalFarm.ts'
+
+console.log('== G · L4 GCH 内核 V&V（oracle：FLORIS 4.6.6 实算）==')
+
+// G1 功率链（单机：剪切廓线 3×3 网格 + cubic-mean + 速度域修正 + 表插值）
+{
+  let maxD = 0, atU = 0
+  for (const c of ORACLE.powerCurve) {
+    const r = evaluateFarmScene({ x: [0], z: [0] }, { uInf: c.u, fromDeg: 270, ti: 0.06 }, [0])
+    const d = Math.abs(r.totalKw - c.kW)
+    if (d > maxD) { maxD = d; atU = c.u }
+  }
+  ok('G1 功率曲线 47 点：|ΔP| ≤ 0.05 kW（剪切网格+cubic-mean+表口径，6→731.0 锚点）',
+    maxD <= 0.05, `maxΔ=${maxD.toExponential(2)} kW @u=${atU}`)
+  const c0 = ORACLE.powerCurve[8] // u=7 m/s
+  const r0 = evaluateFarmScene({ x: [0], z: [0] }, { uInf: c0.u, fromDeg: 270, ti: 0.06 }, [0])
+  ok('G1 uEff 链（立方平均风速）|Δ| ≤ 0.005 m/s',
+    Math.abs(r0.turbines[0].uEff - c0.uEff) <= 0.005,
+    `got=${r0.turbines[0].uEff} want=${c0.uEff}`)
+  ok('G1 Ct 表链 |Δ| ≤ 0.002',
+    Math.abs(r0.turbines[0].ct - c0.Ct) <= 0.002,
+    `got=${r0.turbines[0].ct} want=${c0.Ct}`)
+}
+
+// G2 双机 5D（13 偏航：尾流+偏折+二次导向+横向速度+WAT 全链路）
+{
+  const sc = { x: [0, 632], z: [0, 0] } // FLORIS [0,0]→[632,0]，wd=270（流向+x）
+  let mUp = 0, mDn = 0, mU = 0, mCt = 0, mTi = 0
+  for (const c of ORACLE.pair8ms) {
+    const r = evaluateFarmScene(sc, { uInf: 8, fromDeg: 270, ti: 0.06 }, [c.yaw, 0])
+    mUp = Math.max(mUp, Math.abs(r.turbines[0].powerKw - c.pUpKw))
+    mDn = Math.max(mDn, Math.abs(r.turbines[1].powerKw - c.pDnKw))
+    mU = Math.max(mU, Math.abs(r.turbines[1].uEff - c.uEffDn))
+    mCt = Math.max(mCt, Math.abs(r.turbines[1].ct - c.ctDn))
+    mTi = Math.max(mTi, Math.abs(r.turbines[1].ti - c.tiDn))
+  }
+  ok('G2 双机 13 偏航：上游 |ΔP| ≤ 0.05 kW', mUp <= 0.05, `maxΔ=${mUp.toExponential(2)} kW`)
+  ok('G2 双机 13 偏航：下游 |ΔP| ≤ 0.5 kW（GCH 全链路）', mDn <= 0.5, `maxΔ=${mDn.toFixed(3)} kW`)
+  ok('G2 下游 uEff |Δ| ≤ 0.005 m/s', mU <= 0.005, `maxΔ=${mU.toFixed(5)} m/s`)
+  ok('G2 下游 Ct |Δ| ≤ 0.002', mCt <= 0.002, `maxΔ=${mCt.toFixed(5)}`)
+  ok('G2 下游 TI（crespo WAT+偏航恢复）|Δ| ≤ 0.002', mTi <= 0.002, `maxΔ=${mTi.toFixed(5)}`)
+}
+
+// G3 九机阵列（规范 3×3@632m 场景几何，北来风）
+{
+  const sc = { x: FARM.map((f) => f.x), z: FARM.map((f) => f.z) }
+  const none = ORACLE.array.none
+  const r0 = evaluateFarmScene(sc, { uInf: 8, fromDeg: 0, ti: 0.06 }, new Array(9).fill(0))
+  const mNone = Math.max(
+    Math.abs(r0.totalKw - none.totalKw),
+    ...r0.turbines.map((t, i) => Math.abs(t.powerKw - none.pKw[i])),
+  )
+  ok('G3 阵列 none：总/逐机 |ΔP| ≤ 0.5 kW（总 ~8108 kW，含 WAT 跨 3 排）',
+    mNone <= 0.5, `maxΔ=${mNone.toFixed(3)} kW`)
+  const mNoneU = Math.max(...r0.turbines.map((t, i) => Math.abs(t.uEff - none.uEff[i])))
+  ok('G3 阵列 none：逐机 uEff |Δ| ≤ 0.005 m/s', mNoneU <= 0.005, `maxΔ=${mNoneU.toFixed(5)}`)
+  const mNoneTi = Math.max(...r0.turbines.map((t, i) => Math.abs(t.ti - none.ti[i])))
+  ok('G3 阵列 none：逐机 TI |Δ| ≤ 0.003', mNoneTi <= 0.003, `maxΔ=${mNoneTi.toFixed(5)}`)
+  let mUni = 0
+  for (const c of ORACLE.array.unifiedTotal) {
+    const r = evaluateFarmScene(sc, { uInf: 8, fromDeg: 0, ti: 0.06 }, new Array(9).fill(c.yaw))
+    mUni = Math.max(mUni, Math.abs(r.totalKw - c.totalKw))
+  }
+  ok('G3 阵列 统一偏航 13 档：总 |ΔP| ≤ 1 kW（含 +30°=9060.12 钦定工况）',
+    mUni <= 1, `maxΔ=${mUni.toFixed(3)} kW`)
+  let mRow = 0
+  for (const c of ORACLE.array.row0Scan) {
+    const yaw = new Array(9).fill(0)
+    for (let i = 0; i < 3; i++) yaw[i] = c.yaw
+    const r = evaluateFarmScene(sc, { uInf: 8, fromDeg: 0, ti: 0.06 }, yaw)
+    mRow = Math.max(mRow, Math.abs(r.totalKw - c.totalKw))
+  }
+  ok('G3 阵列 上游排扫描 13 档：总 |ΔP| ≤ 1 kW', mRow <= 1, `maxΔ=${mRow.toFixed(3)} kW`)
+  let mCfg = 0
+  for (const [name, c] of Object.entries(ORACLE.array.configs)) {
+    const r = evaluateFarmScene(sc, { uInf: 8, fromDeg: 0, ti: 0.06 }, [...c.yaw])
+    mCfg = Math.max(mCfg, ...r.turbines.map((t, i) => Math.abs(t.powerKw - c.pKw[i])))
+    void name
+  }
+  ok('G3 阵列 多行配置 5 组：逐机 |ΔP| ≤ 1 kW（含 [30,20,0] 贪心族）', mCfg <= 1, `maxΔ=${mCfg.toFixed(3)} kW`)
+}
+
+// G4/G5（横偏质心 + 横截面）待 gch.ts 的 sampleCrossPlane 导出后启用 ——
+// 设计见 docs/research/round38 交接文档 §5（需独立求值网格，不可复用 3×3 转子网格）。
+
 console.log(`\n结果: ${pass} 通过 / ${fail} 失败`)
 process.exit(fail ? 1 : 0)

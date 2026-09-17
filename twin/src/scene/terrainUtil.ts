@@ -410,12 +410,14 @@ export const FARM: FarmUnit[] = (() => {
   let k = 0
   for (let r = 0; r < 3; r++) {
     for (let c = 0; c < 3; c++) {
-      const jx = (((k * 53) % 5) - 2) * 10
-      const jz = (((k * 37) % 5) - 2) * 8
+      // P0-1（2026-09-16）：移除 ±20m 位置抖动 —— 场景几何与 FLORIS 规范布局
+      // （3×3 @ 632m）逐位一致，物理真值与场景同源（圆18"靶值同源化"精神）。
+      // 实测抖动使 T04 部分逃逸 T01 尾流（439→717 kW，全场 +6.4%），
+      // 与全部 FLORIS 实算表（+24.04% 等）失配；视觉影响 ≤20m/632m，机位不可察。
       arr.push({
         id: `T0${k + 1}`,
-        x: colsX[c] + jx,
-        z: rowsZ[r] + jz,
+        x: colsX[c],
+        z: rowsZ[r],
         row: r, col: c,
         speed: 1.02 + ((k * 29) % 5) * 0.1,
       })
