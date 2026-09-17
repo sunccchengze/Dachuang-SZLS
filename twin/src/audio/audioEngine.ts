@@ -93,6 +93,8 @@ interface TurbineVoice {
   gain: GainNode
   swish: BiquadFilterNode
   swishGain: GainNode
+  /** 空气吸收低通：截止频率随距离掉（远声发闷），R40b */
+  air: BiquadFilterNode
   bladeLfo: OscillatorNode
   bladeDepth: GainNode
   bladeBias: ConstantSourceNode
@@ -120,6 +122,12 @@ export class AudioEngine {
   private surfLfo: OscillatorNode | null = null
   private surfLfoDepth: GainNode | null = null
   private surfLowLfoDepth: GainNode | null = null
+  /** 风床阵 gust LFO + 海床群浪 LFO（R40b：床声不再是一条直线嘶声） */
+  private gustLfo: OscillatorNode | null = null
+  private gustDepth: GainNode | null = null
+  private groupLfo: OscillatorNode | null = null
+  private groupDepthBrown: GainNode | null = null
+  private groupDepthPink: GainNode | null = null
   private voices: TurbineVoice[] = []
   private lastFrame: AcousticFrame | null = null
   private lastParamAt = 0
@@ -200,7 +208,20 @@ export class AudioEngine {
 
     this.master = ctx.createGain()
     this.master.gain.value = 0
-    this.master.connect(ctx.destination)
+    // R40b 主链整形：30Hz 高通（笔记本喇叭不浪费冲程在听不见的次声上）+
+    // 压缩器兜底（浪+碎浪+风机全热时不削顶）
+    const hp = ctx.createBiquadFilter()
+    hp.type = 'highpass'
+    hp.frequency.value = 30
+    const comp = ctx.createDynamicsCompressor()
+    comp.threshold.value = -14
+    comp.knee.value = 10
+    comp.ratio.value = 3.5
+    comp.attack.value = 0.02
+    comp.release.value = 0.35
+    this.master.connect(hp)
+    hp.connect(comp)
+    comp.connect(ctx.destination)
 
     this.oceanBus = ctx.createGain()
     this.oceanBus.gain.value = 1
@@ -236,27 +257,45 @@ export class AudioEngine {
     surfLow.gain.gain.value = 0
     this.surfVoices.push(surfLow)
 
+    // R40b 修「离很远还有明显碎浪声」：旧版把 0.5/0.45 的 ConstantSource 直流**硬接**到
+    // gain.gain（AudioParam 的外接输入是「加」在本征值上）→ surfGain=0 时包络仍 = 0.5，
+    // 碎浪嘶声全图常响。现在直流折进本征值（base×0.5），LFO 深度 = 同值 → 包络 ∈ [0, 2×base]，
+    // surfGain→0 时包络与摆幅一起归零（真的静音，不是「小声但一直在」）。
     this.surfLfo = ctx.createOscillator()
     this.surfLfo.type = 'sine'
     this.surfLfo.frequency.value = 0.12 // ≈8.3s 一组浪，update() 里对齐涌浪周期
     this.surfLfoDepth = ctx.createGain()
-    this.surfLfoDepth.gain.value = 0 // update() 里 = 0.5 × surfGain（离岸即止摆，不留残余嘶声）
-    const surfBias = ctx.createConstantSource()
-    surfBias.offset.value = 0.5
+    this.surfLfoDepth.gain.value = 0
     this.surfLfo.connect(this.surfLfoDepth)
     this.surfLfoDepth.connect(surf.gain.gain)
-    surfBias.connect(surf.gain.gain)
     const surfLowDepth = ctx.createGain()
     surfLowDepth.gain.value = 0
     this.surfLowLfoDepth = surfLowDepth
-    const surfLowBias = ctx.createConstantSource()
-    surfLowBias.offset.value = 0.45
     this.surfLfo.connect(surfLowDepth)
     surfLowDepth.connect(surfLow.gain.gain)
-    surfLowBias.connect(surfLow.gain.gain)
     this.surfLfo.start()
-    surfBias.start()
-    surfLowBias.start()
+
+    // 风床阵 gust（~14s 一阵 ±25%）与海床群浪（~32s ±15%）：床声呼吸感，R40b
+    this.gustLfo = ctx.createOscillator()
+    this.gustLfo.type = 'sine'
+    this.gustLfo.frequency.value = 0.072
+    this.gustDepth = ctx.createGain()
+    this.gustDepth.gain.value = 0
+    this.gustLfo.connect(this.gustDepth)
+    this.gustDepth.connect(this.white.gain.gain)
+    this.gustLfo.start()
+    this.groupLfo = ctx.createOscillator()
+    this.groupLfo.type = 'sine'
+    this.groupLfo.frequency.value = 0.031
+    this.groupDepthBrown = ctx.createGain()
+    this.groupDepthBrown.gain.value = 0
+    this.groupDepthPink = ctx.createGain()
+    this.groupDepthPink.gain.value = 0
+    this.groupLfo.connect(this.groupDepthBrown)
+    this.groupLfo.connect(this.groupDepthPink)
+    this.groupDepthBrown.connect(this.brown.gain.gain)
+    this.groupDepthPink.connect(this.pink.gain.gain)
+    this.groupLfo.start()
 
     // —— 风机声部 ×3（共用一份粉噪 buffer：三条源各自 playbackRate 去相关，
     //     不重复生成 3×3.37s 噪声 —— 构建期 CPU 与内存都省 2/3）——
@@ -286,10 +325,13 @@ export class AudioEngine {
     const ctx = this.ctx!
     const panner = ctx.createPanner()
     panner.panningModel = 'HRTF'
+    // R40b：距离衰减唯一真值在 audioModel.turbineDistanceGain（可回归）；
+    // Panner 只负责 HRTF 方位（rolloff=0 → 不叠加第二份距离衰减，旧版双衰减使
+    // 近塔偏闷、且与 selftest 曲线对不上）
     panner.distanceModel = 'inverse'
     panner.refDistance = 120
     panner.maxDistance = 4000
-    panner.rolloffFactor = 0.85
+    panner.rolloffFactor = 0
     panner.positionX.value = 0
     panner.positionY.value = -9999 // 未分配声部：推到地下极远，HRTF 也不会漏声
     panner.positionZ.value = 0
@@ -309,10 +351,18 @@ export class AudioEngine {
     swish.frequency.value = 620
     swish.Q.value = 0.9
     const swishGain = ctx.createGain()
-    swishGain.gain.value = 1
+    // R40b：本征值必须为 0 —— 包络直流由 bladeBias(0.65) 外接提供；
+    // 旧版本征 1 + 偏置 0.65 = 1.65±depth，切风声整体 hot 了 ~2.5 倍
+    swishGain.gain.value = 0
+    // 空气吸收低通：远声发闷（截止频率 update() 里随距离掉）
+    const air = ctx.createBiquadFilter()
+    air.type = 'lowpass'
+    air.frequency.value = 7000
+    air.Q.value = 0.4
     src.connect(swish)
     swish.connect(swishGain)
-    swishGain.connect(gain)
+    swishGain.connect(air)
+    air.connect(gain)
 
     // 叶片通过包络：LFO(0.35~0.6Hz) → 深度 + 直流偏置 → swishGain（抬升余弦包络）
     const bladeLfo = ctx.createOscillator()
@@ -340,7 +390,7 @@ export class AudioEngine {
     tone.connect(toneGain)
     tone2.connect(tone2Gain)
     tone2Gain.connect(toneGain)
-    toneGain.connect(gain)
+    toneGain.connect(air) // 机械音调同样过空气吸收
 
     src.start()
     bladeLfo.start()
@@ -349,7 +399,7 @@ export class AudioEngine {
     tone2.start()
 
     return {
-      panner, gain, swish, swishGain, bladeLfo, bladeDepth, bladeBias,
+      panner, gain, swish, swishGain, air, bladeLfo, bladeDepth, bladeBias,
       tone, tone2, toneGain, src, active: false, idx: -1,
     }
   }
@@ -406,20 +456,29 @@ export class AudioEngine {
       const lfoHz = Math.max(0.05, Math.min(0.6, 1 / Math.max(2, f.swellPeriod)))
       this.surfLfo.frequency.setTargetAtTime(lfoHz, now, 1.2)
     }
-    // LFO 摆动深度 ∝ 碎浪增益：离岸 surfGain→0 时包络也归零（不是「小声但一直在」）
-    if (this.surfLfoDepth) this.surfLfoDepth.gain.setTargetAtTime(0.5 * f.surfGain, now, TAU_GAIN * 1.6)
-    if (this.surfLowLfoDepth) this.surfLowLfoDepth.gain.setTargetAtTime(0.42 * f.surfGain, now, TAU_GAIN * 1.6)
+    // R40b：包络 = base ± depth·lfo，base 与 depth 同值（= MIX×surfGain×层权×0.5）
+    // → 摆幅 ∈ [0, 2base]；surfGain→0 时 base 与 depth 一起归零 = 真静音
     for (let i = 0; i < this.surfVoices.length; i++) {
       const sv = this.surfVoices[i]
-      // LFO 已接在 gain.gain 上做 ±depth 摆动，这里设的是「基础幅度」（贴岸才有）
-      const base = MIX.surf * f.surfGain * (i === 0 ? 1 : 0.7)
+      const base = MIX.surf * f.surfGain * (i === 0 ? 1 : 0.7) * 0.5
       sv.gain.gain.setTargetAtTime(base, now, TAU_GAIN * 1.6)
+      const depth = i === 0 ? this.surfLfoDepth : this.surfLowLfoDepth
+      if (depth) depth.gain.setTargetAtTime(base, now, TAU_GAIN * 1.6)
       if (i === 0) sv.filter.frequency.setTargetAtTime(900 + 700 * f.surfGain, now, TAU_FILTER)
     }
 
-    // —— 大气风噪床（用第三条白噪，接到海洋总线上做空气感）——
+    // —— 大气风噪床（第三条白噪）+ gust 呼吸（R40b）——
     if (this.white) {
-      this.white.gain.gain.setTargetAtTime(MIX.wind * f.windGain, now, TAU_GAIN)
+      const wbase = MIX.wind * f.windGain
+      this.white.gain.gain.setTargetAtTime(wbase, now, TAU_GAIN)
+      if (this.gustDepth) this.gustDepth.gain.setTargetAtTime(0.25 * wbase, now, TAU_GAIN * 2)
+    }
+    // 海床群浪呼吸：涌浪底/水声 ±15% 慢摆（R40b）
+    if (this.groupDepthBrown && this.brown) {
+      this.groupDepthBrown.gain.setTargetAtTime(0.15 * MIX.swell * f.swellGain, now, TAU_GAIN * 2)
+    }
+    if (this.groupDepthPink && this.pink) {
+      this.groupDepthPink.gain.setTargetAtTime(0.15 * MIX.wash * f.swellGain, now, TAU_GAIN * 2)
     }
 
     // —— 风机声部 ——
@@ -448,11 +507,38 @@ export class AudioEngine {
       // 叶片通过包络：频率 = 3×转频，深度随距离收敛（远处只剩平均响度）
       voice.bladeLfo.frequency.setTargetAtTime(Math.max(0.05, a.bladePassHz), now, 0.4)
       voice.bladeDepth.gain.setTargetAtTime(0.12 + 0.34 * Math.min(1, a.gain * 2), now, TAU_GAIN)
+      // 空气吸收：7kHz@近塔 → ~0.5kHz@1.5km（远声发闷，R40b）
+      voice.air.frequency.setTargetAtTime(400 + 7000 * Math.exp(-a.dist / 900), now, TAU_FILTER)
       // 传动链音调：转频×97（发电机侧）+ 二次谐波；只在近塔可闻
       const ft = Math.max(40, Math.min(1400, a.driveTrainHz))
       voice.tone.frequency.setTargetAtTime(ft, now, TAU_FILTER)
       voice.tone2.frequency.setTargetAtTime(ft * 2, now, TAU_FILTER)
       voice.toneGain.gain.setTargetAtTime(MIX.tone * Math.min(1, a.gain * 2.4), now, TAU_GAIN)
+    }
+  }
+
+  /**
+   * QA 只读探针（scripts/qa_audio.mjs 用）：节点图关键增益的**当前本征值**。
+   * R40b 新增：用于机器验证「远距真静音」（surf base=0 / voice gain=0），
+   * 不靠人耳听截图。
+   */
+  probe(): {
+    master: number
+    beds: { swell: number; wash: number; wind: number; surf: number[] }
+    voices: Array<{ idx: number; gain: number; airHz: number }>
+  } | null {
+    if (!this.ctx) return null
+    return {
+      master: this.master ? this.master.gain.value : 0,
+      beds: {
+        swell: this.brown ? this.brown.gain.gain.value : 0,
+        wash: this.pink ? this.pink.gain.gain.value : 0,
+        wind: this.white ? this.white.gain.gain.value : 0,
+        surf: this.surfVoices.map((v) => v.gain.gain.value),
+      },
+      voices: this.voices.filter((v) => v.active).map((v) => ({
+        idx: v.idx, gain: v.gain.gain.value, airHz: v.air.frequency.value,
+      })),
     }
   }
 

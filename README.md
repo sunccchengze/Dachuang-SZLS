@@ -27,7 +27,7 @@
 
 | 指标 | 实测值 | 测法 |
 |---|---|---|
-| `npm run selftest` | **143 通过 / 0 失败** | Node 22 原生类型剥离，无浏览器依赖（R40 新增声场/草地/执行器 36 断言） |
+| `npm run selftest` | **145 通过 / 0 失败** | Node 22 原生类型剥离，无浏览器依赖（R40 新增声场/草地/执行器 36 断言 + R40b 修正 3） |
 | `npx tsc -b --noEmit` | **0 错误** | — |
 | `npm run lint` | **0 warnings / 0 errors**（52 files） | oxlint 1.79 |
 | `npm run build` | **✓ 1.36s** | Vite 8 + rolldown |

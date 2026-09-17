@@ -22,7 +22,7 @@ import {
 // R40 新增模块（T9 声场 / T8 草地分块 / P2 偏航执行器）
 import {
   swellEnvAt, swellHeightAt, swellPeriodS, surfGain, oceanLandGate, oceanSwellGain,
-  bladePassHz, driveTrainHz, turbineDistanceGain, downwindFactor, selectTurbines,
+  bladePassHz, driveTrainHz, turbineDistanceGain, downwindFactor, selectTurbines, TURBINE_AUDIBLE_FAR,
   acousticFrame, SWELL_A1, SWELL_A2,
 } from '../src/audio/audioModel.ts'
 import {
@@ -780,8 +780,10 @@ console.log('== G · L4 GCH 内核 V&V（oracle：FLORIS 4.6.6 实算）==')
   ok('R40 声场：离岸 2km 碎浪增益 = 0', surfGain(-2000, 6) === 0)
   ok('R40 声场：贴岸 30m 碎浪增益 > 离岸 300m', surfGain(-30, 6) > surfGain(-300, 6))
   ok('R40 声场：深入内陆 2km 碎浪增益 = 0（沙滩听得见、村里听不见）', surfGain(2000, 6) === 0)
-  ok('R40 声场：陆地门单调（深海 1 → 内陆 0.45）',
-    oceanLandGate(-1000) === 1 && close(oceanLandGate(3000), 0.45, 1e-9))
+  ok('R40b 声场：陆地门两段单调（深海 1 → 崖顶≈0.52 → 内陆 2km ≤0.1 后饱和）',
+    oceanLandGate(-1000) === 1 && oceanLandGate(200) < 0.6 &&
+    oceanLandGate(1200) < oceanLandGate(600) && oceanLandGate(2000) <= 0.1 &&
+    oceanLandGate(3000) <= oceanLandGate(2000))
   ok('R40 声场：涌浪底噪随波高单调不减', oceanSwellGain(1) <= oceanSwellGain(6) && oceanSwellGain(6) <= oceanSwellGain(14))
   // 风机声学：叶片通过频率 / 传动链基频 / 距离衰减 / 下风向
   ok('R40 声场：叶片通过频率 = 3×转频（6.9rpm→0.345Hz，12.1rpm→0.605Hz）',
@@ -790,6 +792,11 @@ console.log('== G · L4 GCH 内核 V&V（oracle：FLORIS 4.6.6 实算）==')
   ok('R40 声场：距离衰减单调递减且 1km 处 < 0.2',
     turbineDistanceGain(50) > turbineDistanceGain(300) && turbineDistanceGain(300) > turbineDistanceGain(1000)
     && turbineDistanceGain(1000) < 0.2)
+  // R40b 修「离很远还有明显声音」：可闻地平线 ≥2.2km 必须**精确归零**（不是渐近趋于 0）
+  ok('R40b 声场：可闻地平线 —— 2.2km 外精确 = 0；1.5km < 1km 的一半；2km < 1km 的 5%',
+    turbineDistanceGain(TURBINE_AUDIBLE_FAR) === 0 && turbineDistanceGain(2500) === 0 &&
+    turbineDistanceGain(1500) < turbineDistanceGain(1000) * 0.5 &&
+    turbineDistanceGain(2000) < turbineDistanceGain(1000) * 0.05)
   ok('R40 声场：下风向听者增益 > 上风向（IEC 61400-11 常识口径）',
     downwindFactor(0, 500, 0, 0, 0) > downwindFactor(0, -500, 0, 0, 0))
   // 声部裁决：近塔取本机、远场归零（≤3 声部）
@@ -799,6 +806,8 @@ console.log('== G · L4 GCH 内核 V&V（oracle：FLORIS 4.6.6 实算）==')
   const far = selectTurbines(units, 4200, 300, 4200, 0, 3)
   ok('R40 声场：4km 外全场无声部（融进底噪，不占 PannerNode）', far.length === 0)
   ok('R40 声场：声部数上限 3', selectTurbines(units, FARM_CENTER.x, 90, FARM_CENTER.z, 0, 3).length <= 3)
+  ok('R40b 声场：离场心 3.2km（全机 ≥2.4km 过地平线）声部裁决为空',
+    selectTurbines(units, FARM_CENTER.x + 3200, 300, FARM_CENTER.z, 0, 3).length === 0)
   // 整帧求值：海上 vs 内陆
   const sea = acousticFrame({ lx: 300, ly: 12, lz: 900, fx: 0, fy: 0, fz: -1, ux: 0, uy: 1, uz: 0, tHours: 9, t: 40, windSpeed: 9, windFromDeg: 4, units })
   const inland = acousticFrame({ lx: -2600, ly: 300, lz: -3000, fx: 0, fy: 0, fz: 1, ux: 0, uy: 1, uz: 0, tHours: 9, t: 40, windSpeed: 9, windFromDeg: 4, units })

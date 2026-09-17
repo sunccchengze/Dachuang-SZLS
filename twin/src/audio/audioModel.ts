@@ -93,9 +93,13 @@ export function surfGain(shore: number, hSwell: number): number {
   return band * (0.35 + 0.65 * smoothstep(0.5, 8, hSwell))
 }
 
-/** 陆上/贴岸时把海面底噪压下去（听者在陆地时浪声明显更远、更闷） */
+/**
+ * 陆地门（两段）：上岸 0–260m 先压 55%（浪声变远变闷），再向内陆 500–2000m 渐隐到 15%
+ * ——旧版只压 55%，内陆 3km 的山头上仍听得到海嗡声（R40b 修）。
+ * 海岸崖顶（shore<260）听感基本不变。
+ */
 export function oceanLandGate(shore: number): number {
-  return 1 - 0.55 * smoothstep(0, 260, shore)
+  return (1 - 0.55 * smoothstep(0, 260, shore)) * (1 - 0.85 * smoothstep(500, 2000, shore))
 }
 
 /** 风噪床（叶片切风之外的大气湍流嘶声）：随风速起伏 */
@@ -132,15 +136,22 @@ export interface TurbineAcoustic {
   driveTrainHz: number
 }
 
+/** 可闻地平线：≥2.2km 完全静音（1.2–2.2km 渐隐）——R40b 修「离很远还有明显声音」 */
+export const TURBINE_AUDIBLE_FAR = 2200
+
 /**
- * 距离衰减闭式（inverse 族，Web Audio PannerNode 同思路，但自己算便于回归）：
- *   g(d) = (ref / (ref + d))^1.25，ref = 140 m
- * → 1D(126m) 处 0.52、3D(378m) 处 0.26、1km 处 0.13、2km 处 0.075。
- * 与 5MW 机组「近塔可闻、跨排渐弱、远排融进底噪」的听感一致。
+ * 距离衰减闭式（R40b 收紧：指数 1.25→1.6 + 可闻地平线）：
+ *   g(d) = (ref/(ref+d))^1.6 × (1 − smoothstep(1200, 2200, d))，ref = 140 m
+ * → 1D(126m) 0.36、3D(378m) 0.12、1km 0.035、1.5km ≈0.010、≥2.2km = 0。
+ * 口径依据：5MW 机组近塔可闻、1km  quiet 乡村背景下隐约可闻、2km 外被环境噪底淹没
+ * （球形扩散 + 空气吸收 + 地面效应），旧 1.25 指数在 2–4km 仍留 3% 增益＝安静环境下
+ * 明显可闻的哨音，与物理不符（R40b 用户实测反馈确认）。
+ * 引擎 PannerNode 只做 HRTF 方位（rolloff=0），距离衰减**唯一真值在本函数**（可回归）。
  */
 export function turbineDistanceGain(dist: number): number {
   const ref = 140
-  return Math.pow(ref / (ref + Math.max(0, dist)), 1.25)
+  const d = Math.max(0, dist)
+  return Math.pow(ref / (ref + d), 1.6) * (1 - smoothstep(1200, TURBINE_AUDIBLE_FAR, d))
 }
 
 /** 风速调制：切风声随来流涨落（uEff 用尾流后的等效风速 → 下游机更安静，物理一致） */
@@ -202,7 +213,9 @@ export function selectTurbines(
   lz: number,
   fromDeg: number,
   maxVoices = 3,
-  gainFloor = 0.012,
+  // R40b：曲线收紧（指数 1.6）后 1km 处增益 ≈0.015×风速调制，旧地板 0.012 会把
+  // 「1km 隐约可闻」也裁掉 → 地板降到 0.004；≥2.2km 由地平线**精确归零**兜底
+  gainFloor = 0.004,
 ): TurbineAcoustic[] {
   const all = units.map((u, i) =>
     turbineAcoustic(i, u.x, u.z, u.rpm, u.uEff, lx, ly, lz, fromDeg),
