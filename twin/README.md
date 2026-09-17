@@ -43,7 +43,7 @@ node scripts/qa2.mjs <baseUrl含debug> <curtail.png> <optimize.png>  # 联动/�
 `?cam=方位角,仰角,距离[,tx,ty,tz]` 机位锁定（自动跳过开场）· `?t=10.2` 锁定时刻并暂停（A/B 截图可复现）
 · `?noveil=1` 关闭风纱层 · `?q=low|medium|high` 画质锁定 · `?intro0=1` 跳过开场 ·
 `window.__aeolus`（useSim/farmFrameNow）与 `window.__aeolus_stats()`（手动单帧渲染计数；
-2026-09-13 实测 `?q=high` **250 draw calls / 636,718 tris**，medium 250/562,318，low 222/417,538）。
+2026-09-17 实测 `?q=high` **267 draw calls / 642,556 tris**，medium 264/567,064，low 231/440,060（low 与 R39 基线一致：草地零绘制））。
 
 ## 结构
 ```
@@ -52,10 +52,10 @@ src/
   state/      simStore(zustand 控制态 + 时钟 + useFarmFrame)
   scene/      terrainUtil(世界真值) · turbine/geometry(NREL 5MW 参数化几何) · HoloTurbine/TurbineField
               CableNetwork · WindVeil · Substation · WorldTerrain · SkyAurora · SparkleGround
-              TreeField(远岸森林, R36) · grassField(未挂载) · Callouts(防重叠/避让HUD) ·
+              TreeField(远岸森林, R36) · grassField(瓦片草地+剔除, R40 挂载) · audio/(WebAudio 声场, R40) · Callouts(防重叠/避让HUD) ·
               CameraRig(13节点+书签+跳过) · Effects(三档) · PerfGovernor · EnvSetup · frameBus
   hud/        Hud.tsx(1920×1080 等比舞台：KPI/矩阵/雷达/图表/控制台/告警/信息卡/时间轴)
-scripts/      shot.mjs · shot2.mjs · shotlocal.mjs · probe.mjs · qa2.mjs · perftier.mjs ·
+scripts/      shot.mjs · shot2.mjs · shotlocal.mjs · probe.mjs · qa2.mjs · qa_audio.mjs · perftier.mjs ·
               sunprobe.mjs · moontrack.py · framestats.py · horizoncheck.py ·
               abdiff.py · selftest.mts · calibrateWake.mts · bootstrap.sh（沙箱一键恢复依赖）
 ```
@@ -65,6 +65,7 @@ scripts/      shot.mjs · shot2.mjs · shotlocal.mjs · probe.mjs · qa2.mjs · 
 - 多用户/权限/审计、真实 DEM 与测风塔接入、在线自整定控制：见 docs/02 路线图与 docs/08 §五。
 - 构建 chunk>500kB 提示来自 three 单包（1,278 kB / gzip 384 kB）；业务代码 150 kB、floris3d 数据 130 kB 已各自分包。
 - R29–R37 场景层进度与遗留：见 `../docs/research/round36_海岸真实化与远岸森林.md`（含 R36b/R36c/R37）
-  与 `../docs/research/round38_残项收口与裁决.md`（草地组件 `grassField` 仍未挂载、岛上无树、软渲染性能口径等）。
+  与 `../docs/research/round38_残项收口与裁决.md`（**R40 校正 2026-09-17**：草地 `grassField` 已挂载并配齐剔除、
+  声场 T9 真实现、偏航执行器补验证，见 `../docs/research/round40_声场真实化_草地挂载_偏航执行器.md`；岛上无树/软渲染口径等残项以该文件为准）。
 - 帧率类数字**一律不要引用沙箱值**：SwiftShader 软件渲染（本沙箱 2 核）与真机 GPU 差一个量级，
   `npm run perftier` 只用于档间相对比较与计数回归。

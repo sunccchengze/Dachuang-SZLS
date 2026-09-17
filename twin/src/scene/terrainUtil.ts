@@ -308,7 +308,9 @@ export function treeAccept(x: number, z: number, r: number): number {
   )
   if (ny < 0.62) return 0
   const w = biomeWeights(x, z)
-  if (r > w.forest + 0.35 * w.hill) return 0
+  // 海岛/海岬低海拔区（h < 60m）允许植被茂盛生长，避免岛心因 L>0.82 归入高山裸岩而漏植被
+  const islandBoost = h < 60 ? 0.35 * w.mountain : 0
+  if (r > w.forest + 0.35 * w.hill + islandBoost) return 0
   return 7.5 + r * 9
 }
 /** 树木拒绝采样命中数（selftest 用，与 treeField.buildSet 同一 treeAccept） */

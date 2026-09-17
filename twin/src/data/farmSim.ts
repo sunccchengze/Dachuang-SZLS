@@ -18,7 +18,8 @@
 import { FARM } from '../scene/terrainUtil.ts'
 import { smoothNoise, periodicSmoothNoise } from './rng.ts'
 import {
-  powerCurveKw, rotorRpm, wakeDeficit, yawFactor, genTempC, gridFrequency, WAKE_REV} from './turbinePhysics.ts'
+  powerCurveKw, rotorRpm, genTempC, gridFrequency, WAKE_REV} from './turbinePhysics.ts'
+import { evaluateFarmScene } from '../core/physics/evalFarm.ts'
 
 export const N_UNITS = FARM.length // 9
 export const FARM_RATED_MW = 45 // 9 × 5 MW
@@ -139,63 +140,77 @@ interface FarmCore {
   meanRpm: number
 }
 
+const FARM_SCENE = {
+  x: FARM.map((f) => f.x),
+  z: FARM.map((f) => f.z),
+}
+
 function evalCore(o: CoreOpts): FarmCore {
   const { tHours, unitYaw, targetMW, wind = null } = o
   const w0 = windAt(tHours)
   const fromDeg = wind ? wind.fromDeg : w0.fromDeg
+  const uInf = wind ? wind.u : w0.u
+  const yawMisalignment = FARM.map((_, i) => unitYaw[i] ?? 0)
+
+  const gch = evaluateFarmScene(
+    FARM_SCENE,
+    { uInf, fromDeg, ti: 0.06 },
+    yawMisalignment,
+  )
+
   const units: UnitFrame[] = FARM.map((f, i) => {
     const uFree = freeWindAt(tHours, f.x, f.z, wind ? wind.u : undefined)
+    const tGch = gch.turbines[i]
+    const uEff = tGch.uEff
+    const powerKw = tGch.powerKw
+    const rpm = rotorRpm(uEff)
+    const before = powerCurveKw(uFree)
+    const wakeLossPct = before > 0 ? Math.max(0, 100 * (1 - powerKw / before)) : 0
+    const offset = unitYaw[i] ?? 0
+    const absYaw = ((fromDeg + offset) % 360 + 360) % 360
     return {
-      id: f.id, x: f.x, z: f.z, row: f.row,
-      uFree, uEff: uFree,
-      yawDeg: unitYaw[i] ?? 0,
-      yawErrDeg: (unitYaw[i] ?? 0) - fromDeg,
-      rpm: 0, powerKw: 0, tempC: 0, wakeLossPct: 0, status: 'run',
+      id: f.id,
+      x: f.x,
+      z: f.z,
+      row: f.row,
+      uFree,
+      uEff,
+      yawDeg: absYaw,
+      yawErrDeg: offset,
+      rpm,
+      powerKw,
+      tempC: 0,
+      wakeLossPct,
+      status: rpm <= 0 ? 'idle' : 'run',
     }
   })
-  // 尾流：两两求 Jensen 亏损，多源 RSS 叠加（工程惯例，见 turbinePhysics）
-  for (let i = 0; i < units.length; i++) {
-    const di = units[i]
-    let ssq = 0
-    for (let j = 0; j < units.length; j++) {
-      if (i === j) continue
-      const dj = units[j]
-      const def = wakeDeficit(dj.uFree, di.x - dj.x, di.z - dj.z, fromDeg, dj.yawErrDeg)
-      ssq += def * def
-    }
-    const total = Math.min(0.8, Math.sqrt(ssq))
-    di.uEff = di.uFree * (1 - total)
-  }
-  let wakeSumSq = 0
-  for (let i = 0; i < units.length; i++) {
-    const di = units[i]
-    const before = powerCurveKw(di.uFree)
-    di.powerKw = powerCurveKw(di.uEff) * yawFactor(di.yawErrDeg)
-    di.rpm = rotorRpm(di.uEff)
-    if (di.rpm <= 0) { di.status = 'idle'; di.powerKw = 0 }
-    di.wakeLossPct = before > 0 ? (100 * (1 - powerCurveKw(di.uEff) / before)) : 0
-    void wakeSumSq
-  }
-  let withWakeMW = 0
+
+  const withWakeMW = gch.totalKw / 1000
   let noWakeMW = 0
-  for (const di of units) {
-    withWakeMW += powerCurveKw(di.uEff) * yawFactor(di.yawErrDeg)
-    noWakeMW += powerCurveKw(di.uFree)
-  }
-  const availMW = withWakeMW / 1000
+  for (const di of units) noWakeMW += powerCurveKw(di.uFree)
+
+  const availMW = withWakeMW
   const t = targetMW > 0 && targetMW < FARM_RATED_MW ? targetMW : FARM_RATED_MW
   const derateFrac = Math.min(1, t / Math.max(availMW, 0.001))
-  if (derateFrac < 0.999) for (const di of units) di.powerKw *= derateFrac
-  // 任务#2：限功率/降额后转速按实发功率回落（rotorRpm 内置功率耦合分支）
-  for (const di of units) if (di.status !== 'idle') di.rpm = rotorRpm(di.uEff, di.powerKw)
+  if (derateFrac < 0.999) {
+    for (const di of units) di.powerKw *= derateFrac
+  }
+  for (const di of units) {
+    if (di.status !== 'idle') di.rpm = rotorRpm(di.uEff, di.powerKw)
+  }
   const totalMW = availMW * derateFrac
-  const wakeLossPct = noWakeMW > 0 ? Math.max(0, 100 * (1 - withWakeMW / noWakeMW)) : 0
+  const wakeLossPct = noWakeMW > 0 ? Math.max(0, 100 * (1 - (withWakeMW * 1000) / noWakeMW)) : 0
   let errSum = 0
   for (const di of units) errSum += Math.min(30, Math.abs(di.yawErrDeg))
   const yawPrecPct = 100 * (1 - errSum / units.length / 30)
   let rpmSum = 0
   let rpmN = 0
-  for (const di of units) if (di.rpm > 0) { rpmSum += di.rpm; rpmN++ }
+  for (const di of units) {
+    if (di.rpm > 0) {
+      rpmSum += di.rpm
+      rpmN++
+    }
+  }
   return { units, totalMW, availMW, derateFrac, wakeLossPct, yawPrecPct, meanRpm: rpmN ? rpmSum / rpmN : 0 }
 }
 
@@ -240,15 +255,27 @@ const SCAN_MIN = 9
 
 const ZERO_YAW = new Array<number>(9).fill(0)
 
+const baseSeriesCache = new Map<string, number[]>()
+function getBaseSeries(wind?: WindOverride | null): number[] {
+  const ws = wind ? `|w${wind.u.toFixed(2)}@${wind.fromDeg.toFixed(1)}` : '|w_auto'
+  const hit = baseSeriesCache.get(ws)
+  if (hit) return hit
+  const arr: number[] = []
+  for (let s = 0; s < 48; s++) {
+    const t = (s / 48) * 24
+    arr.push(coreAt(t, ZERO_YAW, FARM_RATED_MW, wind).totalMW)
+  }
+  baseSeriesCache.set(ws, arr)
+  return arr
+}
+
 function buildHeavy(tq: number, unitYaw: number[], targetMW: number, wind?: WindOverride | null): HeavyFrame {
   // 全天 48 点（半小时网格）功率剖面 —— 当前偏航/目标设定下的"这一天"
   const daySeries: number[] = []
-  const baseSeries: number[] = []
+  const baseSeries = getBaseSeries(wind)
   for (let s = 0; s < 48; s++) {
     const t = (s / 48) * 24
     daySeries.push(coreAt(t, unitYaw, targetMW, wind).totalMW)
-    // 零偏航对风基准（=FLORIS none 策略口径）：图表双线对比，增益全天可见
-    baseSeries.push(coreAt(t, ZERO_YAW, FARM_RATED_MW, wind).totalMW)
   }
   let daySum = 0
   for (const v of daySeries) daySum += v

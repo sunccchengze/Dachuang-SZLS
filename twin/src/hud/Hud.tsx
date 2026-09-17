@@ -2,8 +2,11 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useSim, useFarmFrame } from '../state/simStore'
 import { FARM } from '../scene/terrainUtil'
 import { UNIT_NAMEPLATE, FARM_RATED_MW } from '../data/farmSim'
-import { ROTOR_D, WAKE_K, wakeDeflection } from '../data/turbinePhysics'
+import { ROTOR_D, WAKE_K, wakeDeflection, yawFactor } from '../data/turbinePhysics'
 import { anomalyLabel } from '../data/anomaly'
+import {
+  YAW_RATE_DPS, YAW_DEADBAND_DEG, YAW_STOP_BAND_DEG, yawEtaFrom,
+} from '../core/control/yawDrive'
 
 // ================================================================
 // 未来能源数字孪生系统 —— 大屏 HUD（v3：全读数接演示数据契约）
@@ -112,7 +115,8 @@ const DIRS16 = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'S
 
 function Radar() {
   const frame = useFarmFrame()
-  const unitYaw = useSim((st) => st.unitYaw)
+  // P2：雷达尾流走廊画【实际偏航】（与 AirflowField 烟羽、farmSim GCH 同源）
+  const actYaw = useSim((st) => st.actYaw)
   const airflow = useSim((st) => st.airflow)
   const setAirflow = useSim((st) => st.setAirflow)
   const C = 118, R = 96
@@ -129,7 +133,8 @@ function Radar() {
     const py = C + (f.z - cz) * S
     const p = u ? Math.max(0, Math.min(1, u.powerKw / 5000)) : 0
     // BUG-FIX：走廊须用对风偏差（与 wakeDeficit / AirflowField 同源），非指令角
-    const yaw = (unitYaw[i] ?? 0) - frame.windFromDeg
+    // Δψ = 实际偏航偏差（指令与实际之间的滞后在雷达上同样可见）
+    const yaw = actYaw[i] ?? 0
     // 尾流走廊：与 3D 粒子同一套 Jensen 扩张+偏航偏折公式（同源）
     const edge = (sgn: 1 | -1) => {
       const pts: string[] = []
@@ -252,26 +257,95 @@ function PowerChart() {
 function ServoSlider({ i }: { i: number }) {
   const unitYaw = useSim((s) => s.unitYaw)
   const setUnitYaw = useSim((s) => s.setUnitYaw)
+  // P2 · 执行器实况：实际角 / 速率 / 是否在转（10Hz 轮询，与仿真时钟同节拍）
+  const act = useActuator(i)
   const uid = FARM[i]?.id ?? '-'
   const v = unitYaw[i] ?? 0
+  const err = v - act.actual
+  const inDeadband = !act.slewing && Math.abs(err) <= YAW_DEADBAND_DEG
+  const eta = yawEtaFrom(v, act.actual)
   return (
     <div className="srow">
       <span className="slab">偏航执行器{i + 1}<em>→ {uid}</em></span>
       <div className="track">
         <input
           type="range" min={-30} max={30} step={0.5} value={v}
-          aria-label={`偏航执行器 ${i + 1}，控制机组 ${uid}`}
-          aria-valuetext={`${v.toFixed(1)} 度`}
+          aria-label={`偏航执行器 ${i + 1} 指令，控制机组 ${uid}`}
+          aria-valuetext={`指令 ${v.toFixed(1)} 度，实际 ${act.actual.toFixed(1)} 度`}
           onChange={(e) => setUnitYaw(i, Number(e.target.value))}
           onDoubleClick={() => setUnitYaw(i, 0)}
-          title="拖动设定期望偏航角；双击复位为对风 0°"
+          title={`拖动下发偏航指令；双击复位 0°。执行器按 ${YAW_RATE_DPS}°/s 速率限制 + ±${YAW_DEADBAND_DEG}° 死区跟踪（P2）`}
           style={{ ['--p' as string]: `${((v + 30) / 60) * 100}%` }}
         />
-        <div className="trk"><i className="fill" style={{ width: `${((v + 30) / 60) * 100}%` }} /><i className="head" style={{ left: `${((v + 30) / 60) * 100}%` }} /></div>
+        <div className="trk">
+          <i className="fill" style={{ width: `${((v + 30) / 60) * 100}%` }} />
+          {/* 实际角游标：指令与实际之间的滞后一眼可见 */}
+          <i className={`act${act.slewing ? ' moving' : ''}`} style={{ left: `${((act.actual + 30) / 60) * 100}%` }} />
+          <i className="head" style={{ left: `${((v + 30) / 60) * 100}%` }} />
+        </div>
       </div>
-      <span className="sval">{Math.abs(v) < 0.05 ? '0°' : `${v > 0 ? '+' : ''}${v.toFixed(1)}°`}
-        <em className={Math.abs(v) < 0.05 ? 'dpsi-zero' : 'dpsi-off'}>Δψ</em>
+      <span className="sval" title={inDeadband
+        ? `指令偏差 ${err >= 0 ? '+' : ''}${err.toFixed(1)}° 落在 ±${YAW_DEADBAND_DEG}° 死区内：偏航电机按设计不启停`
+        : act.slewing
+          ? `偏航中 ${act.rate >= 0 ? '+' : ''}${act.rate.toFixed(2)}°/s · 剩余 ${Math.abs(err).toFixed(1)}° · 约 ${eta.toFixed(0)} s 到位`
+          : `到位残差 ${err >= 0 ? '+' : ''}${err.toFixed(1)}°（停机带 ±${YAW_STOP_BAND_DEG}°）`}>
+        {Math.abs(v) < 0.05 ? '0°' : `${v > 0 ? '+' : ''}${v.toFixed(1)}°`}
+        <em className={act.slewing ? 'dpsi-slew' : Math.abs(v) < 0.05 ? 'dpsi-zero' : 'dpsi-off'}>
+          {act.slewing ? `↻ ${act.actual >= 0 ? '+' : ''}${act.actual.toFixed(1)}°` : `Δψ ${act.actual >= 0 ? '+' : ''}${act.actual.toFixed(1)}°`}
+        </em>
       </span>
+    </div>
+  )
+}
+
+/** 执行器实况轮询（10Hz，与 startSimClock 同节拍；只在有变化时 setState） */
+function useActuator(i: number): { actual: number; rate: number; slewing: boolean; cycles: number } {
+  const [a, setA] = useState(() => ({ actual: 0, rate: 0, slewing: false, cycles: 0 }))
+  useEffect(() => {
+    const iv = setInterval(() => {
+      const st = useSim.getState().yawBank.states[i]
+      if (!st) return
+      const n = { actual: st.actual, rate: st.rate, slewing: st.slewing, cycles: st.cycles }
+      setA((p) =>
+        Math.abs(p.actual - n.actual) < 0.05 && p.slewing === n.slewing && p.cycles === n.cycles ? p : n,
+      )
+    }, 100)
+    return () => clearInterval(iv)
+  }, [i])
+  return a
+}
+
+/* ---------- T9 · 声场控制（海浪 / 碎浪 / 风机切风 · 程序化 Web Audio） ----------
+   组件只写 store；AudioContext 的创建/恢复/静音全在 AudioField 的 effect 里
+   （由本按钮的点击同步触发 → 仍落在浏览器要求的用户手势链内）。 */
+function SoundControl() {
+  const audioOn = useSim((s) => s.audioOn)
+  const setAudioOn = useSim((s) => s.setAudioOn)
+  const vol = useSim((s) => s.audioVol)
+  const setAudioVol = useSim((s) => s.setAudioVol)
+  const introDone = useSim((s) => s.introDone)
+  const gesturePending = useSim((s) => s.audioGesturePending)
+
+  const toggle = () => {
+    if (!audioOn && !introDone) useSim.setState({ audioGesturePending: true })
+    setAudioOn(!audioOn)
+  }
+
+  return (
+    <div className="sound" title="程序化声场（Web Audio · 零外部音频资产）：涌浪底噪随浪高起伏 / 贴岸加拍岸碎浪 / 风机切风随转速与距离调制 + 传动链音调，HRTF 3D 定位 · 快捷键 M">
+      <span>声场</span>
+      <button
+        type="button" className={audioOn ? 'on' : ''} onClick={toggle}
+        aria-pressed={audioOn} aria-label={audioOn ? '关闭声场（M）' : '开启声场（M）'}
+      >
+        {audioOn ? '♪ 开' : '♪ 关'}
+      </button>
+      <input
+        type="range" min={0} max={100} step={1} value={Math.round(vol * 100)}
+        disabled={!audioOn} aria-label="声场音量"
+        onChange={(e) => setAudioVol(Number(e.target.value) / 100)}
+      />
+      {audioOn && gesturePending && !introDone && <i className="sndwarn">开场结束后自动开声</i>}
     </div>
   )
 }
@@ -314,12 +388,36 @@ function Alarms() {
 }
 
 /* ---------- 单机信息卡（选中机组时出现） ---------- */
-function TurbineCard() {
-  const selected = useSim((s) => s.selected)
+/** 偏航执行器读数块（P2）：指令 → 实际的滞后、速率、死区状态、余弦损失。
+ *  放在卡片子组件里，保证 hook 不在 TurbineCard 的提前 return 之后调用。 */
+function ActuatorRows({ i, cmd }: { i: number; cmd: number }) {
+  const act = useActuator(i)
+  const eta = yawEtaFrom(cmd, act.actual)
+  const err = cmd - act.actual
+  const cosLoss = (1 - yawFactor(act.actual)) * 100
+  return (
+    <>
+      <label>偏航执行器</label>
+      <span>
+        指令 {cmd >= 0 ? '+' : ''}{f1(cmd)}° → 实际 {act.actual >= 0 ? '+' : ''}{f1(act.actual)}° ·{' '}
+        {act.slewing
+          ? `偏航中 ${act.rate >= 0 ? '+' : ''}${f2(act.rate)}°/s · 约 ${eta.toFixed(0)} s 到位`
+          : Math.abs(err) <= YAW_DEADBAND_DEG
+            ? `死区保持 ±${YAW_DEADBAND_DEG}°（电机不启停）`
+            : '已到位抱闸'}
+        <Badge k="代理" />
+      </span>
+      <label>偏航代价</label>
+      <span>余弦损失 {f2(cosLoss)}%（cos^1.88）· 本次起动累计 {act.cycles} 次</span>
+    </>
+  )
+}
+
+function TurbineCardBody({ i }: { i: number }) {
   const setSelected = useSim((s) => s.setSelected)
+  const cmd = useSim((s) => s.unitYaw[i] ?? 0)
   const frame = useFarmFrame()
-  if (selected === null) return null
-  const u = frame.units[selected]
+  const u = frame.units[i]
   if (!u) return null
   return (
     <div className="tcard" role="dialog" aria-label={`${u.id} 机组信息卡`}>
@@ -331,7 +429,8 @@ function TurbineCard() {
       <div className="tgrid">
         <label>状态</label><i className={`st s-${u.status}`}>{u.status === 'alarm' ? '告警' : u.status === 'curtail' ? '限功率' : u.status === 'idle' ? '待机' : '运行'}</i>
         <label>有功功率</label><span>{intFmt(u.powerKw)} kW / {intFmt(UNIT_NAMEPLATE.ratedKw)} kW<Badge k="代理" /></span>
-        <label>偏航角</label><span>{f1(u.yawDeg)}°（对风偏差 {f1(u.yawErrDeg)}°）</span>
+        <label>偏航角</label><span>{f1(u.yawDeg)}°（实际对风偏差 {f1(u.yawErrDeg)}°，来自执行器）<Badge k="代理" /></span>
+        <ActuatorRows i={i} cmd={cmd} />
         <label>转子转速</label><span>{f2(u.rpm)} rpm</span>
         <label>来流风速</label><span>{f1(u.uEff)} m/s（自由流 {f1(u.uFree)}）</span>
         <label>尾流损失</label><span>{f1(u.wakeLossPct)}%</span>
@@ -340,6 +439,12 @@ function TurbineCard() {
       </div>
     </div>
   )
+}
+
+function TurbineCard() {
+  const selected = useSim((s) => s.selected)
+  if (selected === null) return null
+  return <TurbineCardBody i={selected} />
 }
 
 /* ---------- 顶部标题装饰 ---------- */
@@ -588,6 +693,7 @@ export default function Hud() {
           <h1 className="title">未来能源数字孪生系统</h1>
           <div className="subtitle">风电场偏航优化 · 数字孪生演示平台 — AEOLUS TWIN <Badge k="演示" /></div>
           <div className="wallclock">本地 {wall || '--:--:--'} · 仿真 {hh}:{mm}</div>
+          <SoundControl />
           <div className="quality">
             <span>画质</span>
             {(['high', 'medium', 'low'] as const).map((q) => (

@@ -3,10 +3,10 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useSim } from '../state/simStore'
 
 // ============================================================================
-// 自适应画质调节器（D5 修复）
+// 自适应画质调节器（D5 修复与防抖平滑）
 // ----------------------------------------------------------------------------
-// · 以帧时 EMA 判断 GPU 档位：持续 >22ms 降档，持续 <13ms 且自动模式升档；
-// · 档位联动：dpr（Canvas 侧）+ Effects（后期链）；
+// · 以帧时 EMA 判断 GPU 档位：持续 >26ms 降档，持续 <13ms 且自动模式升档；
+// · 降档/升档设置 8 秒冷却期，杜绝临界帧率下的反复切换与 FBO/后处理重建黑屏；
 // · 提供 ?q=low|medium|high 手动锁档（QA/低配答辩现场兜底）。
 // 目标：1080p 高档 ≥55fps（docs/02 §9 性能预算），软渲染 QA 环境自动落 low。
 // ============================================================================
@@ -17,6 +17,7 @@ export default function PerfGovernor() {
   const { gl } = useThree()
   const ema = useRef(16)
   const acc = useRef(0)
+  const lastShiftAt = useRef(0)
   const frozen = useRef(false)
   const introEndAt = useRef(0)
   const lock = useRef<string | null>(
@@ -35,26 +36,32 @@ export default function PerfGovernor() {
       if (ORDER.includes(q)) useSim.getState().setQuality(q, true)
     }
     const d = Math.min(100, dt * 1000)
-    ema.current = ema.current * 0.95 + d * 0.05
+    ema.current = ema.current * 0.96 + d * 0.04
     acc.current += dt
-    if (acc.current < 2) return
+    if (acc.current < 3) return
     acc.current = 0
     const s = useSim.getState()
     if (!s.qualityAuto) return
-    // 开场运镜期间（以及结束后 4s）冻结画质自适应：
+    // 开场运镜期间（以及结束后 5s）冻结画质自适应：
     // 首段 shader 编译/PMREM 常见几秒高帧时，若立即 high→medium→low 连续降档，
     // EffectComposer 与 Canvas dpr 会各重建一次，真机上正是“开场两次黑屏”的来源。
-    if (!s.introDone || performance.now() - introEndAt.current < 4000) {
+    if (!s.introDone || performance.now() - introEndAt.current < 5000) {
       if (!frozen.current && s.introDone) {
         frozen.current = true
         introEndAt.current = performance.now()
       }
       return
     }
+    // 切换冷却期保护（至少 8s 防抖，避免频繁重建 WebGL 后处理管线）
+    const now = performance.now()
+    if (now - lastShiftAt.current < 8000) return
+
     const cur = ORDER.indexOf(s.quality)
-    if (ema.current > 22 && cur > 0) {
+    if (ema.current > 26 && cur > 0) {
+      lastShiftAt.current = now
       s.setQuality(ORDER[cur - 1] as 'low' | 'medium' | 'high')
     } else if (ema.current < 13 && cur < 2) {
+      lastShiftAt.current = now
       s.setQuality(ORDER[cur + 1] as 'medium' | 'high')
     }
   })

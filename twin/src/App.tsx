@@ -21,6 +21,8 @@ import CameraRig from './scene/CameraRig'
 import { ORBIT_MIN_DISTANCE, ORBIT_MAX_DISTANCE, ORBIT_MAX_POLAR_DEG } from './scene/hotkeys.ts'
 import PerfGovernor from './scene/PerfGovernor'
 import Hud from './hud/Hud'
+import AudioField from './audio/AudioField'
+import GrassField from './scene/grassField'
 import { useSim } from './state/simStore'
 
 // ============================================================================
@@ -81,7 +83,7 @@ export default function App() {
           <Canvas
             shadows="soft"
             gl={{ antialias: false, powerPreference: 'high-performance', failIfMajorPerformanceCaveat: false }}
-            dpr={quality === 'high' ? [1, 2] : quality === 'medium' ? [1, 1.5] : [1, 1]}
+            dpr={quality === 'high' ? [1, 1.5] : quality === 'medium' ? [1, 1.25] : [1, 1]}
             camera={{ position: [-100, 1450, 250], fov: 52, near: 1, far: 18000 }}
             onCreated={({ gl, scene, camera }) => {
               gl.toneMapping = THREE.ACESFilmicToneMapping
@@ -100,7 +102,7 @@ export default function App() {
               const warmT0 = performance.now()
               const warm = () => {
                 warmFrames++
-                if (warmFrames >= 3 && performance.now() - warmT0 >= 400) { setReady(true); return }
+                if (warmFrames >= 2 && performance.now() - warmT0 >= 120) { setReady(true); return }
                 requestAnimationFrame(warm)
               }
               requestAnimationFrame(warm)
@@ -130,6 +132,8 @@ export default function App() {
               <SkyAurora />
               <WorldTerrain />
               <TreeField />
+              {/* P1 · T8：草地系统正式挂载（相机跟随分块 + 视距裁决，见 grassField.tsx） */}
+              <GrassField />
               <NightPulse />
               <SparkleGround count={4600} />
               <WindVeil />
@@ -175,6 +179,8 @@ export default function App() {
         )}
       </div>
       <Hud />
+      {/* T9 · 声场驱动层（Canvas 之外，rAF + Web Audio 自有时钟：软渲染掉帧不影响声音） */}
+      <AudioField />
     </>
   )
 }

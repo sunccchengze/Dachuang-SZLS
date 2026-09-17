@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './styles/theme.css'
 import { startSimClock, useSim, farmFrameNow } from './state/simStore'
+import { snapYawBank } from './core/control/yawDrive'
+import { audioEngine } from './audio/audioEngine'
 import { pickSourceFromQuery } from './data/telemetry'
 import { debugEnabled } from './data/debug'
 import { bindFloris3D } from './data/florisData'
@@ -19,7 +21,14 @@ startSimClock()
 pickSourceFromQuery().start()
 // 调试探针（仅 DEV/?debug=1）：供 QA 自动化注入指令、读取 store
 if (debugEnabled()) {
-  (window as unknown as Record<string, unknown>).__aeolus = { useSim, farmFrameNow }
+  // snapYaw：把偏航执行器瞬移到指令角（稳态取证用；正常界面必须看 0.3°/s 的真实滞后）
+  const snapYaw = (cmds?: number[]) => {
+    const st = useSim.getState()
+    snapYawBank(st.yawBank, cmds ?? st.unitYaw)
+    useSim.setState({ actYaw: st.yawBank.states.map((s2) => s2.actual) })
+  }
+  // audio：声场引擎只读探针（QA 验证 AudioContext 状态 / 声场求值，不可越权改节点）
+  ;(window as unknown as Record<string, unknown>).__aeolus = { useSim, farmFrameNow, snapYaw, audio: audioEngine }
   const tq = new URLSearchParams(location.search).get('t')
   if (tq && Number.isFinite(Number(tq))) useSim.setState({ tHours: Number(tq), playing: false })
 }

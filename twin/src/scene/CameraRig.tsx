@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { CAM, FARM } from './terrainUtil'
+import { pushCameraState } from './cameraBus'
 import { CAM_HOTKEYS } from './hotkeys.ts'
 import { useSim } from '../state/simStore'
 import {
@@ -75,6 +76,8 @@ const _tLook = new THREE.Vector3()
 const _dir = new THREE.Vector3()
 const _right = new THREE.Vector3()
 const _mv = new THREE.Vector3()
+const _camFwd = new THREE.Vector3()
+const _camUp = new THREE.Vector3()
 const _flyTarget = new THREE.Vector3()
 const FLY_ACCEL_TAU = 0.18
 const FLY_DECAY_TAU = 0.55
@@ -145,6 +148,12 @@ export default function CameraRig() {
   useFrame((state, delta) => {
     if (!controlsRef.current) controlsRef.current = (state.controls as any) || null
     const ctl = controlsRef.current
+
+    // T9 · 声场需要相机位姿（AudioField 在 Canvas 之外，走 cameraBus 旁路）。
+    // 放在所有 return 分支之前：DEBUG_CAM / 书签机位 / 自由飞行 / 巡航都覆盖到。
+    camera.getWorldDirection(_camFwd)
+    _camUp.copy(camera.up).applyQuaternion(camera.quaternion).normalize()
+    pushCameraState(camera.position, _camFwd, _camUp)
 
     if (DEBUG_CAM) {
       if (ctl) ctl.enabled = true
