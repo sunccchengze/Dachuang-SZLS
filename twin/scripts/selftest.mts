@@ -3,7 +3,7 @@
 // 运行：node --experimental-strip-types scripts/selftest.mts
 // 依赖：仅 Node 22 原生类型剥离；无浏览器、无网络。
 // ================================================================
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import {
   farmFrame, optimizeYaw, windAt, FARM_RATED_MW, dayNight, sunWarmth,
 } from '../src/data/farmSim.ts'
@@ -546,6 +546,193 @@ ok('偏航因子：cos^p 随 |yaw| 递减', yawFactor(0) > yawFactor(10) && yawF
   const lrR = readFileSync('src/scene/LightRig.tsx', 'utf8')
   ok('R37 主灯：sunWarmth 驱动色温暖化 + skyState.warmF 写入',
     lrR.includes('sunWarmth') && lrR.includes('warmF'))
+}
+
+// R39 · T4 落地锁（从孤儿分支 a3 采纳并重写的三项：波系同源 / 真天空反射 / 云掩日月次序）
+// ---------------------------------------------------------------
+// 依据：docs/research/round38_残项收口与裁决.md §一（先裁决后合并）；
+//      实现落在主线基线上，不照抄 a3 写法。
+{
+  const wt = readFileSync('src/scene/WorldTerrain.tsx', 'utf8')
+  const vert = wt.slice(wt.indexOf('const VERT'), wt.indexOf('const FRAG'))
+  const frag = wt.slice(wt.indexOf('const FRAG'), wt.indexOf('export default function'))
+
+  // ① 波系同源：VERT 的 Gerstner 与 FRAG 的 swellN 必须逐项对表（波长/陡度/时间系数/相位）
+  const gs = [...vert.matchAll(/gerstner\(p,\s*(\w+),\s*([\d.]+),\s*([\d.]+),\s*uTime \* ([\d.]+)((?:\s*\+\s*[\d.]+)?)\s*,/g)]
+    .map((m) => ({ dir: m[1], steep: m[2], lambda: m[3], tc: m[4], phase: m[5].replace(/\s+/g, '') }))
+  const expect = [
+    { steep: '0.06', lambda: '2400.0', tc: '0.35', phase: '' },
+    { steep: '0.045', lambda: '1500.0', tc: '0.50', phase: '+2.1' },
+  ]
+  const tableOK = gs.length === 2 && gs.every((g, i) =>
+    g.steep === expect[i].steep && g.lambda === expect[i].lambda
+    && g.tc === expect[i].tc && g.phase === expect[i].phase)
+  ok('R39 波系同源：VERT 仍是两条 Gerstner（λ 2400/1500 · 陡度 0.06/0.045 · 时序 0.35/0.50+2.1）',
+    tableOK, JSON.stringify(gs))
+  const need = ['6.28318530718 / 2400.0', '6.28318530718 / 1500.0', '0.06 / k1', '0.045 / k2', 't * 0.35', 't * 0.50 + 2.1']
+  const miss = need.filter((n) => !frag.includes(n))
+  ok('R39 波系同源：FRAG swellN 与 VERT 同方向/同波长/同相位/同幅值（照抄项级对表）',
+    frag.includes('float swellN') && miss.length === 0, miss.join(' '))
+  ok('R39 波系同源：waveHeight = 0.72·swellN·swellEnv + 次网格细节；法线 = 几何法线 + 解析细节',
+    frag.includes('0.72 * swellN(p) * swellEnv()') && frag.includes('vec3 waterNormal(vec3 gN')
+    && frag.includes('normalize(gN + vec3(') && frag.includes('float rippleHeight(vec2 p)'))
+  ok('R39 波系同源：VERT 几何法线同吃 amp 包络（防「水面不动、法线在摇」）',
+    vert.includes('mix(vec3(0.0, 1.0, 0.0), gNorm, clamp(amp, 0.0, 1.0))'))
+
+  // ② 真天空反射：反射色必须来自天幕采样（同源消费 uWarmF/uFogColor/uSunDir/uMoonDir）
+  ok('R39 真天空反射：seaSky() 存在且被 reflect(-V,N) 驱动（反射与视角/日月/色温同源）',
+    wt.includes('vec3 seaSky(vec3 R, float sGate)') && wt.includes('vec3 Rr = reflect(-V, N)')
+    && wt.includes('vec3 skyRef = seaSky(Rr, sGateNow)'))
+  ok('R39 真天空反射：旧「与视角无关的平涂 skyRef」已移除',
+    !wt.includes('vec3 skyRef = mix(vec3(0.014, 0.032, 0.054)'),
+    '平涂反射 = 反射一个天上不存在的颜色（round38 §一 判据）')
+
+  // ③ 云掩日月次序：云必须画在日月之后（云可遮日月），不再自相矛盾
+  const sky = readFileSync('src/scene/SkyAurora.tsx', 'utf8')
+  const sIdx = sky.indexOf('sunDiscCol'), mIdx = sky.indexOf('moonDot ='), cIdx = sky.indexOf('cov = smoothstep')
+  ok('R39 云掩日月次序：日 → 月 → 云（云最后画，可遮日月；夜间云不可见不抢星野）',
+    sIdx > -1 && mIdx > sIdx && cIdx > mIdx, `sun=${sIdx} moon=${mIdx} cloud=${cIdx}`)
+}
+
+// ================================================================
+// G · L4 物理内核（FLORIS 4.6.6 GCH 移植）vs FLORIS 实算 oracle
+// 数据：src/data/oracle/florisGchOracle.ts（生成件，勿手改；
+//   生成器 docs/research/scripts/generate_floris_gch_oracle.py，
+//   FlorisModel('defaults')=GCH，TI=0.06，shear=0.12@90m）
+// 容差口径：TS 为行级移植（float64），容差设宽 2 个数量级以上，
+//   任何结构性偏差都会越线。
+// ================================================================
+import { ORACLE } from '../src/data/oracle/florisGchOracle.ts'
+import { evaluateFarmScene } from '../src/core/physics/evalFarm.ts'
+
+console.log('== G · L4 GCH 内核 V&V（oracle：FLORIS 4.6.6 实算）==')
+
+// G1 功率链（单机：剪切廓线 3×3 网格 + cubic-mean + 速度域修正 + 表插值）
+{
+  let maxD = 0, atU = 0
+  for (const c of ORACLE.powerCurve) {
+    const r = evaluateFarmScene({ x: [0], z: [0] }, { uInf: c.u, fromDeg: 270, ti: 0.06 }, [0])
+    const d = Math.abs(r.totalKw - c.kW)
+    if (d > maxD) { maxD = d; atU = c.u }
+  }
+  ok('G1 功率曲线 47 点：|ΔP| ≤ 0.05 kW（剪切网格+cubic-mean+表口径，6→731.0 锚点）',
+    maxD <= 0.05, `maxΔ=${maxD.toExponential(2)} kW @u=${atU}`)
+  const c0 = ORACLE.powerCurve[8] // u=7 m/s
+  const r0 = evaluateFarmScene({ x: [0], z: [0] }, { uInf: c0.u, fromDeg: 270, ti: 0.06 }, [0])
+  ok('G1 uEff 链（立方平均风速）|Δ| ≤ 0.005 m/s',
+    Math.abs(r0.turbines[0].uEff - c0.uEff) <= 0.005,
+    `got=${r0.turbines[0].uEff} want=${c0.uEff}`)
+  ok('G1 Ct 表链 |Δ| ≤ 0.002',
+    Math.abs(r0.turbines[0].ct - c0.Ct) <= 0.002,
+    `got=${r0.turbines[0].ct} want=${c0.Ct}`)
+}
+
+// G2 双机 5D（13 偏航：尾流+偏折+二次导向+横向速度+WAT 全链路）
+{
+  const sc = { x: [0, 632], z: [0, 0] } // FLORIS [0,0]→[632,0]，wd=270（流向+x）
+  let mUp = 0, mDn = 0, mU = 0, mCt = 0, mTi = 0
+  for (const c of ORACLE.pair8ms) {
+    const r = evaluateFarmScene(sc, { uInf: 8, fromDeg: 270, ti: 0.06 }, [c.yaw, 0])
+    mUp = Math.max(mUp, Math.abs(r.turbines[0].powerKw - c.pUpKw))
+    mDn = Math.max(mDn, Math.abs(r.turbines[1].powerKw - c.pDnKw))
+    mU = Math.max(mU, Math.abs(r.turbines[1].uEff - c.uEffDn))
+    mCt = Math.max(mCt, Math.abs(r.turbines[1].ct - c.ctDn))
+    mTi = Math.max(mTi, Math.abs(r.turbines[1].ti - c.tiDn))
+  }
+  ok('G2 双机 13 偏航：上游 |ΔP| ≤ 0.05 kW', mUp <= 0.05, `maxΔ=${mUp.toExponential(2)} kW`)
+  ok('G2 双机 13 偏航：下游 |ΔP| ≤ 0.5 kW（GCH 全链路）', mDn <= 0.5, `maxΔ=${mDn.toFixed(3)} kW`)
+  ok('G2 下游 uEff |Δ| ≤ 0.005 m/s', mU <= 0.005, `maxΔ=${mU.toFixed(5)} m/s`)
+  ok('G2 下游 Ct |Δ| ≤ 0.002', mCt <= 0.002, `maxΔ=${mCt.toFixed(5)}`)
+  ok('G2 下游 TI（crespo WAT+偏航恢复）|Δ| ≤ 0.002', mTi <= 0.002, `maxΔ=${mTi.toFixed(5)}`)
+}
+
+// G3 九机阵列（规范 3×3@632m 场景几何，北来风）
+{
+  const sc = { x: FARM.map((f) => f.x), z: FARM.map((f) => f.z) }
+  const none = ORACLE.array.none
+  const r0 = evaluateFarmScene(sc, { uInf: 8, fromDeg: 0, ti: 0.06 }, new Array(9).fill(0))
+  const mNone = Math.max(
+    Math.abs(r0.totalKw - none.totalKw),
+    ...r0.turbines.map((t, i) => Math.abs(t.powerKw - none.pKw[i])),
+  )
+  ok('G3 阵列 none：总/逐机 |ΔP| ≤ 0.5 kW（总 ~8108 kW，含 WAT 跨 3 排）',
+    mNone <= 0.5, `maxΔ=${mNone.toFixed(3)} kW`)
+  const mNoneU = Math.max(...r0.turbines.map((t, i) => Math.abs(t.uEff - none.uEff[i])))
+  ok('G3 阵列 none：逐机 uEff |Δ| ≤ 0.005 m/s', mNoneU <= 0.005, `maxΔ=${mNoneU.toFixed(5)}`)
+  const mNoneTi = Math.max(...r0.turbines.map((t, i) => Math.abs(t.ti - none.ti[i])))
+  ok('G3 阵列 none：逐机 TI |Δ| ≤ 0.003', mNoneTi <= 0.003, `maxΔ=${mNoneTi.toFixed(5)}`)
+  let mUni = 0
+  for (const c of ORACLE.array.unifiedTotal) {
+    const r = evaluateFarmScene(sc, { uInf: 8, fromDeg: 0, ti: 0.06 }, new Array(9).fill(c.yaw))
+    mUni = Math.max(mUni, Math.abs(r.totalKw - c.totalKw))
+  }
+  ok('G3 阵列 统一偏航 13 档：总 |ΔP| ≤ 1 kW（含 +30°=9060.12 钦定工况）',
+    mUni <= 1, `maxΔ=${mUni.toFixed(3)} kW`)
+  let mRow = 0
+  for (const c of ORACLE.array.row0Scan) {
+    const yaw = new Array(9).fill(0)
+    for (let i = 0; i < 3; i++) yaw[i] = c.yaw
+    const r = evaluateFarmScene(sc, { uInf: 8, fromDeg: 0, ti: 0.06 }, yaw)
+    mRow = Math.max(mRow, Math.abs(r.totalKw - c.totalKw))
+  }
+  ok('G3 阵列 上游排扫描 13 档：总 |ΔP| ≤ 1 kW', mRow <= 1, `maxΔ=${mRow.toFixed(3)} kW`)
+  let mCfg = 0
+  for (const [name, c] of Object.entries(ORACLE.array.configs)) {
+    const r = evaluateFarmScene(sc, { uInf: 8, fromDeg: 0, ti: 0.06 }, [...c.yaw])
+    mCfg = Math.max(mCfg, ...r.turbines.map((t, i) => Math.abs(t.powerKw - c.pKw[i])))
+    void name
+  }
+  ok('G3 阵列 多行配置 5 组：逐机 |ΔP| ≤ 1 kW（含 [30,20,0] 贪心族）', mCfg <= 1, `maxΔ=${mCfg.toFixed(3)} kW`)
+}
+
+// G4/G5（横偏质心 + 横截面）待 gch.ts 的 sampleCrossPlane 导出后启用 ——
+// 设计见 docs/research/round38 交接文档 §5（需独立求值网格，不可复用 3×3 转子网格）。
+
+// R38 · 证据链完整性（docs/08 D2 精神：把「要拿证据」沉淀成可执行断言）
+// 历史坑：① `twin/shots/` 曾提交 16 个 0 字节 PNG（分步 A/B 序列全是空文件＝假证据）；
+// ② `twin/docs/` 与 `docs/` 双证据树，路径漂移后文档指不到图（本轮已合并为单树）。
+// 两条都在这里锁死：图片不得为空，*.md 引用的图片名必须能在证据树里找到。
+{
+  const IMG = /\.(png|jpe?g|webp|gif|bmp)$/i
+  const walk = (dir: string, out: string[] = []): string[] => {
+    if (!existsSync(dir)) return out
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === 'node_modules' || e.name === 'dist' || e.name.startsWith('.')) continue
+      const p = `${dir}/${e.name}`
+      if (e.isDirectory()) walk(p, out)
+      else out.push(p)
+    }
+    return out
+  }
+  const evidence = [...walk('../docs'), ...walk('../image-search')]
+  const empty = evidence.filter((f) => IMG.test(f) && statSync(f).size === 0)
+  ok('R38 证据完整性：docs/ 与 image-search/ 下不存在 0 字节图片',
+    empty.length === 0, `${empty.length} 个：${empty.slice(0, 3).join(' ')}`)
+
+  const present = new Set(evidence.filter((f) => IMG.test(f)).map((f) => f.split('/').pop()!))
+  const missing: string[] = []
+  // 证据图引用必须可查：漏拍 / 改名 / 移树都在这里锁死。
+  // 不查：命令行示例（shot.mjs/abdiff/… 行）、花括号速记、`<占位>.png`。
+  const CMD = /shot\d?\.mjs|abdiff|framestats|horizoncheck|perfstats|python3|npm run|npx |^\s*\$/
+  const TOK = /[^\s`"'()[\]<>|{},*?]+\.(?:png|jpe?g)/g // 排除通配（`r33_*.png` 是集合描述，不是链接）
+  // 设计上已不存在、但历史文档合理提及的资产（不允许静默扩大此表）：
+  //  sky-realistic-cyan.png —— Round-9 #6 删除的 1.9 MB 无许可位图（见 docs/08「删除…无许可记录」）
+  const GONE = new Set(['sky-realistic-cyan.png'])
+  for (const m of walk('../docs').filter((f) => f.endsWith('.md'))) {
+    const lines = readFileSync(m, 'utf8').split('\n')
+    lines.forEach((line, i) => {
+      if (CMD.test(line)) return
+      for (const mm of line.matchAll(TOK)) {
+        const prev = mm.index! > 0 ? line[mm.index! - 1] : ' '
+        if (!/[\s`(/]/.test(prev)) continue // 不是独立 token（如 r24_{20,30}s_before.png 的尾巴）
+        const name = mm[0].split('/').pop()!
+        const tag = `${m.split('/').pop()}:${i + 1} → ${name}`
+        if (!present.has(name) && !GONE.has(name) && !missing.includes(tag)) missing.push(tag)
+      }
+    })
+  }
+  ok('R38 证据链：docs/**.md 引用的截图都能找到对应文件（无漏拍/无断链）',
+    missing.length === 0, `${missing.length} 处：${missing.slice(0, 6).join(' | ')}`)
 }
 
 console.log(`\n结果: ${pass} 通过 / ${fail} 失败`)

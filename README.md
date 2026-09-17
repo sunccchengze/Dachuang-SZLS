@@ -14,20 +14,42 @@
 | docs/research/img/ | 顶级大屏参考图 5 张 |
 | docs/research/mockups/ | **预期效果概念图**（AI 生图并经两轮导演修图）：`styleA_deepblue_v2.png` 深蓝全息风、`styleB_amber_v2.png` 琥珀金工业风 |
 
-## ✅ 已验证基线（2026-08-24 沙箱实测）
+## ✅ 已验证基线（2026-08-24 沙箱实测 · 技术选型 PoC）
+> 本节是**选型期**的 PoC 数据（当时尚未有地形/海洋/森林等场景层），不要与下方「当前状态」表混读。
 - Vite 8.2.2 + React 19.2.8 + TS 6.0.3 + three 0.185.1 + R3F 9.7.0 + drei 10.7.8 + @react-three/postprocessing 3.1.0 + zustand 5.0.15：**构建通过（1.18s，gzip 382KB）**，含 9 机阵列/物理天空/Bloom/SMAA/晕影 PoC
 - wrangler 4.125.0 可用；npm 核验：n8ao 2.0.1、@takram/three-atmosphere 0.19.1、@gltf-transform/cli 4.4.2、camera-controls 3.1.2、echarts 6.1.0、uplot 1.6.32、maath 0.10.8、gsap 3.15.0
 - Cloudflare Pages 硬约束登记：单文件 ≤25MiB、20,000 文件、带宽免费；Workers Static Assets 为官方新推荐（迁移零成本预留）
 
-## 🚦 当前状态（2026-09-06）
-**v3 演示平台已交付**：`twin/`（AEOLUS TWIN）。docs/07 评审 + docs/08 合并清单全部 P0/P1 修复并实测验收：
-构建 0 错误、lint 0 警告、数据契约自检 22/22、35 draw calls、联动闭环有截图证据（docs/research/shots/after_*.png）。
+## 🚦 当前状态（2026-09-13 实测，R38 收口轮）
+**v3 演示平台已交付并持续细化**：`twin/`（AEOLUS TWIN）。docs/07 评审 + docs/08 合并清单全部 P0/P1 修复并实测验收，
+场景自 R29 起已推进到 R37（海洋/海岸/天空/色温）。本轮（2026-09-13）在 `arena/01a099f2-dachuang-szls` 复测的**权威数字**：
+
+| 指标 | 实测值 | 测法 |
+|---|---|---|
+| `npm run selftest` | **84 通过 / 0 失败** | Node 22 原生类型剥离，无浏览器依赖 |
+| `npx tsc -b --noEmit` | **0 错误** | — |
+| `npm run lint` | **0 warnings / 0 errors**（52 files） | oxlint 1.79 |
+| `npm run build` | **✓ 1.36s** | Vite 8 + rolldown |
+| 渲染计数（`?q=high&t=15&cam=60,22,990`） | **250 draw calls / 636,718 tris / 47,384 lines** | `npm run perftier`（`window.__aeolus_stats()` 单帧手动计数） |
+| 画质分档 | high 250c/636,718t · medium 250c/562,318t · low 222c/417,538t | 同上，三档同参 |
+| 产物体积 | JS gzip 合计 **468 kB**（three 单包 384 kB + 业务 58 kB + floris3d 26 kB）· CSS 162 kB | `vite build` reporter |
+
+> 旧文档里反复出现的「22 断言 / 35 draw calls」是 2026-08-28 v3 交付轮的口径，**已作废**，以本表为准。
+> **一条命令跑齐四条闸门**：`cd twin && npm run verify`（lint + selftest + tsc/build）。
+> CI：`ci/qa-gates.yml` 已备好但**尚未生效**——本仓 GitHub App 无 `workflows` 权限，需人执行
+> `mkdir -p .github/workflows && git mv ci/qa-gates.yml .github/workflows/ && git push` 启用（见该文件头注释）。
+> 沙箱为 SwiftShader 软渲染（本沙箱仅 2 核），**帧率绝对值不可用作结论**，只作档间相对比较；实机 GPU 需另行验收。
+
 数据口径三分法（真实/演示/示意）已上界面角标与 README。文档索引补充：
 
 | 文件 | 内容 |
 |---|---|
 | [docs/07_全面评审报告_问题清单与优先级.md](docs/07_全面评审报告_问题清单与优先级.md) | 第二轮全面评审（A-E 五类 63 项） |
 | [docs/08_合并评审_最终清单.md](docs/08_合并评审_最终清单.md) | **权威清单（终版）**：复核裁决 + 逐项修复证据 + 验收门槛对照 |
-| [docs/research/round36_海岸真实化与远岸森林.md](docs/research/round36_海岸真实化与远岸森林.md) | R36：以 coastal_3d_v2 为镜 —— 岸距场/拍岸碎浪/地平线收边/白昼卷云/远岸森林（selftest 73/73） |
-| [docs/research/shots/](docs/research/shots/) | 历轮截图证据链（含本轮 before/after 对拍） |
+| [docs/09_R34_海洋真实化.md](docs/09_R34_海洋真实化.md) | R34 海洋真实化（深度/配色/波光口径定型） |
+| [docs/10_R28-R32_地形海洋重做.md](docs/10_R28-R32_地形海洋重做.md) | R28–R32 地形海洋重做全过程 |
+| [docs/research/round36_海岸真实化与远岸森林.md](docs/research/round36_海岸真实化与远岸森林.md) | R36/R36b/R36c/R37 权威记录：岸距场/拍岸碎浪/地平线收边/白昼卷云/远岸森林/夜陆去灰白/日照金山 |
+| [docs/research/round38_残项收口与裁决.md](docs/research/round38_残项收口与裁决.md) | **R38 本轮**：残项清单逐项收口 + `arena/01a074a3` 孤儿分支裁决 |
+| [docs/research/](docs/research/) | 历轮 round*.md（11–38）+ [shots/](docs/research/shots/) 截图证据链 |
+| [HANDOFF_NEXT.md](HANDOFF_NEXT.md) | 当前阶段交接（开放项与红线）；[HANDOFF.md](HANDOFF.md) 为第 2 任历史交接 |
 | [twin/README.md](twin/README.md) | 演示平台运行/自检/调试键/口径说明 |

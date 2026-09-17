@@ -2,3 +2,12 @@ node_modules/
 dist/
 *.local
 .DS_Store
+
+# 沙箱产物（不入库）
+twin/nsslibs/
+twin/.nssbuild/
+twin/shots/
+__pycache__/
+*.pyc
+
+# 证据完整性由 npm run selftest 的 R38 两项守卫负责（0 字节图 / 文档断链）

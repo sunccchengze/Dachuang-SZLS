@@ -54,7 +54,7 @@ const smoothstep = (e0: number, e1: number, x: number) => {
 //  · 峡湾水道深切北岸（长 1.6km、宽 220~560m，两壁陡峭，海岬变湾中岛）；
 //  · 海蚀柱群（离岸峭岩，浪蚀奇观）；
 //  · 海床仍只保留极低幅微地貌（±2m），贴地稳定。
-// 注：R32-R34 系回退后重做（见 twin/docs/research/R32-R34-改造提示词.md），
+// 注：R32-R34 系回退后重做（见 docs/research/R32-R34-改造提示词.md），
 //     因原 commit 不在本快照内，函数名与原实现未必逐字一致，但几何约束等价。
 /** 海上风电场中心（保持旧取景重心；本版地形不再以之为圆心） */
 export const FARM_CENTER = { x: -100, z: -640 } as const
@@ -210,6 +210,34 @@ export function shoreSigned(x: number, z: number): number {
     if (si > s) s = si
   }
   return s
+}
+
+/**
+ * 海岸线带符号距离（米，陆侧正 / 海侧负）—— R36 新增（参考 coastal_3d_v2 的
+ * 「真海岸距离」思路，闭式实现，不上 EDT，理由见 docs/11 §四）。
+ *
+ * 真值推导：landBase = max(wN, wW)·(1−fjordCarve)，wN = smoothstep(0, rw, dNorth)，
+ * rw = rampAt(x,z)。max(wN,wW)=0.5（视觉岸线）⟺ max(sN, sW) = 0，其中
+ * sN = dNorth − rw/2、sW = dWest − rw/2（各岸 0.5 等值面即 s=0，两条岸线
+ * 法向分别近似沿 −z / +x，轴方向距离≈法向距离，误差 ≲5%，与 R34 同类已知偏差）。
+ *  · 海侧（至少一个 s<0）：到岸线距离 = min(|sN|, |sW|) → 符号化 = max(sN, sW)
+ *  · 陆侧深处（sN>0 且 sW>0，仅西北角内侧）：最近岸线在拐角 → hypot(sN, sW)
+ *  · 峡湾水道：carve 把陆地挖成海 → 强制负值（≈半渠宽 110m 封顶）
+ *  · 离岸岛/海蚀柱不在此场（其水线泡沫由 vLand 薄带自动环绕，见 WorldTerrain）
+ * ⚠ R39 合并口径（2026-09-17）：本函数**未被运行时采用**。主线同一问题的实现是上面的
+ * `shoreSigned()`——北/西岸 + 岛/海岬/海蚀柱的 SDF 并集（严格更全，含离岸岛）；
+ * 本函数只算两条岸（其作者自己在 docs/11 §四 声明离岸岛不在此场）。
+ * 按 docs/research/round38_残项收口与裁决.md §一 的裁决「否决」，仅作对照实现保留，
+ * 无调用方、不参与渲染、不进 selftest；若后续确认无用可直接删除（历史在 595daf2）。
+ */
+export function coastSignedDist(x: number, z: number): number {
+  const rw = rampAt(x, z)
+  const sN = dNorth(x, z) - rw * 0.5
+  const sW = dWest(x, z) - rw * 0.5
+  let d = sN > 0 && sW > 0 ? Math.hypot(sN, sW) : Math.max(sN, sW)
+  const carve = fjordCarve(x, z)
+  if (carve > 0) d = Math.min(d, -110 * carve)
+  return d
 }
 
 /**
@@ -410,12 +438,14 @@ export const FARM: FarmUnit[] = (() => {
   let k = 0
   for (let r = 0; r < 3; r++) {
     for (let c = 0; c < 3; c++) {
-      const jx = (((k * 53) % 5) - 2) * 10
-      const jz = (((k * 37) % 5) - 2) * 8
+      // P0-1（2026-09-16）：移除 ±20m 位置抖动 —— 场景几何与 FLORIS 规范布局
+      // （3×3 @ 632m）逐位一致，物理真值与场景同源（圆18"靶值同源化"精神）。
+      // 实测抖动使 T04 部分逃逸 T01 尾流（439→717 kW，全场 +6.4%），
+      // 与全部 FLORIS 实算表（+24.04% 等）失配；视觉影响 ≤20m/632m，机位不可察。
       arr.push({
         id: `T0${k + 1}`,
-        x: colsX[c] + jx,
-        z: rowsZ[r] + jz,
+        x: colsX[c],
+        z: rowsZ[r],
         row: r, col: c,
         speed: 1.02 + ((k * 29) % 5) * 0.1,
       })

@@ -1,5 +1,10 @@
 # 截图验货记录
 
+> **2026-09-13（R38-T2）起本目录是全仓唯一证据树**：原 `twin/docs/research/shots/` 的 R30–R34 自截图
+> （21 个文件）已 `git mv` 进来；`twin/shots/` 下 16 个 0 字节 PNG（崩溃残留的"分步 A/B 序列"＝假证据）已删除。
+> 下方清单为历轮**原始登记**，按时间追加，不改写历史措辞；树结构与规矩见文末两节。
+
+
 - `r4_final_holo.png`：统一全息风机的上一版基线。
 - `r5_holo_real_transparent_final.png`：R5，NREL 真实几何初版全息化（保留供对比）。
 - `r6_holo_real_tinted.png`：R6，降低能量值与线框不透明度后的冰青版本，避免白色实体观感。
@@ -47,3 +52,36 @@
 ## 去雾恢复证据（2026-09-06，`?cam=2.6,17,1393,0,22,-340&t=10` hero 机位，可复现）
 - `fog_before_022.png` / `fog_after_013.png`：恢复 R32-C-round4 用户已验收的雾密度（0.00022→0.00013，
   系 a98a2eb 合并时丢失的 1 行）；远峰雪岩对比恢复、中景山体脱灰，空气感保留。
+
+## 各轮图片的归属（合并后速查）
+
+| 位置 | 内容 | 正文说明在哪 |
+|---|---|---|
+| `r30_base_*.png`、`r31_*.png`（平铺） | R30 海洋重构基线 / R31 开放外海与接地投影 | `docs/research/round30_海洋重构.md`、`round31_开放外海与接地投影.md` |
+| `r32/` `r33/` `r34/` | R32 分形海岸线 · R33 草地实验（未挂载）· R34 海洋真实化 | `docs/10_R28-R32_地形海洋重做.md`、`docs/09_R34_海洋真实化.md`；**三个目录各有一份 README**（补 docs/10 挂账） |
+| `r29_ocean_*.png`、`r29b_*.png`（平铺） | R29 海洋地面 | `docs/research/round29_海洋地面.md`（R38 已把表内临时名改为实际文件名） |
+| `r36/`（含 `moon/`、`nightland/`、`gold/`） | R36 岸距/碎浪/远岸森林、R36b 月落、R36c 夜陆、R37 色温 | `docs/research/round36_海岸真实化与远岸森林.md` |
+| `after_*.png`、`before_*.png`、`hot4789_*`、`fog_*` | v3 交付轮与各专项对拍 | `docs/08_合并评审_最终清单.md` |
+
+## 两条硬规矩（已进 `npm run selftest`，R38 起）
+
+1. **不许空壳证据**——`docs/**` 与 `image-search/**` 下任何图片为 0 字节即自检失败；
+2. **不许断链**——`docs/**/*.md` 引用的每个 `<文件名>.png`（独立 token；通配符、`<占位符>` 与命令行示例除外——写占位符请一律用尖括号，
+   否则守卫会把它当真链接）
+   必须能在证据树里找到同名文件。改名/移树而漏改文档会直接红。
+
+跑法 `cd twin && npm run selftest`（末两项即本目录守卫）。例外表 `GONE` 只登记
+"按裁决删除、历史文档仍会提及"的资产（现为 Round-9 删的 `sky-realistic-cyan.png`，1.9 MB 无许可位图），
+**不许为了通过检查往里塞**。
+
+## 拍摄 SOP（新轮次照抄）
+
+```bash
+bash twin/scripts/bootstrap.sh                    # 沙箱重置后恢复 chromium + NSS 桩库
+cd twin && npm run dev -- --host 0.0.0.0
+node scripts/shot.mjs 'http://127.0.0.1:5173/?debug=1&t=10&cam=0,22,990' \
+  ../docs/research/shots/rNN_<主题>.png 12000 1920 1080
+python3 scripts/abdiff.py before.png after.png rNN_label   # 帧差（同相位才算 A/B）
+python3 scripts/framestats.py before.png after.png         # 亮度/饱和，守"不得更亮"红线
+```
+沙箱是 SwiftShader 软渲染：**像素可读，帧率数字一律不可引用**。
