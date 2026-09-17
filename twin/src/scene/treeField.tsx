@@ -23,10 +23,10 @@ import { useSim } from '../state/simStore'
 //    不重建几何/着色器）。
 // ============================================================
 
-/** 各画质档树数（high 全量；medium 减半；low 0 —— 软渲染/低配保帧）。
+/** 各画质档树数（high 全量 4800；medium 2400；low 600 低密度剪影，告别整片空秃）。
  *  模块内部常量（不导出：组件文件只导出组件，保 fast-refresh，lint 0 警告口径）。
  *  实测 high=4800 ≈ +19 万三角 / +1 draw call（单实例化批次）。 */
-const TREE_TIERS = { high: 4800, medium: 2400, low: 0 } as const
+const TREE_TIERS = { high: 4800, medium: 2400, low: 600 } as const
 
 const VERT = /* glsl */ `
 attribute vec4 aInst;   // xyz 世界落位（根部），w 树高（米）
@@ -202,35 +202,77 @@ function createSet(): TreeSet {
   return { geo, mat, count: 0 }
 }
 
-/** 拒绝采样落位（与 selftest treeSampleHits 同一 treeAccept/种子域）。
- *  写入实例属性并抬 instanceCount；幂等（重复调用以最新档位为准）。 */
-function fillPlacements(set: TreeSet, budget: number): void {
-  if (set.count > 0 || budget <= 0) return
-  const inst = new Float32Array(budget * 4)
-  const rot = new Float32Array(budget * 2)
-  const rnd = mulberry32(4242)
-  let placed = 0
-  let guard = 0
-  const guardMax = budget * 30
-  while (placed < budget && guard < guardMax) {
-    guard++
-    const x = (rnd() * 2 - 1) * TREE_SPAN_M
-    const z = (rnd() * 2 - 1) * TREE_SPAN_M
-    const r1 = rnd()
-    const s = treeAccept(x, z, r1)
-    if (s <= 0) continue
-    inst[placed * 4] = x
-    inst[placed * 4 + 1] = terrainSurfaceY(x, z) - 0.22 // 根部微埋防悬空
-    inst[placed * 4 + 2] = z
-    inst[placed * 4 + 3] = s
-    rot[placed * 2] = rnd() * Math.PI * 2
-    rot[placed * 2 + 1] = rnd()
-    placed++
+/** 拒绝采样分帧落位（解决 T3b 首帧 2.5s~5s 长尖峰：分帧每批 600 株渐进落盘）。
+ *  写入实例属性并抬 instanceCount；幂等。 */
+function fillPlacementsChunked(
+  set: TreeSet,
+  targetCount: number,
+): () => void {
+  let cancelled = false
+  const budget = targetCount
+  if (set.count >= budget) {
+    set.geo.instanceCount = budget
+    return () => {}
   }
-  set.geo.setAttribute('aInst', new THREE.InstancedBufferAttribute(inst, 4))
-  set.geo.setAttribute('aRot', new THREE.InstancedBufferAttribute(rot, 2))
-  set.count = placed
-  set.geo.instanceCount = Math.min(placed, budget)
+
+  if (!set.geo.attributes.aInst) {
+    const inst = new Float32Array(TREE_TIERS.high * 4)
+    const rot = new Float32Array(TREE_TIERS.high * 2)
+    set.geo.setAttribute('aInst', new THREE.InstancedBufferAttribute(inst, 4))
+    set.geo.setAttribute('aRot', new THREE.InstancedBufferAttribute(rot, 2))
+  }
+
+  const instAttr = set.geo.attributes.aInst as THREE.InstancedBufferAttribute
+  const rotAttr = set.geo.attributes.aRot as THREE.InstancedBufferAttribute
+  const inst = instAttr.array as Float32Array
+  const rot = rotAttr.array as Float32Array
+
+  const rnd = mulberry32(4242)
+  let placed = set.count
+  let guard = 0
+  const guardMax = TREE_TIERS.high * 30
+  const CHUNK_SIZE = 600
+
+  // 恢复之前采样的随机状态（若增量采样）
+  for (let i = 0; i < placed; i++) {
+    // 快速步进 rnd 保持与全量采样确定性一致
+    rnd(); rnd(); rnd(); rnd(); rnd()
+  }
+
+  function step() {
+    if (cancelled) return
+    const chunkTarget = Math.min(placed + CHUNK_SIZE, budget)
+    while (placed < chunkTarget && guard < guardMax) {
+      guard++
+      const x = (rnd() * 2 - 1) * TREE_SPAN_M
+      const z = (rnd() * 2 - 1) * TREE_SPAN_M
+      const r1 = rnd()
+      const s = treeAccept(x, z, r1)
+      if (s <= 0) continue
+      inst[placed * 4] = x
+      inst[placed * 4 + 1] = terrainSurfaceY(x, z) - 0.22 // 根部微埋防悬空
+      inst[placed * 4 + 2] = z
+      inst[placed * 4 + 3] = s
+      rot[placed * 2] = rnd() * Math.PI * 2
+      rot[placed * 2 + 1] = rnd()
+      placed++
+    }
+    set.count = placed
+    set.geo.instanceCount = placed
+    instAttr.needsUpdate = true
+    rotAttr.needsUpdate = true
+
+    if (placed < budget && guard < guardMax) {
+      if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
+        window.requestAnimationFrame(step)
+      } else {
+        setTimeout(step, 0)
+      }
+    }
+  }
+
+  step()
+  return () => { cancelled = true }
 }
 
 export default function TreeField() {
@@ -238,12 +280,15 @@ export default function TreeField() {
   const set = useMemo(() => createSet(), [])
   const meshRef = useRef<THREE.Mesh>(null)
 
-  // 首帧之后延迟落位（≈1.6s CPU 不进启动关键路径；开场运镜 34s 内无感长齐）。
-  // low 档不采样（省 1.6s CPU）；档位升高时补采。
+  // 首帧之后分帧渐进落位（消除 CPU 尖峰，平滑扩展至当前档位预算）
   useEffect(() => {
-    if (quality === 'low' || set.count > 0) return
-    const id = window.setTimeout(() => fillPlacements(set, TREE_TIERS.high), 80)
-    return () => window.clearTimeout(id)
+    const target = TREE_TIERS[quality]
+    if (set.count >= target) {
+      set.geo.instanceCount = target
+      return
+    }
+    const cancel = fillPlacementsChunked(set, target)
+    return cancel
   }, [set, quality])
 
   // 画质档 → 实例数（运行时只调 instanceCount，不重建几何/程序）
@@ -267,6 +312,6 @@ export default function TreeField() {
     }
   })
 
-  if (target === 0) return null
+  if (target <= 0) return null
   return <mesh ref={meshRef} geometry={set.geo} material={set.mat} frustumCulled={false} />
 }
