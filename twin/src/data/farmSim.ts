@@ -150,7 +150,7 @@ function evalCore(o: CoreOpts): FarmCore {
   const w0 = windAt(tHours)
   const fromDeg = wind ? wind.fromDeg : w0.fromDeg
   const uInf = wind ? wind.u : w0.u
-  const yawMisalignment = FARM.map((_, i) => (unitYaw[i] ?? 0) - fromDeg)
+  const yawMisalignment = FARM.map((_, i) => unitYaw[i] ?? 0)
 
   const gch = evaluateFarmScene(
     FARM_SCENE,
@@ -166,6 +166,8 @@ function evalCore(o: CoreOpts): FarmCore {
     const rpm = rotorRpm(uEff)
     const before = powerCurveKw(uFree)
     const wakeLossPct = before > 0 ? Math.max(0, 100 * (1 - powerKw / before)) : 0
+    const offset = unitYaw[i] ?? 0
+    const absYaw = ((fromDeg + offset) % 360 + 360) % 360
     return {
       id: f.id,
       x: f.x,
@@ -173,8 +175,8 @@ function evalCore(o: CoreOpts): FarmCore {
       row: f.row,
       uFree,
       uEff,
-      yawDeg: unitYaw[i] ?? 0,
-      yawErrDeg: (unitYaw[i] ?? 0) - fromDeg,
+      yawDeg: absYaw,
+      yawErrDeg: offset,
       rpm,
       powerKw,
       tempC: 0,

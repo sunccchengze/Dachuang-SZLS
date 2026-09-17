@@ -124,12 +124,11 @@ export default function AirflowField() {
         }
       }
       for (let r = 0; r < N_RING; r++) {
-        const fade = 1 - r / (N_RING - 1)
-        // 第 22 轮：ax 与 useFrame 中烟羽轴向位置同式（70 + r·(15r+46)），
-        // 附加 exp(-ax/1000) 轴向衰减——尾流核心（前 1.5 排距）保留，
-        // 远端 2 km 长尾不再覆盖近排机组与镜头前景。
-        const ax = 70 + r * (r * 15 + 46)
-        const a = 0.055 * fade * fade * Math.exp(-ax / 1000)
+        // 从近转子 15m 平滑展开，近端 fadeIn 根除硬边切口，远端指数消散
+        const ax = 15 + r * (r * 15 + 46)
+        const fadeIn = Math.min(1, ax / 120)
+        const fade = (1 - r / (N_RING - 1)) * fadeIn
+        const a = 0.040 * fade * fade * Math.exp(-ax / 900)
         for (let kk = 0; kk < N_SEG; kk++) paA[base + r * N_SEG + kk] = a
       }
     }
@@ -183,10 +182,7 @@ export default function AirflowField() {
     for (let j = 0; j < NX; j++) {
       x9[j] = FARM[j].x
       z9[j] = FARM[j].z
-      // BUG-FIX：此处原用指令偏航角 unitYaw，而功率链 wakeDeficit 用的是
-      // 对风偏差 (unitYaw − fromDeg)。风向一偏离正北，画面尾流方向就和功率
-      // 算出来的方向对不上（实测 fromDeg=11° 时 800m 处差 61~74m）。
-      yawErr9[j] = (s.unitYaw[j] ?? 0) - w.fromDeg
+      yawErr9[j] = s.unitYaw[j] ?? 0
     }
 
     const g = streaks.geometry
@@ -262,16 +258,16 @@ export default function AirflowField() {
     let c = 0
     for (let j = 0; j < NX; j++) {
       const ye = yawErr9[j]
-      const by = terrainSurfaceY(x9[j], z9[j]) + 88
+      const by = terrainSurfaceY(x9[j], z9[j]) + 90
       for (let r = 0; r < N_RING; r++) {
-        const ax = 70 + r * (r * 15 + 46)
-        const rad0 = ROTOR_D * 0.52 + WAKE_K * ax
+        const ax = 15 + r * (r * 15 + 46)
+        const rad0 = ROTOR_D * 0.50 + WAKE_K * ax
         const off = wakeDeflection(ye, ax)
         for (let kk = 0; kk < N_SEG; kk++) {
           const ang = (kk / N_SEG) * Math.PI * 2
-          const wob = 1 + 0.035 * Math.sin(ang * 3 + now * 1.2 + j * 2.1) // 0.12→0.035：扭曲幅度收小
+          const wob = 1 + 0.025 * Math.sin(ang * 3 + now * 1.2 + j * 2.1)
           const o = Math.cos(ang) * rad0 * wob + off
-          const h = Math.sin(ang) * rad0 * 0.94 * wob // 0.72→0.94：截面接近正圆
+          const h = Math.sin(ang) * rad0 * wob
           ca[c++] = x9[j] + fx * ax + cxv * o
           ca[c++] = by + h
           ca[c++] = z9[j] + fz * ax + czv * o

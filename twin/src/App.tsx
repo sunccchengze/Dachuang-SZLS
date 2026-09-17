@@ -100,7 +100,7 @@ export default function App() {
               const warmT0 = performance.now()
               const warm = () => {
                 warmFrames++
-                if (warmFrames >= 3 && performance.now() - warmT0 >= 400) { setReady(true); return }
+                if (warmFrames >= 2 && performance.now() - warmT0 >= 120) { setReady(true); return }
                 requestAnimationFrame(warm)
               }
               requestAnimationFrame(warm)

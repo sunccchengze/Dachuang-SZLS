@@ -578,8 +578,8 @@ export default function WorldTerrain() {
     g.setAttribute('aShore', new THREE.BufferAttribute(shore, 1))
     g.computeVertexNormals()
 
-    // Step C1 高度纹理：512² 烘焙（半浮点最近邻采样，所有 WebGL2 / WebGL1 硬件通用，避免浮点线性插值扩展缺失导致 context lost）
-    const hg = bakeHeightGrid(512, SIZE)
+    // Step C1 高度纹理：256² 烘焙（半浮点最近邻采样，所有 WebGL2 / WebGL1 硬件通用，消除启动 1.5s 阻塞）
+    const hg = bakeHeightGrid(256, SIZE)
     const hdata = new Uint16Array(hg.size * hg.size)
     for (let k = 0; k < hdata.length; k++) hdata[k] = THREE.DataUtils.toHalfFloat(hg.data[k])
     const htex = new THREE.DataTexture(hdata, hg.size, hg.size, THREE.RedFormat, THREE.HalfFloatType)
