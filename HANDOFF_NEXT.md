@@ -1,20 +1,29 @@
-# HANDOFF_NEXT · 当前阶段交接（2026-09-13，R38 收口轮）
+# HANDOFF_NEXT · 当前阶段交接（2026-09-17，R39 合并轮）
 
-> 上一版本文写于 2026-08-28（`arena/01a04884-0824-2026`），其"尚未完成"清单**大半已在本仓后续 10 轮中解决**，
-> 已整体重写。历史版本可从 `git log -- HANDOFF_NEXT.md` 取回；第 2 任的完整交接见 [`HANDOFF.md`](HANDOFF.md)
-> （那份也已加"历史文档"声明与过期数字速查）。
+> 上一版本写于 2026-09-13（R38 收口轮，`arena/01a099f2-dachuang-szls`），其开放项 1/2/3/5 已在 R39 处理完。
+> 历史版本可从 `git log -- HANDOFF_NEXT.md` 取回；第 2 任的完整交接见 [`HANDOFF.md`](HANDOFF.md)。
+> 本轮（R39）的完整记录：`docs/research/round39_分支合并与T4落地.md`。
 
 ## 一句话口径（准确的，不是好看的）
 
-**信息口径与联动闭环已收口（docs/07/08，P0/P1/P2 全绿并留证据）；场景层已从"灰色噪声平板"推进到
-R29→R37 的海洋/海岸/森林/天空/色温体系，工程基线全绿（selftest 84/84、lint 0/0、tsc 0 错、build ✓）。
-仍未做的集中在三处：真实数据接入与 V&V（E 类）、渲染体系的性能与 LOD 口径、以及本轮列出的场景残项。
+**信息口径与联动闭环已收口（docs/07/08，P0/P1/P2 全绿并留证据）；场景层已推进到 R29→R39 的
+海洋/海岸/森林/天空/色温/波系同源体系；工程基线 selftest **98 通过 / 9 失败**（9 项全部是
+P0-1 的 G2/G3 偏航链 + R17 代理口径的**既有失败**，见下）、lint 0/0、tsc 0 错、build ✓。
+R39 把仓库里两条未并入的分支（R38 与孤儿 a3）正式合入，并落地了 a3 的三项技法（波系同源 /
+真天空反射 / 云掩日月次序）。仍未做的集中在三处：**L4 物理内核的偏航链（P0-1 收尾）**、
+真实数据接入与 V&V（E 类）、以及场景/性能残项（T3b/T5–T8）。
 不要用"可以直接答辩"这类表述。**
 
-## 现状（2026-09-13 实测）
+## 现状（2026-09-17 实测）
 
-- 提交：main = `bd5f5e8`（R37 日照金山），113 commits，0 open PR；
-- `npm run selftest` **84/84** · `npm run lint` **0/0** · `npx tsc -b --noEmit` **0 错** · `npm run build` **✓ 1.36s**；
+- 提交：本工作分支 tip = `4299fbb`（R39 合并轮）；`main` 里原有 R37/R38 内容均已并入；
+- `npm run selftest` **98 通过 / 9 失败** · `npm run lint` **0/0** · `npx tsc -b --noEmit` **0 错** · `npm run build` **✓ 1.48s**；
+  新增模块：`twin/src/core/physics/{gch,florisTable,evalFarm}.ts`（L4 GCH 内核）+ `src/data/oracle/florisGchOracle.ts`；
+- **9 项失败清单（必须知道，别误判为"全绿"）**：`G2 下游 |ΔP|≤0.5kW`（24.6kW）、`G2 下游 uEff`（0.055）、
+  `G2 下游 Ct`（0.0025）、`G2 下游 TI`（0.0145）、`G3 统一偏航`（72.9kW）、`G3 上游排扫描`（349.4kW）、
+  `G3 多行配置`（36.8kW）、`V&V FLORIS none ±5%`、`V&V FLORIS 独立寻优增益 24.04%`。
+  **无偏航链路已全绿**（G1 功率链 47 点 |ΔP|≤0.05kW、G3 none 总/逐机功率+uEff+TI）→ 偏差集中在
+  **偏折 / 二次导向 / 偏航附加恢复 / 横向速度**这条链；
 - 单帧渲染计数（`?q=high&t=15&cam=60,22,990`）：**250 draw calls / 636,718 tris**（medium 250/562,318、low 222/417,538）；
 - 取证链路：`bash twin/scripts/bootstrap.sh` 一键恢复 npm + 无头 Chromium（NSS 桩库）；
   `npm run perftier` 出三档基线；`scripts/{shot,abdiff,framestats,horizoncheck,sunprobe,moontrack}.mjs|py` 出像素证据。
