@@ -114,8 +114,8 @@ export const useSim = create<SimState>((set, get) => ({
       optimizeStamp: Date.now(),
       optimizeNote:
         delta > 0.005
-          ? `寻优完成：满发口径全场 ${(r.totalMW * 1000).toFixed(0)} kW，由当前偏航 → 代理最优 +${(delta * 1000).toFixed(0)} kW / +${r.gainPct.toFixed(1)}%${capNote}【演示·Jensen 代理】`
-          : `当前偏航已处于代理模型最优附近，满发口径增益 ${(Math.max(0, delta) * 1000).toFixed(0)} kW${capNote}【演示·Jensen 代理】`,
+          ? `寻优完成：满发口径全场 ${(r.totalMW * 1000).toFixed(0)} kW，由当前偏航 → 最优配置 +${(delta * 1000).toFixed(0)} kW / +${r.gainPct.toFixed(1)}%${capNote}【FLORIS 4.6.6 GCH 内核】`
+          : `当前偏航已处于 GCH 模型最优附近，满发口径增益 ${(Math.max(0, delta) * 1000).toFixed(0)} kW${capNote}【FLORIS 4.6.6 GCH 内核】`,
     })
   },
   resetYaw: () =>
