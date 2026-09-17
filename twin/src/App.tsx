@@ -81,7 +81,7 @@ export default function App() {
           <Canvas
             shadows="soft"
             gl={{ antialias: false, powerPreference: 'high-performance', failIfMajorPerformanceCaveat: false }}
-            dpr={quality === 'high' ? [1, 2] : quality === 'medium' ? [1, 1.5] : [1, 1]}
+            dpr={quality === 'high' ? [1, 1.5] : quality === 'medium' ? [1, 1.25] : [1, 1]}
             camera={{ position: [-100, 1450, 250], fov: 52, near: 1, far: 18000 }}
             onCreated={({ gl, scene, camera }) => {
               gl.toneMapping = THREE.ACESFilmicToneMapping

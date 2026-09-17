@@ -9,7 +9,7 @@ import { useSim } from '../state/simStore'
 import { mulberry32 } from '../data/rng.ts'
 
 // ============================================================================
-// AirflowField —— 风洞烟线式全场气流可视化（第 12 轮 R2 重制）
+// AirflowField —— 风洞烟线式全场气流可视化（第 12 轮 R2 重制 + 性能精简优化）
 // 用户反馈：圆环走廊"不像尾流"。改为两种经典 CFD/风洞语言：
 //  ① 风纹拖尾线（streak lines）：每条=粒子上一帧→当前帧的线段，
 //     长度∝当地速度、亮度∝有效风速——自由来流=长而亮，
@@ -67,7 +67,7 @@ void main() {
 
 export default function AirflowField() {
   const quality = useSim((s) => s.quality)
-  const n = quality === 'high' ? 2400 : quality === 'medium' ? 1300 : 600
+  const n = quality === 'high' ? 1600 : quality === 'medium' ? 900 : 450
 
   const { streaks, plumes } = useMemo(() => {
     // —— 风纹拖尾线：每粒 2 顶点（尾→头），alpha 头亮尾隐 ——
@@ -176,6 +176,8 @@ export default function AirflowField() {
     const cxv = fz, czv = -fx
     const ct = Math.min(0.9, thrustCt(baseU))
     const a = (1 - Math.sqrt(Math.max(0, 1 - ct))) / 2
+    const twoA = 2 * a
+    const rd035 = ROTOR_D * 0.35
     const NX = FARM.length
     const x9: number[] = new Array(NX), z9: number[] = new Array(NX), yawErr9: number[] = new Array(NX)
     for (let j = 0; j < NX; j++) {
@@ -202,13 +204,13 @@ export default function AirflowField() {
       for (let j = 0; j < NX; j++) {
         const dx = px - x9[j], dz = pz - z9[j]
         const ax = dx * fx + dz * fz
-        if (ax <= ROTOR_D * 0.35) continue
+        if (ax <= rd035) continue
         const cr = dx * cxv + dz * czv
         const sigma = ROTOR_D * 0.5 + WAKE_K * ax
         const q = (cr - wakeDeflection(yawErr9[j], ax)) / sigma
         const bell = Math.exp(-0.5 * q * q)
         const core = (ROTOR_D / (ROTOR_D + 2 * WAKE_K * ax)) ** 2
-        const di = Math.min(0.85, 2 * a * core * bell)
+        const di = Math.min(0.85, twoA * core * bell)
         def2 += di * di
         lat += di * (q / (1 + Math.abs(q)))
       }
@@ -219,7 +221,6 @@ export default function AirflowField() {
       const vzs = (fz + czv * lat * 1.35) * sp
       const vys = lat * sp * 0.16 + (eff < 0.9 ? 6 : 0)
       const hx = px + vxs * dt, hy = py + vys * dt, hz = pz + vzs * dt
-      const gd = terrainSurfaceY(hx, hz)
       const along = (hx - FCX) * fx + (hz - FCZ) * fz
       const across = (hx - FCX) * cxv + (hz - FCZ) * czv
       if (along > CX + 260 || Math.abs(across) > CX * 1.15 || hy > 330) {
@@ -227,7 +228,7 @@ export default function AirflowField() {
         const side = (Math.random() * 2 - 1) * CX * 0.94
         const nx = FCX + fx * back + cxv * side
         const nz = FCZ + fz * back + czv * side
-        const ny = Math.max(terrainSurfaceY(nx, nz) + 4, 4 + Math.random() ** 1.7 * 255)
+        const ny = 4 + Math.random() ** 1.7 * 255
         P.px[i] = nx; P.py[i] = ny; P.pz[i] = nz
         pa[i * 6] = nx - vxs * TRAIL
         pa[i * 6 + 1] = ny
@@ -238,6 +239,7 @@ export default function AirflowField() {
         continue
       }
       px = hx
+      const gd = hy < 30 ? terrainSurfaceY(hx, hz) : 0
       py = hy < gd + 2.5 ? gd + 2.5 : hy
       pz = hz
       P.px[i] = px; P.py[i] = py; P.pz[i] = pz

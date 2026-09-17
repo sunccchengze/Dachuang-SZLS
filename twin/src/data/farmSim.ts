@@ -253,15 +253,27 @@ const SCAN_MIN = 9
 
 const ZERO_YAW = new Array<number>(9).fill(0)
 
+const baseSeriesCache = new Map<string, number[]>()
+function getBaseSeries(wind?: WindOverride | null): number[] {
+  const ws = wind ? `|w${wind.u.toFixed(2)}@${wind.fromDeg.toFixed(1)}` : '|w_auto'
+  const hit = baseSeriesCache.get(ws)
+  if (hit) return hit
+  const arr: number[] = []
+  for (let s = 0; s < 48; s++) {
+    const t = (s / 48) * 24
+    arr.push(coreAt(t, ZERO_YAW, FARM_RATED_MW, wind).totalMW)
+  }
+  baseSeriesCache.set(ws, arr)
+  return arr
+}
+
 function buildHeavy(tq: number, unitYaw: number[], targetMW: number, wind?: WindOverride | null): HeavyFrame {
   // 全天 48 点（半小时网格）功率剖面 —— 当前偏航/目标设定下的"这一天"
   const daySeries: number[] = []
-  const baseSeries: number[] = []
+  const baseSeries = getBaseSeries(wind)
   for (let s = 0; s < 48; s++) {
     const t = (s / 48) * 24
     daySeries.push(coreAt(t, unitYaw, targetMW, wind).totalMW)
-    // 零偏航对风基准（=FLORIS none 策略口径）：图表双线对比，增益全天可见
-    baseSeries.push(coreAt(t, ZERO_YAW, FARM_RATED_MW, wind).totalMW)
   }
   let daySum = 0
   for (const v of daySeries) daySum += v
